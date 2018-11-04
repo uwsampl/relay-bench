@@ -6,6 +6,7 @@ verify_ssl = true
 torch = "==0.4.1"
 torchvision = "*"
 requests = "*"
+matplotlib = "*"
 
 [dev-packages]
 
