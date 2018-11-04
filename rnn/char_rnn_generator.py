@@ -63,10 +63,10 @@ class RNN:
         category = relay.var('category', shape=(1, n_categories))
         inp = relay.var('input', shape=(1, input_size))
         hidden = relay.var('hidden', shape=(1, hidden_size))
-        combined = op.concatenate([category, inp, hidden], axis=1)
+        combined = op.concatenate2(op.concatenate2(category, inp, axis=1), hidden, axis=1)
         hidden = linear(n_categories + input_size + hidden_size, hidden_size, combined)
         output = linear(n_categories + input_size + hidden_size, output_size, combined)
-        output_combined = op.concatenate([hidden, output], axis=1)
+        output_combined = op.concatenate2(hidden, output, axis=1)
         output = linear(hidden_size + output_size, output_size, output_combined)
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
