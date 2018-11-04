@@ -44,9 +44,10 @@ from tvm import relay
 from tvm.relay import op
 
 def linear(input_size, output_size, x):
+    print((input_size, output_size))
     weight = relay.var('linear_weight', shape=(input_size, output_size))
     bias = relay.var('linear_bias', shape=(output_size,))
-    return op.add(op.nn.dense(x, weight), bias)
+    return op.add(op.nn.dense(x, weight), bias), weight, bias
 
 max_length = 20
 
@@ -59,19 +60,29 @@ env = Environment()
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
         self.fwd = relay.GlobalVar('fwd')
-        self.hidden = np.zeros((1, hidden_size))
+        self.hidden = init((1, hidden_size))
         category = relay.var('category', shape=(1, n_categories))
         inp = relay.var('input', shape=(1, input_size))
-        hidden = relay.var('hidden', shape=(1, hidden_size))
-        combined = op.concatenate2(op.concatenate2(category, inp, axis=1), hidden, axis=1)
-        hidden = linear(n_categories + input_size + hidden_size, hidden_size, combined)
-        output = linear(n_categories + input_size + hidden_size, output_size, combined)
+        hidden_var = relay.var('hidden', shape=(1, hidden_size))
+        combined = op.concatenate2(op.concatenate2(category, inp, axis=1), hidden_var, axis=1)
+        hidden, self.w0_var, self.b0_var = linear(n_categories + input_size + hidden_size, hidden_size, combined)
+        output, self.w1_var, self.b1_var = linear(n_categories + input_size + hidden_size, output_size, combined)
         output_combined = op.concatenate2(hidden, output, axis=1)
-        output = linear(hidden_size + output_size, output_size, output_combined)
+        output, self.w2_var, self.b2_var = linear(hidden_size + output_size, output_size, output_combined)
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
         body = relay.Tuple([output, hidden])
-        env[self.fwd] = relay.Function(relay.ir_pass.free_vars(body), body)
+        assert len(relay.ir_pass.free_vars(body)) == 9
+        para = [category, inp, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
+        for x in para:
+            print(x)
+        env[self.fwd] = relay.Function(para, body)
+        self.w0 = init((n_categories + input_size + hidden_size, hidden_size))
+        self.b0 = init(hidden_size)
+        self.w1 = init((n_categories + input_size + hidden_size, output_size))
+        self.b1 = init(output_size)
+        self.w2 = init((hidden_size + output_size, output_size))
+        self.b2 = init(output_size)
 
     def __call__(self, category, start_letter='A'):
         category_tensor = categoryTensor(category)
@@ -79,9 +90,8 @@ class RNN:
         hidden = self.hidden
         output_name = start_letter
         for i in range(max_length):
-            output, hidden = evaluate(env, self.fwd)
+            output, hidden = evaluate(env, self.fwd, category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
             raise
-            output, hidden = rnn(category_tensor, input[0], hidden)
             topv, topi = output.topk(1)
             topi = topi[0][0]
             if topi == n_letters - 1:
@@ -98,6 +108,9 @@ class RNN:
 
 import random
 
+def init(shape):
+    return np.random.normal(0, 1, shape).astype('float32')
+
 # Random item from a list
 def randomChoice(l):
     return l[random.randint(0, len(l) - 1)]
@@ -113,15 +126,15 @@ def categoryTensor(category):
     li = all_categories.index(category)
     tensor = np.zeros((1, n_categories))
     tensor[0][li] = 1
-    return tensor
+    return tensor.astype('float32')
 
 # One-hot matrix of first to last letters (not including EOS) for input
 def inputTensor(line):
-    tensor = np.zeros((len(line), 1, n_letters))
+    tensor = np.zeros((len(line), n_letters))
     for li in range(len(line)):
         letter = line[li]
-        tensor[li][0][all_letters.find(letter)] = 1
-    return tensor
+        tensor[li][all_letters.find(letter)] = 1
+    return tensor.astype('float32')
 
 # LongTensor of second letter to end (EOS) for target
 def targetTensor(line):
