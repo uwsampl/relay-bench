@@ -44,7 +44,6 @@ from tvm import relay
 from tvm.relay import op
 
 def linear(input_size, output_size, x):
-    print((input_size, output_size))
     weight = relay.var('linear_weight', shape=(input_size, output_size))
     bias = relay.var('linear_bias', shape=(output_size,))
     return op.add(op.nn.dense(x, weight), bias), weight, bias
@@ -74,8 +73,6 @@ class RNN:
         body = relay.Tuple([output, hidden])
         assert len(relay.ir_pass.free_vars(body)) == 9
         para = [category, inp, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
-        for x in para:
-            print(x)
         env[self.fwd] = relay.Function(para, body)
         self.w0 = init((n_categories + input_size + hidden_size, hidden_size))
         self.b0 = init(hidden_size)
@@ -91,7 +88,7 @@ class RNN:
         output_name = start_letter
         for i in range(max_length):
             output, hidden = evaluate(env, self.fwd, category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
-            hidden = hidden.data.asnumpy().astype('float32')
+            hidden = hidden.data
             d = output.data.asnumpy()
             topi = np.argmax(d)
             if topi == n_letters - 1:
@@ -153,6 +150,15 @@ def randomTrainingExample():
 import time
 import math
 
+def timeSince(since):
+    now = time.time()
+    ms = round(1000 * (now - since))
+    s = math.floor(ms / 1000)
+    m = math.floor(s / 60)
+    return '%dm %ds %dms' % (m, s % 60, ms % 1000)
+
+start = time.time()
+
 rnn = RNN(n_letters, 128, n_letters)
 
 rnn.samples('Russian', 'RUS')
@@ -162,3 +168,5 @@ rnn.samples('German', 'GER')
 rnn.samples('Spanish', 'SPA')
 
 rnn.samples('Chinese', 'CHI')
+
+print("time of relay: " + timeSince(start))
