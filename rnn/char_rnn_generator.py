@@ -91,9 +91,9 @@ class RNN:
         output_name = start_letter
         for i in range(max_length):
             output, hidden = evaluate(env, self.fwd, category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
-            raise
-            topv, topi = output.topk(1)
-            topi = topi[0][0]
+            hidden = hidden.data.asnumpy().astype('float32')
+            d = output.data.asnumpy()
+            topi = np.argmax(d)
             if topi == n_letters - 1:
                 break
             else:
