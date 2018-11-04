@@ -44,8 +44,9 @@ from tvm import relay
 from tvm.relay import op
 
 def linear(input_size, output_size, x):
-    weight = relay.var('linear_weight', shape=(output_size, input_size))
-    return op.nn.dense(x, weight)
+    weight = relay.var('linear_weight', shape=(input_size, output_size))
+    bias = relay.var('linear_bias', shape=(output_size,))
+    return op.add(op.nn.dense(x, weight), bias)
 
 max_length = 20
 
