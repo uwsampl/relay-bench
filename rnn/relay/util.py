@@ -1,5 +1,6 @@
 import numpy as np
-from .. import language_data as data
+import rnn.language_data as data
+import random
 
 # Random item from a list
 def randomChoice(l):
@@ -40,26 +41,21 @@ def random_training_example():
     target_line_tensor = targetTensor(line)
     return category_tensor, input_line_tensor, target_line_tensor
 
-
 def sample(rnn, category, start_letter='A'):
     category_tensor = categoryTensor(category)
     input = inputTensor(start_letter)
     hidden = rnn.hidden
     output_name = start_letter
     for i in range(data.MAX_LENGTH):
-        output, hidden, topi = rnn(category_tensor, input, hidden)
-        hidden = hidden.data
-        d = output.data.asnumpy()
+        output, hidden, topi, b, input = rnn(category_tensor, input, hidden)
         topi = topi.data.asnumpy()
-        if topi == data.N_LETTERS - 1:
+        if b.asnumpy():
             break
         else:
             letter = data.ALL_LETTERS[topi]
             output_name += letter
-            input = inputTensor(letter)
     return output_name
 
 def samples(rnn, category, start_letters='ABC'):
     for start_letter in start_letters:
         print(sample(rnn, category, start_letter))
-
