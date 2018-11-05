@@ -57,7 +57,7 @@ def sample(rnn, category, start_letter='A'):
             letter = data.ALL_LETTERS[topi]
             output_name += letter
             input = inputTensor(letter)
-        return output_name
+    return output_name
 
 def samples(rnn, category, start_letters='ABC'):
     for start_letter in start_letters:
