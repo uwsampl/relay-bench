@@ -3,15 +3,12 @@ import glob
 import os
 import unicodedata
 import string
-from .. import get_data
+from .. import language_data as data
 import numpy as np
 from tvm import relay
 from tvm.relay import op
 from tvm.relay.interpreter import evaluate
 from tvm.relay.env import Environment
-
-N_CATEGORIES = len(DATA.keys())
-N_LETTERS = len(get_data.ALL_LETTERS) + 1
 
 def linear(input_size, output_size, x):
     weight = relay.var('linear_weight', shape=(input_size, output_size))
@@ -67,70 +64,70 @@ class RNN:
         for start_letter in start_letters:
             print(self(category, start_letter))
 
-import random
+# import random
 
-def init(shape):
-    return np.random.normal(0, 1, shape).astype('float32')
+# def init(shape):
+#     return np.random.normal(0, 1, shape).astype('float32')
 
-# Random item from a list
-def randomChoice(l):
-    return l[random.randint(0, len(l) - 1)]
+# # Random item from a list
+# def randomChoice(l):
+#     return l[random.randint(0, len(l) - 1)]
 
-# Get a random category and random line from that category
-def randomTrainingPair():
-    category = randomChoice(all_categories)
-    line = randomChoice(category_lines[category])
-    return category, line
+# # Get a random category and random line from that category
+# def randomTrainingPair():
+#     category = randomChoice(all_categories)
+#     line = randomChoice(category_lines[category])
+#     return category, line
 
-# One-hot vector for category
-def categoryTensor(category):
-    li = all_categories.index(category)
-    tensor = np.zeros((1, n_categories))
-    tensor[0][li] = 1
-    return tensor.astype('float32')
+# # One-hot vector for category
+# def categoryTensor(category):
+#     li = all_categories.index(category)
+#     tensor = np.zeros((1, n_categories))
+#     tensor[0][li] = 1
+#     return tensor.astype('float32')
 
-# One-hot matrix of first to last letters (not including EOS) for input
-def inputTensor(line):
-    tensor = np.zeros((len(line), n_letters))
-    for li in range(len(line)):
-        letter = line[li]
-        tensor[li][all_letters.find(letter)] = 1
-    return tensor.astype('float32')
+# # One-hot matrix of first to last letters (not including EOS) for input
+# def inputTensor(line):
+#     tensor = np.zeros((len(line), n_letters))
+#     for li in range(len(line)):
+#         letter = line[li]
+#         tensor[li][all_letters.find(letter)] = 1
+#     return tensor.astype('float32')
 
-# LongTensor of second letter to end (EOS) for target
-def targetTensor(line):
-    letter_indexes = [all_letters.find(line[li]) for li in range(1, len(line))]
-    letter_indexes.append(n_letters - 1) # EOS
-    return np.LongTensor(letter_indexes)
+# # LongTensor of second letter to end (EOS) for target
+# def targetTensor(line):
+#     letter_indexes = [all_letters.find(line[li]) for li in range(1, len(line))]
+#     letter_indexes.append(n_letters - 1) # EOS
+#     return np.LongTensor(letter_indexes)
 
-# Make category, input, and target tensors from a random category, line pair
-def randomTrainingExample():
-    category, line = randomTrainingPair()
-    category_tensor = categoryTensor(category)
-    input_line_tensor = inputTensor(line)
-    target_line_tensor = targetTensor(line)
-    return category_tensor, input_line_tensor, target_line_tensor
+# # Make category, input, and target tensors from a random category, line pair
+# def randomTrainingExample():
+#     category, line = randomTrainingPair()
+#     category_tensor = categoryTensor(category)
+#     input_line_tensor = inputTensor(line)
+#     target_line_tensor = targetTensor(line)
+#     return category_tensor, input_line_tensor, target_line_tensor
 
-import time
-import math
+# import time
+# import math
 
-def timeSince(since):
-    now = time.time()
-    ms = round(1000 * (now - since))
-    s = math.floor(ms / 1000)
-    m = math.floor(s / 60)
-    return '%dm %ds %dms' % (m, s % 60, ms % 1000)
+# def timeSince(since):
+#     now = time.time()
+#     ms = round(1000 * (now - since))
+#     s = math.floor(ms / 1000)
+#     m = math.floor(s / 60)
+#     return '%dm %ds %dms' % (m, s % 60, ms % 1000)
 
-start = time.time()
+# start = time.time()
 
-rnn = RNN(n_letters, 128, n_letters)
+# rnn = RNN(n_letters, 128, n_letters)
 
-rnn.samples('Russian', 'RUS')
+# rnn.samples('Russian', 'RUS')
 
-rnn.samples('German', 'GER')
+# rnn.samples('German', 'GER')
 
-rnn.samples('Spanish', 'SPA')
+# rnn.samples('Spanish', 'SPA')
 
-rnn.samples('Chinese', 'CHI')
+# rnn.samples('Chinese', 'CHI')
 
-print("time of relay: " + timeSince(start))
+# print("time of relay: " + timeSince(start))

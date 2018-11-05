@@ -4,13 +4,11 @@ import os
 import string
 import torch
 import torch.nn as nn
-from .. import get_data
+from .. import language_data as data
 
-DATA = get_data.get_data()
-N_CATEGORIES = len(DATA.keys())
-N_LETTERS = len(get_data.ALL_LETTERS) + 1
+DATA = data.get_data()
 
-print('# categories:', n_categories)
+print('# categories:', data.N_CATEGORIES)
 
 class RNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
