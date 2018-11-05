@@ -12,6 +12,7 @@ DATA_PATH = 'data'
 ALL_LETTERS = string.ascii_letters + " .,;'"
 N_LETTERS = len(ALL_LETTERS) + 1
 N_CATEGORIES = None
+ALL_CATEGORIES = []
 
 # Turn a Unicode string to plain ASCII, thanks to http://stackoverflow.com/a/518232/2809427
 def unicode_to_ascii(s):
@@ -39,6 +40,7 @@ def get_data():
     for language in glob.glob(os.path.join(DATA_PATH , 'names', "*")):
         with open(language, encoding='utf-8') as language_file:
             category = os.path.splitext(os.path.basename(language))[0]
+            ALL_CATEGORIES.append(category)
             lines = language_file.read().strip().split('\n')
             names = [unicode_to_ascii(line) for line in lines]
             languages[category] = names
