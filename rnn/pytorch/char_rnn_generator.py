@@ -15,8 +15,8 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         self.hidden_size = hidden_size
 
-        self.i2h = nn.Linear(n_categories + input_size + hidden_size, hidden_size)
-        self.i2o = nn.Linear(n_categories + input_size + hidden_size, output_size)
+        self.i2h = nn.Linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size)
+        self.i2o = nn.Linear(data.N_CATEGORIES + input_size + hidden_size, output_size)
         self.o2o = nn.Linear(hidden_size + output_size, output_size)
         self.dropout = nn.Dropout(0.1)
         self.softmax = nn.LogSoftmax(dim=1)

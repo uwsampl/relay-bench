@@ -24,10 +24,10 @@ def bench_forward(input_size, hidden_size, output_size):
     # PyTorch
     pytorch_start = time.time()
     pytorch_rnn = pytorch.char_rnn_generator.RNN(input_size, hidden_size, output_size)
-    pytorch.samples('Russian', 'RUS')
-    pytorch.samples('German', 'GER')
-    pytorch.samples('Spanish', 'SPA')
-    pytorch.samples('Chinese', 'CHI')
+    pytorch.samples(pytorch_rnn, 'Russian', 'RUS')
+    pytorch.samples(pytorch_rnn, 'German', 'GER')
+    pytorch.samples(pytorch_rnn, 'Spanish', 'SPA')
+    pytorch.samples(pytorch_rnn, 'Chinese', 'CHI')
     print("time of PyTorch: " + time_since(pytorch_start))
 
 def main():
