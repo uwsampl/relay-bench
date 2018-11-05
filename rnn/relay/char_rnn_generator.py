@@ -37,7 +37,7 @@ class RNN:
         output, self.w2_var, self.b2_var = linear(hidden_size + output_size, output_size, output_combined)
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
-        body = relay.Tuple([output, hidden])
+        body = relay.Tuple([output, hidden, op.argmax(output)])
         assert len(relay.ir_pass.free_vars(body)) == 9
         para = [category, inp, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
         mod[self.fwd] = relay.Function(para, body)
@@ -54,10 +54,10 @@ class RNN:
         hidden = self.hidden
         output_name = start_letter
         for i in range(max_length):
-            output, hidden = intrp.evaluate(self.fwd)(category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
+            output, hidden, topi = intrp.evaluate(self.fwd)(category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
             hidden = hidden.data
             d = output.data.asnumpy()
-            topi = np.argmax(d)
+            topi = topi.data.asnumpy()
             if topi == data.N_LETTERS - 1:
                 break
             else:
