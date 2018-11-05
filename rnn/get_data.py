@@ -2,7 +2,6 @@ import unicodedata
 
 DATA_URL = 'https://download.pytorch.org/tutorial/data.zip'
 DATA_PATH = 'data'
-
 ALL_LETTERS = string.ascii_letters + " .,;'"
 
 # Turn a Unicode string to plain ASCII, thanks to http://stackoverflow.com/a/518232/2809427
