@@ -1,8 +1,11 @@
 from io import open
 import glob
 import os
+import random
 import unicodedata
 import string
+import time
+import math
 from rnn import language_data as data
 import numpy as np
 import tvm
@@ -21,7 +24,8 @@ p = Prelude(mod)
 ctx = tvm.context("llvm", 0)
 intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
 
-max_length = 20
+def init(shape):
+    return np.random.normal(0, 1, shape).astype('float32')
 
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
@@ -47,93 +51,8 @@ class RNN:
         self.b1 = init(output_size)
         self.w2 = init((hidden_size + output_size, output_size))
         self.b2 = init(output_size)
+        self.forward = intrp.evaluate(self.fwd)
 
-    def __call__(self, category, start_letter='A'):
-        category_tensor = categoryTensor(category)
-        input = inputTensor(start_letter)
-        hidden = self.hidden
-        output_name = start_letter
-        for i in range(max_length):
-            output, hidden, topi = intrp.evaluate(self.fwd)(category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
-            hidden = hidden.data
-            d = output.data.asnumpy()
-            topi = topi.data.asnumpy()
-            if topi == data.N_LETTERS - 1:
-                break
-            else:
-                letter = data.ALL_LETTERS[topi]
-                output_name += letter
-            input = inputTensor(letter)
-        return output_name
+    def __call__(self, category, input, hidden):
+        return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
 
-    def samples(self, category, start_letters='ABC'):
-        for start_letter in start_letters:
-            print(self(category, start_letter))
-
-import random
-
-def init(shape):
-    return np.random.normal(0, 1, shape).astype('float32')
-
-# Random item from a list
-def randomChoice(l):
-    return l[random.randint(0, len(l) - 1)]
-
-# Get a random category and random line from that category
-def randomTrainingPair():
-    category = randomChoice(data.ALL_CATEGORIES)
-    line = randomChoice(data.__DATA__[category])
-    return category, line
-
-# One-hot vector for category
-def categoryTensor(category):
-    li = data.ALL_CATEGORIES.index(category)
-    tensor = np.zeros((1, data.N_CATEGORIES))
-    tensor[0][li] = 1
-    return tensor.astype('float32')
-
-# One-hot matrix of first to last letters (not including EOS) for input
-def inputTensor(line):
-    tensor = np.zeros((len(line), data.N_LETTERS))
-    for li in range(len(line)):
-        letter = line[li]
-        tensor[li][data.ALL_LETTERS.find(letter)] = 1
-    return tensor.astype('float32')
-
-# LongTensor of second letter to end (EOS) for target
-def targetTensor(line):
-    letter_indexes = [data.ALL_LETTERS.find(line[li]) for li in range(1, len(line))]
-    letter_indexes.append(data.N_LETTERS - 1) # EOS
-    return np.LongTensor(letter_indexes)
-
-# Make category, input, and target tensors from a random category, line pair
-def randomTrainingExample():
-    category, line = randomTrainingPair()
-    category_tensor = categoryTensor(category)
-    input_line_tensor = inputTensor(line)
-    target_line_tensor = targetTensor(line)
-    return category_tensor, input_line_tensor, target_line_tensor
-
-import time
-import math
-
-def timeSince(since):
-    now = time.time()
-    ms = round(1000 * (now - since))
-    s = math.floor(ms / 1000)
-    m = math.floor(s / 60)
-    return '%dm %ds %dms' % (m, s % 60, ms % 1000)
-
-start = time.time()
-
-rnn = RNN(data.N_LETTERS, 128, data.N_LETTERS)
-
-rnn.samples('Russian', 'RUS')
-
-rnn.samples('German', 'GER')
-
-rnn.samples('Spanish', 'SPA')
-
-rnn.samples('Chinese', 'CHI')
-
-print("time of relay: " + timeSince(start))

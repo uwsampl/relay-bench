@@ -13,6 +13,7 @@ ALL_LETTERS = string.ascii_letters + " .,;'"
 N_LETTERS = len(ALL_LETTERS) + 1
 N_CATEGORIES = None
 ALL_CATEGORIES = []
+MAX_LENGTH = 20
 
 # Turn a Unicode string to plain ASCII, thanks to http://stackoverflow.com/a/518232/2809427
 def unicode_to_ascii(s):
