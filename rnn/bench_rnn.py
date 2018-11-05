@@ -1,3 +1,6 @@
+from . import pytorch
+from . import relay
+
 def main():
     # names_by_language = get_data()
     inp = letter_to_index('A')
