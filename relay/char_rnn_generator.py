@@ -50,13 +50,15 @@ def linear(input_size, output_size, x):
 
 max_length = 20
 
+import tvm
 import numpy as np
-from tvm.relay.interpreter import evaluate
-from tvm.relay.env import Environment
+from tvm.relay import create_executor, Module
 from tvm.relay.prelude import Prelude
 
-env = Environment()
-p = Prelude(env)
+mod = Module()
+p = Prelude(mod)
+ctx = tvm.context("llvm", 0)
+intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
 
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
@@ -72,10 +74,10 @@ class RNN:
         output, self.w2_var, self.b2_var = linear(hidden_size + output_size, output_size, output_combined)
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
-        body = relay.Tuple([output, hidden, op.argmax(output)])
+        body = relay.Tuple([output, hidden, output])
         assert len(relay.ir_pass.free_vars(body)) == 9
         para = [category, inp, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
-        env[self.fwd] = relay.Function(para, body)
+        mod[self.fwd] = relay.Function(para, body)
         self.w0 = init((n_categories + input_size + hidden_size, hidden_size))
         self.b0 = init(hidden_size)
         self.w1 = init((n_categories + input_size + hidden_size, output_size))
@@ -89,8 +91,8 @@ class RNN:
         hidden = self.hidden
         output_name = start_letter
         for i in range(max_length):
-            output, hidden, meow = evaluate(env, self.fwd, category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
-            print(meow.data.shape)
+            output, hidden, meow = intrp.evaluate(self.fwd)(category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
+            #print(meow.data.shape)
             d = output.data.asnumpy()
             topi = np.argmax(d)
             if topi == n_letters - 1:
@@ -107,7 +109,7 @@ class RNN:
     #     hidden = self.hidden
     #     output_name = start_letter
     #     for i in range(max_length):
-    #         output, hidden = evaluate(env, self.fwd, category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
+    #         output, hidden = evaluate(mod, self.fwd, category_tensor, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
     #         d = output.data.asnumpy()
     #         topi = np.argmax(d)
     #         if topi == n_letters - 1:
