@@ -87,8 +87,6 @@ def main():
     inp = letter_to_tensor('A')
     rnn = rnn_cell(NUM_LETTERS, NUM_HIDDEN, n_categories)
     import pdb; pdb.set_trace()
-    # hidden = 128
-    # RNN(NUM_LETTERS, hidden, NUM_C
 
 if __name__ == "__main__":
     main()
