@@ -43,16 +43,15 @@ def random_training_example():
 
 def sample(rnn, category, start_letter='A'):
     category_tensor = categoryTensor(category)
-    input = inputTensor(start_letter)
+    input = data.letter_to_topi(start_letter)
     hidden = rnn.hidden
     output_name = start_letter
     for i in range(data.MAX_LENGTH):
-        output, hidden, topi, b, input = rnn(category_tensor, input, hidden)
-        topi = topi.data.asnumpy()
+        output, hidden, input, b = rnn(category_tensor, input, hidden)
         if b.asnumpy():
             break
         else:
-            letter = data.ALL_LETTERS[topi]
+            letter = data.topi_to_letter(input.data.asnumpy())
             output_name += letter
     return output_name
 

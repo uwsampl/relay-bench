@@ -23,9 +23,6 @@ def linear(input_size, output_size, x):
 def init(shape):
     return np.random.normal(0, 1, shape).astype('float32')
 
-def letter_to_topi(letter):
-    return data.ALL_LETTERS.index(letter)
-
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
         mod = Module()
@@ -38,7 +35,8 @@ class RNN:
         n_letter = relay.const(data.N_LETTERS)
         one_diag = relay.const(np.diag(np.ones(58)).astype('float32'))
         boxed_one = relay.const(np.array([1]).astype('int32'))
-        inp = relay.var('input', shape=(1, input_size))
+        inp_topi = relay.var('input', shape=(), dtype='int32')
+        inp = op.take(one_diag, op.multiply(boxed_one, inp_topi), axis=0)
         hidden_var = relay.var('hidden', shape=(1, hidden_size))
         combined = op.concatenate([category, inp, hidden_var], axis=1)
         hidden, self.w0_var, self.b0_var = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined)
@@ -51,10 +49,9 @@ class RNN:
         body = relay.Tuple([output,
                             hidden,
                             topi,
-                            op.equal(topi, op.subtract(n_letter, relay.const(1))),
-                            op.take(one_diag, op.multiply(boxed_one, topi), axis=0)])
+                            op.equal(topi, op.subtract(n_letter, relay.const(1)))])
         assert len(relay.ir_pass.free_vars(body)) == 9
-        para = [category, inp, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
+        para = [category, inp_topi, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
         mod[self.fwd] = relay.Function(para, body)
         self.w0 = init((data.N_CATEGORIES + input_size + hidden_size, hidden_size))
         self.b0 = init(hidden_size)
@@ -69,31 +66,26 @@ class RNN:
 
     def sample(self, category, start_letter='A'):
         category_tensor = categoryTensor(category)
-        input = inputTensor(start_letter)
+        input = data.letter_to_topi(start_letter)
         hidden = self.hidden
-        output_name = start_letter
-        output_topi = [letter_to_topi(start_letter)]
+        output_topi = [relay.const(data.letter_to_topi(start_letter))]
         for i in range(data.MAX_LENGTH):
-            output, hidden, topi, b, input = self.forward(category_tensor,
-                                                          input,
-                                                          hidden,
-                                                          self.w0,
-                                                          self.b0,
-                                                          self.w1,
-                                                          self.b1,
-                                                          self.w2,
-                                                          self.b2)
+            output, hidden, input, b = self.forward(category_tensor,
+                                                    input,
+                                                    hidden,
+                                                    self.w0,
+                                                    self.b0,
+                                                    self.w1,
+                                                    self.b1,
+                                                    self.w2,
+                                                    self.b2)
             if b.data.asnumpy():
                 break
             else:
-                topi = topi.data.asnumpy()
-                letter = data.ALL_LETTERS[topi]
-                output_topi.append(topi)
-                output_name += letter
-        output_name_new = ''
+                output_topi.append(input)
+        output_name = ''
         for x in output_topi:
-            output_name_new += data.ALL_LETTERS[x]
-        assert output_name_new == output_name
+            output_name += data.topi_to_letter(x.data.asnumpy())
         return output_name
 
     def samples(self, category, start_letters='ABC'):
