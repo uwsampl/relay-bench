@@ -40,10 +40,10 @@ class RNN:
         boxed_one = relay.const(np.array([1]).astype('int32'))
         inp = relay.var('input', shape=(1, input_size))
         hidden_var = relay.var('hidden', shape=(1, hidden_size))
-        combined = op.concatenate2(op.concatenate2(category, inp, axis=1), hidden_var, axis=1)
+        combined = op.concatenate([category, inp, hidden_var], axis=1)
         hidden, self.w0_var, self.b0_var = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined)
         output, self.w1_var, self.b1_var = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined)
-        output_combined = op.concatenate2(hidden, output, axis=1)
+        output_combined = op.concatenate([hidden, output], axis=1)
         output, self.w2_var, self.b2_var = linear(hidden_size + output_size, output_size, output_combined)
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
