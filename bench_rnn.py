@@ -1,3 +1,4 @@
+import cProfile
 import time
 import math
 from rnn import pytorch, language_data as data, relay
@@ -12,9 +13,9 @@ def time_since(since):
     return '%dm %ds %dms' % (m, s % 60, ms % 1000)
 
 def bench_forward(input_size, hidden_size, output_size):
-    relay_start = time.time()
     # Relay
-    relay_rnn = relay.char_rnn_generator.RNN(data.N_LETTERS, 128, data.N_LETTERS)
+    relay_rnn = relay.char_rnn_generator.RNN(data.N_LETTERS, hidden_size, data.N_LETTERS)
+    relay_start = time.time()
     relay.samples(relay_rnn, 'Russian', 'RUS')
     relay.samples(relay_rnn, 'German', 'GER')
     relay.samples(relay_rnn, 'Spanish', 'SPA')
@@ -22,8 +23,8 @@ def bench_forward(input_size, hidden_size, output_size):
     print("time of relay: " + time_since(relay_start))
 
     # PyTorch
-    pytorch_start = time.time()
     pytorch_rnn = pytorch.char_rnn_generator.RNN(input_size, hidden_size, output_size)
+    pytorch_start = time.time()
     pytorch.samples(pytorch_rnn, 'Russian', 'RUS')
     pytorch.samples(pytorch_rnn, 'German', 'GER')
     pytorch.samples(pytorch_rnn, 'Spanish', 'SPA')
@@ -31,6 +32,7 @@ def bench_forward(input_size, hidden_size, output_size):
     print("time of PyTorch: " + time_since(pytorch_start))
 
 def main():
+    #cProfile.run('bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS)')
     bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS)
 
 if __name__ == "__main__":

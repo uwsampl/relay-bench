@@ -9,6 +9,7 @@ requests = "*"
 matplotlib = "*"
 decorator = "*"
 attr = "*"
+attrs = "*"
 
 [dev-packages]
 "autopep8" = "*"

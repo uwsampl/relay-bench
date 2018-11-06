@@ -27,6 +27,13 @@ intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
 def init(shape):
     return np.random.normal(0, 1, shape).astype('float32')
 
+def _time_since(since):
+    now = time.time()
+    ms = round(1000 * (now - since))
+    s = math.floor(ms / 1000)
+    m = math.floor(s / 60)
+    return '%dm %ds %dms' % (m, s % 60, ms % 1000)
+
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
         self.fwd = relay.GlobalVar('fwd')
@@ -51,8 +58,11 @@ class RNN:
         self.b1 = init(output_size)
         self.w2 = init((hidden_size + output_size, output_size))
         self.b2 = init(output_size)
-        self.forward = intrp.evaluate(self.fwd)
+        self.forward = intrp.static_evaluate(self.fwd)
 
     def __call__(self, category, input, hidden):
+        # start = time.time()
         return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
+        # print(_time_since(start))
+        return res
 

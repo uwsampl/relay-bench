@@ -106,4 +106,4 @@ venv.bak/
 data/
 data.zip
 .vscode/
-
+*.pyre/
