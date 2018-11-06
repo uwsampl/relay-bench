@@ -71,6 +71,7 @@ class RNN:
         else_branch = p.cons(fwd_res[0], rec_call)
         body = relay.If(op.equal(max, relay.const(0)), p.nil(), else_branch)
         mod[self.loop_fwd] = relay.Function(loop_para, body)
+        print(mod[self.loop_fwd].checked_type)
         self.loop_forward = intrp.evaluate(self.loop_fwd)
 
     def __call__(self, category, input, hidden):
