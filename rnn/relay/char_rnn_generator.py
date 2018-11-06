@@ -77,7 +77,6 @@ class RNN:
         return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
 
     def sample(self, category, start_letter='A'):
-        raise
         category_tensor = categoryTensor(category)
         input = data.letter_to_topi(start_letter)
         hidden = self.hidden
