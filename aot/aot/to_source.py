@@ -23,8 +23,6 @@ class ToSource:
         return "return"
 
     def visit_packed_call(self, call):
-        packed_func = call.packed_func
-
         args = ""
         end = len(call.args) - 1
         for i, arg in enumerate(call.args):
@@ -33,7 +31,7 @@ class ToSource:
                 args += ", "
 
         return f"""
-            PackedFunc *pf = reinterpret_cast<PackedFunc*>({packed_func.handle.value});
+            const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
             NDArray out = NDArray::Empty({{}}, dtype_f32, context);
             (*pf)({args}, out);

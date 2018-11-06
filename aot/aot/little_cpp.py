@@ -6,7 +6,7 @@ class LittleCppNode:
 
 @attr.s(auto_attribs=True)
 class PackedCall(LittleCppNode):
-    packed_func: Any
+    name: str
     arity: int
     args: Any
     output_type: Any

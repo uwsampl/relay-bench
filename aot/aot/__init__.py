@@ -68,7 +68,10 @@ class AoTCompiler(ExprFunctor):
     def mk_primitive_op(self, func, args, output_type):
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
         jit_func = self.engine.jit(cc_key)
-        return PackedCall(jit_func, len(func.params) + 1, args, output_type)
+        hash = relay.ir_pass.structural_hash(func)
+        name = f"op{hash}"
+        register_func(name, jit_func)
+        return PackedCall(name, len(func.params) + 1, args, output_type)
 
     def visit_call(self, call):
         if is_primitive(call.op):
@@ -85,7 +88,10 @@ class AoTCompiler(ExprFunctor):
         else:
             return CPPFunction(func.params, self.visit(func.body), func.checked_type)
 
+_LIB = None
+
 def compile(func, name='default'):
+    global _LIB
     packed_name = f'relay.aot.{name}'
     compiler = AoTCompiler()
     func = compiler.optimize(func)
@@ -93,10 +99,9 @@ def compile(func, name='default'):
     source_code = to_source.to_source(packed_name, func)
     lib_name = "libtest.so"
     compile_cpp(source_code, "libtest.so")
-    load_lib("libtest.so")
-    a = tvm.nd.array(np.array(1).astype('float32'))
-    b = tvm.nd.array(np.array(2).astype('float32'))
-    c = tvm.nd.array(np.array(0).astype('float32'))
+    _LIB = load_lib("libtest.so")
+    a = tvm.nd.array(np.array(1.0, dtype='float32'))
+    b = tvm.nd.array(np.array(1.0, dtype='float32'))
     fn = get_global_func(packed_name)
-    import pdb; pdb.set_trace()
+    return fn
 
