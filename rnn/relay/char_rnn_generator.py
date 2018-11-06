@@ -23,6 +23,9 @@ def linear(input_size, output_size, x):
 def init(shape):
     return np.random.normal(0, 1, shape).astype('float32')
 
+def letter_to_topi(letter):
+    return data.ALL_LETTERS.index(letter)
+
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
         mod = Module()
@@ -59,7 +62,7 @@ class RNN:
         self.b1 = init(output_size)
         self.w2 = init((hidden_size + output_size, output_size))
         self.b2 = init(output_size)
-        self.forward = intrp.static_evaluate(self.fwd)
+        self.forward = intrp.evaluate(self.fwd)
 
     def __call__(self, category, input, hidden):
         return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
@@ -69,6 +72,7 @@ class RNN:
         input = inputTensor(start_letter)
         hidden = self.hidden
         output_name = start_letter
+        output_topi = [letter_to_topi(start_letter)]
         for i in range(data.MAX_LENGTH):
             output, hidden, topi, b, input = self.forward(category_tensor,
                                                           input,
@@ -84,7 +88,12 @@ class RNN:
             else:
                 topi = topi.data.asnumpy()
                 letter = data.ALL_LETTERS[topi]
+                output_topi.append(topi)
                 output_name += letter
+        output_name_new = ''
+        for x in output_topi:
+            output_name_new += data.ALL_LETTERS[x]
+        assert output_name_new == output_name
         return output_name
 
     def samples(self, category, start_letters='ABC'):
