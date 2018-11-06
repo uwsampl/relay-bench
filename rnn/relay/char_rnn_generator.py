@@ -51,15 +51,27 @@ class RNN:
                             topi,
                             op.equal(topi, op.subtract(n_letter, relay.const(1)))])
         assert len(relay.ir_pass.free_vars(body)) == 9
-        para = [category, inp_topi, hidden_var, self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
-        mod[self.fwd] = relay.Function(para, body)
+        inp_para = [category, inp_topi, hidden_var]
+        weight_para = [self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
+        para = inp_para + weight_para
         self.w0 = init((data.N_CATEGORIES + input_size + hidden_size, hidden_size))
         self.b0 = init(hidden_size)
         self.w1 = init((data.N_CATEGORIES + input_size + hidden_size, output_size))
         self.b1 = init(output_size)
         self.w2 = init((hidden_size + output_size, output_size))
         self.b2 = init(output_size)
+        mod[self.fwd] = relay.Function(para, body)
         self.forward = intrp.evaluate(self.fwd)
+
+        self.loop_fwd = relay.GlobalVar('loop_fwd')
+        max = relay.var('max', shape=(), dtype='int32')
+        loop_para = [max] + para
+        fwd_res = self.fwd(*para)
+        rec_call = relay.If(fwd_res[3], self.loop_fwd(op.subtract(max, relay.const(1)), category, fwd_res[2], fwd_res[1], *weight_para), p.nil())
+        else_branch = p.cons(fwd_res[0], rec_call)
+        body = relay.If(op.equal(max, relay.const(0)), p.nil(), else_branch)
+        mod[self.loop_fwd] = relay.Function(loop_para, body)
+        self.loop_forward = intrp.evaluate(self.loop_fwd)
 
     def __call__(self, category, input, hidden):
         return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
@@ -69,24 +81,44 @@ class RNN:
         input = data.letter_to_topi(start_letter)
         hidden = self.hidden
         output_topi = [relay.const(data.letter_to_topi(start_letter))]
-        for i in range(data.MAX_LENGTH):
-            output, hidden, input, b = self.forward(category_tensor,
-                                                    input,
-                                                    hidden,
-                                                    self.w0,
-                                                    self.b0,
-                                                    self.w1,
-                                                    self.b1,
-                                                    self.w2,
-                                                    self.b2)
-            if b.data.asnumpy():
-                break
-            else:
-                output_topi.append(input)
+        output = self.loop_forward(20,
+                                   category_tensor,
+                                   input,
+                                   hidden,
+                                   self.w0,
+                                   self.b0,
+                                   self.w1,
+                                   self.b1,
+                                   self.w2,
+                                   self.b2)
         output_name = ''
         for x in output_topi:
             output_name += data.topi_to_letter(x.data.asnumpy())
         return output_name
+
+    #def sample(self, category, start_letter='A'):
+    #    category_tensor = categoryTensor(category)
+    #    input = data.letter_to_topi(start_letter)
+    #    hidden = self.hidden
+    #    output_topi = [relay.const(data.letter_to_topi(start_letter))]
+    #    for i in range(data.MAX_LENGTH):
+    #        output, hidden, input, b = self.forward(category_tensor,
+    #                                                input,
+    #                                                hidden,
+    #                                                self.w0,
+    #                                                self.b0,
+    #                                                self.w1,
+    #                                                self.b1,
+    #                                                self.w2,
+    #                                                self.b2)
+    #        if b.data.asnumpy():
+    #            break
+    #        else:
+    #            output_topi.append(input)
+    #    output_name = ''
+    #    for x in output_topi:
+    #        output_name += data.topi_to_letter(x.data.asnumpy())
+    #    return output_name
 
     def samples(self, category, start_letters='ABC'):
         for start_letter in start_letters:
