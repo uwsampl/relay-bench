@@ -1,7 +1,7 @@
 {
   "binary": "/usr/local/bin/pyre.bin",
   "source_directories": [
-    "."
+    "aot/"
   ],
   "typeshed": "/usr/local/lib/pyre_check/typeshed/"
 }

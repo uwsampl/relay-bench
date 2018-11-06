@@ -4,12 +4,15 @@ import attr
 class LittleCppNode:
     pass
 
+@attr.s(auto_attribs=True)
 class PackedCall(LittleCppNode):
     packed_func: Any
     arity: int
     args: Any
 
-class Function(LittleCppNode):
+@attr.s(auto_attribs=True)
+class CPPFunction(LittleCppNode):
+
     params: Any
     body: Any
 

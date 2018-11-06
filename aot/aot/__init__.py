@@ -6,7 +6,7 @@ import tvm
 from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import ExprFunctor
 from tvm.relay.backend import compile_engine
-import little_cpp
+from .little_cpp import PackedCall, CPPFunction
 
 TVM_PATH = os.environ['TVM_PATH']
 
@@ -59,21 +59,23 @@ def load_lib(name):
 
 
 def is_primitive(func: relay.Function):
-    return func.attrs and func.attrs.Primitive
+    return isinstance(func, relay.Function) and func.attrs and func.attrs.Primitive.value == 1
 
 class AoTCompiler(ExprFunctor):
-    def __init__():
+    def __init__(self):
+        super().__init__()
         self.engine = compile_engine.get()
 
     def optimize(self, expr):
         infer_e = relay.ir_pass.infer_type(expr)
         fused_e = relay.ir_pass.fuse_ops(infer_e)
+        fused_e = relay.ir_pass.infer_type(fused_e)
         return fused_e
 
     def mk_primitive_op(self, func):
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
         jit_func = self.engine.jit(cc_key)
-        return PackedCall(jit_func, len(func.params) + 1)
+        return PackedCall(jit_func, len(func.params) + 1, [])
 
     def visit_call(self, call):
         if is_primitive(call.op):
@@ -85,20 +87,25 @@ class AoTCompiler(ExprFunctor):
         return var
 
     def visit_function(self, func):
-        import pdb; pdb.set_trace()
         if is_primitive(func):
             return self.mk_primitive_op(func)
         else:
-            self.visit(func.body)
+            return CPPFunction(func.params, self.visit(func.body))
 
-def mk_func_api_wrapper(name, jit_func, arity):
+#  PackedFunc *pf = reinterpret_cast<PackedFunc*>({jit_func.handle.value});
+#         CHECK(pf);
+#         (*pf)({args});
+
+def mk_register_api(func):
+    assert isinstance(func, CPPFunction)
+
     args = ""
     for i in range(arity):
         args += f"args[{i}]"
         if i != arity - 1:
             args += ", "
 
-    return f"""
+    register = f"""
     TVM_REGISTER_API("{name}")
     .set_body([](TVMArgs args, TVMRetValue* ret) {{
         PackedFunc *pf = reinterpret_cast<PackedFunc*>({jit_func.handle.value});
@@ -111,9 +118,7 @@ def compile(func):
     compiler = AoTCompiler()
     func = compiler.optimize(func)
     func = compiler.visit(func)
-    engine = compile_engine.get()
-    cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
-    jit_func = engine.jit(cc_key)
+    import pdb; pdb.set_trace()
     wrapper = mk_func_api_wrapper('aaa', jit_func, 3)
     source = mk_file(wrapper)
     lib_name = "libtest.so"
