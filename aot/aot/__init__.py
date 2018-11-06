@@ -7,18 +7,11 @@ from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import ExprFunctor
 from tvm.relay.backend import compile_engine
 from .little_cpp import PackedCall, CPPFunction
+from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
 
-def mk_file(body):
-    return f"""
-    #include <tvm/tvm.h>
-    #include <tvm/api_registry.h>
 
-    using namespace tvm;
-
-    {body}
-    """
 
 def compile_cpp(source, lib_name, lib_path=None):
     if lib_path is None:
@@ -72,14 +65,14 @@ class AoTCompiler(ExprFunctor):
         fused_e = relay.ir_pass.infer_type(fused_e)
         return fused_e
 
-    def mk_primitive_op(self, func):
+    def mk_primitive_op(self, func, args, output_type):
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
         jit_func = self.engine.jit(cc_key)
-        return PackedCall(jit_func, len(func.params) + 1, [])
+        return PackedCall(jit_func, len(func.params) + 1, args, output_type)
 
     def visit_call(self, call):
         if is_primitive(call.op):
-            return self.mk_primitive_op(call.op)
+            return self.mk_primitive_op(call.op, call.args, call.checked_type)
         else:
             raise Exception("...")
 
@@ -88,45 +81,22 @@ class AoTCompiler(ExprFunctor):
 
     def visit_function(self, func):
         if is_primitive(func):
-            return self.mk_primitive_op(func)
+            return self.mk_primitive_op(func, call.args, func.ret_type)
         else:
-            return CPPFunction(func.params, self.visit(func.body))
+            return CPPFunction(func.params, self.visit(func.body), func.checked_type)
 
-#  PackedFunc *pf = reinterpret_cast<PackedFunc*>({jit_func.handle.value});
-#         CHECK(pf);
-#         (*pf)({args});
-
-def mk_register_api(func):
-    assert isinstance(func, CPPFunction)
-
-    args = ""
-    for i in range(arity):
-        args += f"args[{i}]"
-        if i != arity - 1:
-            args += ", "
-
-    register = f"""
-    TVM_REGISTER_API("{name}")
-    .set_body([](TVMArgs args, TVMRetValue* ret) {{
-        PackedFunc *pf = reinterpret_cast<PackedFunc*>({jit_func.handle.value});
-        CHECK(pf);
-        (*pf)({args});
-    }});
-    """
-
-def compile(func):
+def compile(func, name='default'):
+    packed_name = f'relay.aot.{name}'
     compiler = AoTCompiler()
     func = compiler.optimize(func)
     func = compiler.visit(func)
-    import pdb; pdb.set_trace()
-    wrapper = mk_func_api_wrapper('aaa', jit_func, 3)
-    source = mk_file(wrapper)
+    source_code = to_source.to_source(packed_name, func)
     lib_name = "libtest.so"
-    compile_cpp(source, "libtest.so")
+    compile_cpp(source_code, "libtest.so")
     load_lib("libtest.so")
     a = tvm.nd.array(np.array(1).astype('float32'))
     b = tvm.nd.array(np.array(2).astype('float32'))
     c = tvm.nd.array(np.array(0).astype('float32'))
-    fn = get_global_func('aaa')
+    fn = get_global_func(packed_name)
     import pdb; pdb.set_trace()
 
