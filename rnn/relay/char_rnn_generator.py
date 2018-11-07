@@ -61,7 +61,7 @@ class RNN:
         self.w2 = init((hidden_size + output_size, output_size))
         self.b2 = init(output_size)
         mod[self.fwd] = relay.Function(para, body)
-        self.forward = intrp.evaluate(self.fwd)
+        self.forward = intrp.static_evaluate(self.fwd)
 
         self.loop_fwd = relay.GlobalVar('loop_fwd')
         max = relay.var('max', shape=(), dtype='int32')
