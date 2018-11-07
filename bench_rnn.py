@@ -3,7 +3,7 @@ import time
 import math
 from rnn import pytorch, language_data as data, relay
 
-N_HIDDEN = 128
+N_HIDDEN = 1024
 
 def time_since(since):
     now = time.time()
@@ -73,9 +73,9 @@ def bench_forward(hidden_size):
     bench.append(SampleRNNBench("pytorch", lambda c, s: pytorch.sample(pytorch_rnn, c, s), lambda x: x))
     for b in bench:
         t, r = b(sample)
-        #for l in r:
-        #    print(l)
-        #print("time of " + str(b) + " : " + str(t))
+        for l in r:
+            print(l)
+        print("time of " + str(b) + " : " + str(t))
 
 def profile():
     sample = [
@@ -89,8 +89,8 @@ def profile():
     cProfile.runctx('bench[0](sample)', {'bench':bench, 'sample':sample}, {})
 
 def main():
-    #bench_forward(N_HIDDEN)
-    profile()
+    bench_forward(N_HIDDEN)
+    #profile()
 
 if __name__ == "__main__":
     main()
