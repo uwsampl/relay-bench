@@ -23,6 +23,13 @@ def linear(input_size, output_size, x):
 def init(shape):
     return np.random.normal(0, 1, shape).astype('float32')
 
+def extract_tensor_list(l):
+    if l.con.name_hint == 'cons':
+        return [np.asscalar(l.fields[0].data.asnumpy())] + extract_tensor_list(l.fields[1])
+    else:
+        assert l.con.name_hint == 'nil'
+        return []
+
 class RNN:
     def __init__(self, input_size, hidden_size, output_size):
         mod = Module()
@@ -76,12 +83,6 @@ class RNN:
     def __call__(self, category, input, hidden):
         return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
 
-    def woosh(self, l):
-        if l.con.name_hint == 'cons':
-            return [np.asscalar(l.fields[0].data.asnumpy())] + self.woosh(l.fields[1])
-        else:
-            assert l.con.name_hint == 'nil'
-            return []
 
     def sample(self, category, start_letter='A'):
         category_tensor = categoryTensor(category)
@@ -99,7 +100,7 @@ class RNN:
                                    self.b2)
         def extract():
             output_name = ''
-            for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
+            for x in [data.letter_to_topi(start_letter)] + extract_tensor_list(output):
                 output_name += data.topi_to_letter(x)
             return output_name
         return extract
