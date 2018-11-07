@@ -67,7 +67,7 @@ class RNN:
         max = relay.var('max', shape=(), dtype='int32')
         loop_para = [max] + para
         fwd_res = self.fwd(*para)
-        rec_call = relay.If(fwd_res[3], self.loop_fwd(op.subtract(max, relay.const(1)), category, fwd_res[2], fwd_res[1], *weight_para), p.nil())
+        rec_call = relay.If(fwd_res[3], p.nil(), self.loop_fwd(op.subtract(max, relay.const(1)), category, fwd_res[2], fwd_res[1], *weight_para))
         else_branch = p.cons(fwd_res[0], rec_call)
         body = relay.If(op.equal(max, relay.const(0)), p.nil(), else_branch)
         mod[self.loop_fwd] = relay.Function(loop_para, body)
@@ -93,6 +93,7 @@ class RNN:
                                    self.w2,
                                    self.b2)
         output_name = ''
+        print(output)
         for x in output_topi:
             output_name += data.topi_to_letter(x.data.asnumpy())
         return output_name
