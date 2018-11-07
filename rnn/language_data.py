@@ -50,3 +50,9 @@ def get_data():
     __DATA__ = languages
     N_CATEGORIES = len(__DATA__.keys())
     return __DATA__
+
+def letter_to_topi(letter):
+    return ALL_LETTERS.index(letter)
+
+def topi_to_letter(topi):
+    return ALL_LETTERS[topi]
