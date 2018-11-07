@@ -66,6 +66,7 @@ def bench_forward(hidden_size):
     # Relay
     for b in bench:
         t, r = b(sample)
+        print(r)
         print("time of " + str(b) + " : " + str(t))
 
 def main():
