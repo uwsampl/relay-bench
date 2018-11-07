@@ -103,30 +103,6 @@ class RNN:
             output_name += data.topi_to_letter(x)
         return output_name
 
-    #def sample(self, category, start_letter='A'):
-    #    category_tensor = categoryTensor(category)
-    #    input = data.letter_to_topi(start_letter)
-    #    hidden = self.hidden
-    #    output_topi = [relay.const(data.letter_to_topi(start_letter))]
-    #    for i in range(data.MAX_LENGTH):
-    #        output, hidden, input, b = self.forward(category_tensor,
-    #                                                input,
-    #                                                hidden,
-    #                                                self.w0,
-    #                                                self.b0,
-    #                                                self.w1,
-    #                                                self.b1,
-    #                                                self.w2,
-    #                                                self.b2)
-    #        if b.data.asnumpy():
-    #            break
-    #        else:
-    #            output_topi.append(input)
-    #    output_name = ''
-    #    for x in output_topi:
-    #        output_name += data.topi_to_letter(x.data.asnumpy())
-    #    return output_name
-
     def samples(self, category, start_letters='ABC'):
         for start_letter in start_letters:
             print(self.sample(category, start_letter))
