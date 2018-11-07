@@ -1,8 +1,12 @@
-from typing import Any, Optional
+from tvm.relay import Var
+from typing import Any, Optional, List, Tuple
 import attr
 
 class LittleCppNode:
     pass
+
+class Decl(LittleCppNode):
+    bindings: List[Tuple[Var, LittleCppNode]]
 
 @attr.s(auto_attribs=True)
 class PackedCall(LittleCppNode):
@@ -13,7 +17,7 @@ class PackedCall(LittleCppNode):
 
 @attr.s(auto_attribs=True)
 class CPPFunction(LittleCppNode):
-    params: Any
+    params: List[Var]
     body: Any
     ret_type: Any
     name: Optional[str] = None

@@ -9,7 +9,7 @@ class ToSource:
         self.name_counter = 0
         self.source_content = ""
         self.name_map = {}
-        self.cont = None
+        self.cont = []
 
     def fresh_global_name(self):
         name = f"global{self.name_counter}"
@@ -19,13 +19,24 @@ class ToSource:
     def fresh_local_name():
         pass
 
-    def do_cont():
-        return "return"
+    def do_cont(self, *args):
+        cont = self.cont.pop()
+        return cont(*args)
+
+    def visit(self, node):
+        if isinstance(node, little_cpp.PackedCall):
+            return self.visit_packed_call(node)
+        elif isinstance(node, little_cpp.CPPFunction):
+            return self.visit_cpp_function(node)
+        else:
+            raise Exception("...")
 
     def visit_packed_call(self, call):
         args = ""
         end = len(call.args) - 1
         for i, arg in enumerate(call.args):
+            varg = self.visit(arg)
+            import pdb; pdb.set_trace()
             args += self.name_map[arg]
             if i != end:
                 args += ", "
@@ -35,14 +46,13 @@ class ToSource:
             CHECK(pf);
             NDArray out = NDArray::Empty({{}}, dtype_f32, context);
             (*pf)({args}, out);
-            return out;
+            {self.do_cont("out")};
         """
 
     def visit_cpp_function(self, func):
         name = func.name = self.fresh_global_name()
         assert isinstance(func.body, little_cpp.PackedCall)
         param_str = ""
-        args = ""
 
         end = len(func.params) - 1
         for i, param in enumerate(func.params):
@@ -52,7 +62,9 @@ class ToSource:
             if i != end:
                 param_str += ", "
 
-        body = self.visit_packed_call(func.body)
+        self.cont.append(lambda end: f"return {end};")
+
+        body = self.visit(func.body)
 
         func = f"""
         NDArray {name}({param_str}) {{

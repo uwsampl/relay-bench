@@ -4,13 +4,12 @@ import os
 import subprocess
 import tvm
 from tvm import relay, get_global_func, target, register_func
-from tvm.relay.expr import ExprFunctor
+from tvm.relay.expr import ExprFunctor, Expr
 from tvm.relay.backend import compile_engine
 from .little_cpp import PackedCall, CPPFunction
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
-
 
 
 def compile_cpp(source, lib_name, lib_path=None):
@@ -55,17 +54,18 @@ def is_primitive(func: relay.Function):
     return isinstance(func, relay.Function) and func.attrs and func.attrs.Primitive.value == 1
 
 class AoTCompiler(ExprFunctor):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.engine = compile_engine.get()
 
-    def optimize(self, expr):
+    def optimize(self, expr: Expr) -> Expr:
         infer_e = relay.ir_pass.infer_type(expr)
         fused_e = relay.ir_pass.fuse_ops(infer_e)
         fused_e = relay.ir_pass.infer_type(fused_e)
-        return fused_e
+        anf_fused = relay.ir_pass.to_anf(fused_e)
+        return anf_fused
 
-    def mk_primitive_op(self, func, args, output_type):
+    def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
         jit_func = self.engine.jit(cc_key)
         hash = relay.ir_pass.structural_hash(func)
@@ -73,7 +73,7 @@ class AoTCompiler(ExprFunctor):
         register_func(name, jit_func)
         return PackedCall(name, len(func.params) + 1, args, output_type)
 
-    def visit_call(self, call):
+    def visit_call(self, call: Expr) -> Expr:
         if is_primitive(call.op):
             return self.mk_primitive_op(call.op, call.args, call.checked_type)
         else:
