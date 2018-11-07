@@ -48,12 +48,29 @@ def get_network(name, batch_size, dtype='float32'):
         net, params = relay.testing.squeezenet.get_workload(batch_size=batch_size, version=version, dtype=dtype)
     elif name == 'custom':
         # an example for custom network
+        # from tvm.relay.testing import init
+        # net = relay.var('data')
+        # net = relay.testing.layers.conv2d(net, channels=4, kernel_size=(3,3), padding=(1,1))
+        # net = relay.nn.batch_flatten(net)
+        # net = relay.testing.layers.dense_add_bias(net, units=1000)
+        # net, params = init.create_workload(net, batch_size, (3, 224, 224))
         from tvm.relay.testing import init
-        net = relay.var('data')
-        net = relay.testing.layers.conv2d(net, channels=4, kernel_size=(3,3), padding=(1,1))
-        net = relay.nn.batch_flatten(net)
-        net = relay.testing.layers.dense_add_bias(net, units=1000)
-        net, params = init.create_workload(net, batch_size, (3, 224, 224))
+        input_shape = (3, 224)
+        net = relay.var('data', shape=input_shape)
+        weight = relay.var('dense_weight', shape=(224, 224))
+        net = relay.nn.dense(net, weight)
+        net = relay.Function(relay.ir_pass.free_vars(net), net)
+        # net = relay.testing.layers.dense_add_bias(net, name="dense")
+        net, params = init.create_workload(net)
+    # simple networks for experimenting
+    elif name == 'mlp':
+        image_shape = (1, 28, 28)
+        input_shape = (batch_size,) + image_shape
+        net, params = relay.testing.mlp.get_workload(batch_size=batch_size, image_shape=image_shape)
+    elif name == 'dqn':
+        image_shape = (4, 84, 84)
+        input_shape = (batch_size,) + image_shape
+        net, params = relay.testing.dqn.get_workload(batch_size=batch_size, image_shape=image_shape)
     # elif name == 'mxnet':
     #     # an example for mxnet model
     #     from mxnet.gluon.model_zoo.vision import get_model
