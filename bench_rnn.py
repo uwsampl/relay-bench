@@ -71,16 +71,26 @@ def bench_forward(hidden_size):
     bench.append(SampleRNNBench("relay with loop", lambda c, s: relay_rnn.sample(c, s), lambda x: x()))
     pytorch_rnn = pytorch.char_rnn_generator.RNN(data.N_LETTERS, hidden_size, data.N_LETTERS)
     bench.append(SampleRNNBench("pytorch", lambda c, s: pytorch.sample(pytorch_rnn, c, s), lambda x: x))
-    # Relay
     for b in bench:
         t, r = b(sample)
-        for l in r:
-            print(l)
-        print("time of " + str(b) + " : " + str(t))
+        #for l in r:
+        #    print(l)
+        #print("time of " + str(b) + " : " + str(t))
+
+def profile():
+    sample = [
+        RNNSample('Russian', 'RUS'),
+        RNNSample('German', 'GER'),
+        RNNSample('Spanish', 'SPA'),
+        RNNSample('Chinese', 'CHI')]
+    bench = []
+    relay_rnn = relay.char_rnn_generator.RNN(data.N_LETTERS, 128, data.N_LETTERS)
+    bench.append(SampleRNNBench("relay with loop", lambda c, s: relay_rnn.sample(c, s), lambda x: x()))
+    cProfile.runctx('bench[0](sample)', {'bench':bench, 'sample':sample}, {})
 
 def main():
-    #cProfile.run('bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS)')
-    bench_forward(N_HIDDEN)
+    #bench_forward(N_HIDDEN)
+    profile()
 
 if __name__ == "__main__":
     main()
