@@ -71,7 +71,6 @@ class RNN:
         else_branch = relay.If(fwd_res[3], p.nil(), else_else_branch)
         body = relay.If(op.equal(max, relay.const(0)), p.nil(), else_branch)
         mod[self.loop_fwd] = relay.Function(loop_para, body)
-        print(mod[self.loop_fwd].checked_type)
         self.loop_forward = intrp.static_evaluate(self.loop_fwd)
 
     def __call__(self, category, input, hidden):
@@ -98,11 +97,9 @@ class RNN:
                                    self.b1,
                                    self.w2,
                                    self.b2)
-        output_name = ''
-        for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
-            output_name += data.topi_to_letter(x)
-        return output_name
-
-    def samples(self, category, start_letters='ABC'):
-        for start_letter in start_letters:
-            print(self.sample(category, start_letter))
+        def extract():
+            output_name = ''
+            for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
+                output_name += data.topi_to_letter(x)
+            return output_name
+        return extract

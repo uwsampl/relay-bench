@@ -34,17 +34,25 @@ class RNNSample:
         self.category = category
         self.starting_letters = starting_letters
 
-class SamplesRNNBench(Bench):
-    def __init__(self, name, samples):
+class SampleRNNBench(Bench):
+    def __init__(self, name, sample, extract):
         super().__init__()
         self.name = name
-        self.samples = samples
+        self.sample = sample
+        self.extract = extract
 
     def prepare(self, samples):
         def compute():
+            ret = []
             for sample in samples:
-                self.samples(sample.category, sample.starting_letters)
-            return lambda: None
+                for l in sample.starting_letters:
+                    ret.append(self.sample(sample.category, l))
+            def extract():
+                ext = []
+                for r in ret:
+                    ext.append(self.extract(r))
+                return ext
+            return extract
         return compute
 
     def __str__(self):
@@ -58,15 +66,16 @@ def bench_forward(hidden_size):
         RNNSample('Chinese', 'CHI')]
     bench = []
     relay_rnn = relay.char_rnn_generator.RNN(data.N_LETTERS, hidden_size, data.N_LETTERS)
-    bench.append(SamplesRNNBench("relay", lambda c, s: relay.samples(relay_rnn, c, s)))
+    bench.append(SampleRNNBench("relay", lambda c, s: relay.sample(relay_rnn, c, s), lambda x: x))
     relay_rnn = relay.char_rnn_generator.RNN(data.N_LETTERS, hidden_size, data.N_LETTERS)
-    bench.append(SamplesRNNBench("relay with loop", lambda c, s: relay_rnn.samples(c, s)))
+    bench.append(SampleRNNBench("relay with loop", lambda c, s: relay_rnn.sample(c, s), lambda x: x()))
     pytorch_rnn = pytorch.char_rnn_generator.RNN(data.N_LETTERS, hidden_size, data.N_LETTERS)
-    bench.append(SamplesRNNBench("pytorch", lambda c, s: pytorch.samples(pytorch_rnn, c, s)))
+    bench.append(SampleRNNBench("pytorch", lambda c, s: pytorch.sample(pytorch_rnn, c, s), lambda x: x))
     # Relay
     for b in bench:
         t, r = b(sample)
-        print(r)
+        for l in r:
+            print(l)
         print("time of " + str(b) + " : " + str(t))
 
 def main():

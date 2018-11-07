@@ -54,7 +54,3 @@ def sample(rnn, category, start_letter='A'):
             letter = data.topi_to_letter(input.data.asnumpy())
             output_name += letter
     return output_name
-
-def samples(rnn, category, start_letters='ABC'):
-    for start_letter in start_letters:
-        print(sample(rnn, category, start_letter))

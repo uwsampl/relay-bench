@@ -56,8 +56,3 @@ def sample(rnn, category, start_letter='A'):
              input = inputTensor(letter)
 
          return output_name
-
-# Get multiple samples from one category and multiple starting letters
-def samples(rnn, category, start_letters='ABC'):
-     for start_letter in start_letters:
-         print(sample(rnn, category, start_letter))
