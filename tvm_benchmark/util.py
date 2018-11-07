@@ -2,6 +2,7 @@
 
 import sys
 from tvm import relay
+from tvm.relay import testing
 
 def get_network(name, batch_size, dtype='float32'):
     """Get the symbol definition and random weight of a network
@@ -23,11 +24,8 @@ def get_network(name, batch_size, dtype='float32'):
         The random parameters for benchmark
     input_shape: tuple
         The shape of input tensor
-    output_shape: tuple
-        The shape of output tensor
     """
     input_shape = (batch_size, 3, 224, 224)
-    output_shape = (batch_size, 1000)
 
     if name == 'mobilenet':
         net, params = relay.testing.mobilenet.get_workload(batch_size=batch_size, dtype=dtype)
@@ -38,7 +36,7 @@ def get_network(name, batch_size, dtype='float32'):
         net, params = relay.testing.inception_v3.get_workload(batch_size=batch_size, dtype=dtype)
     elif "resnet" in name:
         n_layer = int(name.split('-')[1])
-        net, params = relay.testing.resnet.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
+        net, params = testing.resnet.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
     elif "vgg" in name:
         n_layer = int(name.split('-')[1])
         net, params = relay.testing.vgg.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
@@ -65,7 +63,7 @@ def get_network(name, batch_size, dtype='float32'):
     else:
         raise ValueError("Unsupported network: " + name)
 
-    return net, params, input_shape, output_shape
+    return net, params, input_shape
 
 def print_progress(msg):
     """print progress message

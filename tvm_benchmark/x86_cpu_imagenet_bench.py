@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 
 import tvm
+from tvm import relay
 from tvm.contrib.util import tempdir
 import tvm.contrib.graph_runtime as runtime
 import nnvm.compiler
@@ -20,13 +21,11 @@ def evaluate_network(network, target, target_host, repeat):
     remote = tracker.request(args.rpc_key)
 
     print_progress(network)
-    net, params, input_shape, output_shape = get_network(network, batch_size=1)
+    net, params, input_shape = get_network(network, batch_size=1)
 
     print_progress("%-20s building..." % network)
-    with nnvm.compiler.build_config(opt_level=3):
-        graph, lib, params = nnvm.compiler.build(
-            net, target=target, target_host=target_host,
-            shape={'data': input_shape}, params=params, dtype=dtype)
+    with relay.build_module.build_config(opt_level=3):
+        graph, lib, params = relay.build(net, target=target, target_host=target_host, params=params)
 
     tmp = tempdir()
     if 'android' in str(target):
@@ -63,8 +62,9 @@ if __name__ == "__main__":
                          'mobilenet', 'mobilenet_v2', 'squeezenet_v1.0', 'squeezenet_v1.1'],
                         help='The name of neural network')
     parser.add_argument("--model", type=str, choices=
-                        ['rk3399', 'mate10', 'mate10pro', 'p20', 'p20pro',
-                         'pixel2', 'rasp3b', 'pynq'], default='rk3399',
+                        # ['rk3399', 'mate10', 'mate10pro', 'p20', 'p20pro',
+                        #  'pixel2', 'rasp3b', 'pynq'], default='rk3399',
+                        ['llvm'], default='llvm',
                         help="The model of the test device. If your device is not listed in "
                              "the choices list, pick the most similar one as argument.")
     parser.add_argument("--host", type=str, default='localhost')
@@ -88,4 +88,3 @@ if __name__ == "__main__":
     print("--------------------------------------------------")
     for network in networks:
         evaluate_network(network, target, target_host, args.repeat)
-
