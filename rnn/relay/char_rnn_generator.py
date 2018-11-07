@@ -67,8 +67,8 @@ class RNN:
         max = relay.var('max', shape=(), dtype='int32')
         loop_para = [max] + para
         fwd_res = self.fwd(*para)
-        rec_call = relay.If(fwd_res[3], p.nil(), self.loop_fwd(op.subtract(max, relay.const(1)), category, fwd_res[2], fwd_res[1], *weight_para))
-        else_branch = p.cons(fwd_res[0], rec_call)
+        else_else_branch = p.cons(fwd_res[2], self.loop_fwd(op.subtract(max, relay.const(1)), category, fwd_res[2], fwd_res[1], *weight_para))
+        else_branch = relay.If(fwd_res[3], p.nil(), else_else_branch)
         body = relay.If(op.equal(max, relay.const(0)), p.nil(), else_branch)
         mod[self.loop_fwd] = relay.Function(loop_para, body)
         print(mod[self.loop_fwd].checked_type)
@@ -77,11 +77,17 @@ class RNN:
     def __call__(self, category, input, hidden):
         return self.forward(category, input, hidden, self.w0, self.b0, self.w1, self.b1, self.w2, self.b2)
 
+    def woosh(self, l):
+        if l.con.name_hint == 'cons':
+            return [np.asscalar(l.fields[0].data.asnumpy())] + self.woosh(l.fields[1])
+        else:
+            assert l.con.name_hint == 'nil'
+            return []
+
     def sample(self, category, start_letter='A'):
         category_tensor = categoryTensor(category)
         input = data.letter_to_topi(start_letter)
         hidden = self.hidden
-        output_topi = [relay.const(data.letter_to_topi(start_letter))]
         output = self.loop_forward(20,
                                    category_tensor,
                                    input,
@@ -93,9 +99,8 @@ class RNN:
                                    self.w2,
                                    self.b2)
         output_name = ''
-        print(output)
-        for x in output_topi:
-            output_name += data.topi_to_letter(x.data.asnumpy())
+        for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
+            output_name += data.topi_to_letter(x)
         return output_name
 
     #def sample(self, category, start_letter='A'):
