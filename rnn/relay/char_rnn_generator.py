@@ -99,8 +99,8 @@ class RNN:
                                    self.w2,
                                    self.b2)
         output_name = ''
-        #for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
-        #    output_name += data.topi_to_letter(x)
+        for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
+            output_name += data.topi_to_letter(x)
         return output_name
 
     #def sample(self, category, start_letter='A'):
