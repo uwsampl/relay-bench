@@ -103,7 +103,7 @@ class ToSource:
         body = self.visit(func.body)
 
         if self.local:
-            func = f"""[&]({param_str}) {{
+            func = f"""[=]({param_str}) {{
                 {body}
             }}
             """

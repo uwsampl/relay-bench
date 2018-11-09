@@ -20,6 +20,8 @@ def compile_cpp(source, lib_name, lib_path=None):
     with open(source_path, 'w') as source_file:
         source_file.write(source)
 
+    source_file.close()
+
     system = os.uname()[0]
     if system == 'Darwin':
         command = [
@@ -59,6 +61,11 @@ def compile_cpp(source, lib_name, lib_path=None):
 
     proc = subprocess.run(command)
     assert proc.returncode == 0
+    cleanup = [
+        "rm",
+        source_path
+    ]
+    assert subprocess.run(cleanup).returncode == 0
 
 
 def load_lib(name):
