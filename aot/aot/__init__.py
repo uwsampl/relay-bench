@@ -95,7 +95,8 @@ class AoTCompiler(ExprFunctor):
         jit_func = self.engine.jit(cc_key)
         hash = relay.ir_pass.structural_hash(func)
         name = f"op{hash}"
-        register_func(name, jit_func)
+        if not get_global_func(name, allow_missing=True):
+            register_func(name, jit_func)
         return PackedCall(name, len(func.params) + 1, args, output_type)
 
     def visit_call(self, call: Expr) -> Expr:

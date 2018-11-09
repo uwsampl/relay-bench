@@ -11,6 +11,7 @@ class ToSource:
         self.source_content = ""
         self.name_map = {}
         self.cont = []
+        self.local = True
 
     def fresh_global_name(self):
         name = f"global{self.name_counter}"
@@ -26,19 +27,26 @@ class ToSource:
         cont = self.cont.pop()
         return cont(*args)
 
-    def visit(self, node):
+    def visit(self, node, local=True):
+        old_local = self.local
+        self.local = local
+
         if isinstance(node, little_cpp.PackedCall):
-            return self.visit_packed_call(node)
+            res = self.visit_packed_call(node)
         elif isinstance(node, little_cpp.CPPFunction):
-            return self.visit_cpp_function(node)
+            res = self.visit_cpp_function(node)
         elif isinstance(node, little_cpp.Decl):
-            return self.visit_decl(node)
+            res = self.visit_decl(node)
         elif isinstance(node, little_cpp.Invoke):
-            return self.visit_invoke(node)
+            res = self.visit_invoke(node)
         elif isinstance(node, relay.Var):
-            return self.name_map[node]
+            res = self.name_map[node]
         else:
             raise Exception("...")
+
+        self.local = old_local
+
+        return res
 
     def visit_invoke(self, invoke):
         args_str = ""
@@ -57,8 +65,8 @@ class ToSource:
             local_name = self.fresh_local_name(var)
             self.name_map[var] = local_name
             value_str = self.visit(value)
-            source += f"NDArray {local_name} = {value_str};\n"
-        source += self.visit(decl.body)
+            source += f"auto {local_name} = {value_str};\n"
+        source += self.do_cont(self.visit(decl.body))
         return source
 
     def visit_packed_call(self, call):
@@ -94,17 +102,23 @@ class ToSource:
 
         body = self.visit(func.body)
 
-        func = f"""
-        NDArray {name}({param_str}) {{
-            {body}
-        }}
-        """
+        if self.local:
+            func = f"""[&]({param_str}) {{
+                {body}
+            }}
+            """
+        else:
+            func = f"""
+            NDArray {name}({param_str}) {{
+                {body}
+            }}
+            """
         return func
 
     def mk_register_api(self, name: str, func: little_cpp.CPPFunction) -> str:
         assert isinstance(func, little_cpp.CPPFunction)
         source = ""
-        source += self.visit_cpp_function(func)
+        source += self.visit(func, False)
 
         args = ""
         end = len(func.params) - 1
