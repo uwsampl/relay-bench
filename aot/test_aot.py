@@ -32,7 +32,6 @@ def test_mult_op():
     np.testing.assert_allclose(output.asnumpy(), np.exp(a.asnumpy() + b.asnumpy()))
 
 if __name__ == "__main__":
-    # test_add()
-    # import pdb; pdb.set_trace()
+    test_add()
     test_mult_op()
 

@@ -137,18 +137,20 @@ class AoTCompiler(ExprFunctor):
         else:
             return CPPFunction(func.params, self.visit(func.body), func.checked_type)
 
-_LIB = None
+_LIB_COUNTER = 1
+_LIB = []
 
 def compile(func, name='default'):
-    global _LIB
-    packed_name = f'relay.aot.{name}'
+    global _LIB, _LIB_COUNTER
+    packed_name = f'relay.aot.{name}.{_LIB_COUNTER}'
     compiler = AoTCompiler()
     func = compiler.optimize(func)
     func = compiler.visit(func)
     source_code = to_source.to_source(packed_name, func)
-    lib_name = "libtest.so"
-    compile_cpp(source_code, "libtest.so")
-    _LIB = load_lib("libtest.so")
+    lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
+    _LIB_COUNTER += 1
+    compile_cpp(source_code, lib_name)
+    _LIB.append(load_lib(lib_name))
     a = tvm.nd.array(np.array(1.0, dtype='float32'))
     b = tvm.nd.array(np.array(1.0, dtype='float32'))
     fn = get_global_func(packed_name)
