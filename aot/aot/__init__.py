@@ -4,9 +4,9 @@ import os
 import subprocess
 import tvm
 from tvm import relay, get_global_func, target, register_func
-from tvm.relay.expr import ExprFunctor, Expr
+from tvm.relay.expr import ExprFunctor, Expr, Let
 from tvm.relay.backend import compile_engine
-from .little_cpp import PackedCall, CPPFunction
+from .little_cpp import PackedCall, CPPFunction, Invoke
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
@@ -57,12 +57,17 @@ class AoTCompiler(ExprFunctor):
     def __init__(self) -> None:
         super().__init__()
         self.engine = compile_engine.get()
+        self.bindings = [[]]
+
+    def add_binding(self, var, value):
+        self.bindings[-1].append((var, value))
 
     def optimize(self, expr: Expr) -> Expr:
         infer_e = relay.ir_pass.infer_type(expr)
         fused_e = relay.ir_pass.fuse_ops(infer_e)
         fused_e = relay.ir_pass.infer_type(fused_e)
         anf_fused = relay.ir_pass.to_anf(fused_e)
+        anf_fused = relay.ir_pass.infer_type(anf_fused)
         return anf_fused
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
@@ -77,14 +82,30 @@ class AoTCompiler(ExprFunctor):
         if is_primitive(call.op):
             return self.mk_primitive_op(call.op, call.args, call.checked_type)
         else:
-            raise Exception("...")
+            args = [self.visit(arg) for arg in call.args]
+            fn = self.visit(call.op)
+            return Invoke(fn, args)
+
+    def visit_let(self, let: Expr) -> Expr:
+        self.bindings.append([])
+
+        while isinstance(let, Let):
+            cpp_value = self.visit(let.value)
+            self.add_binding(let.var, cpp_value)
+            let = let.body
+
+        bindings = self.bindings.pop()
+        body = self.visit(let)
+
+        return little_cpp.Decl(bindings, body)
 
     def visit_var(self, var):
         return var
 
     def visit_function(self, func):
         if is_primitive(func):
-            return self.mk_primitive_op(func, call.args, func.ret_type)
+            body = self.mk_primitive_op(func, func.params, func.ret_type)
+            return CPPFunction(func.params, body, func.checked_type)
         else:
             return CPPFunction(func.params, self.visit(func.body), func.checked_type)
 

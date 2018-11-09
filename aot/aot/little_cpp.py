@@ -5,8 +5,10 @@ import attr
 class LittleCppNode:
     pass
 
+@attr.s(auto_attribs=True)
 class Decl(LittleCppNode):
     bindings: List[Tuple[Var, LittleCppNode]]
+    body: LittleCppNode
 
 @attr.s(auto_attribs=True)
 class PackedCall(LittleCppNode):
@@ -16,9 +18,15 @@ class PackedCall(LittleCppNode):
     output_type: Any
 
 @attr.s(auto_attribs=True)
+class Invoke(LittleCppNode):
+    call: Any
+    args: Any
+
+@attr.s(auto_attribs=True)
 class CPPFunction(LittleCppNode):
     params: List[Var]
     body: Any
     ret_type: Any
     name: Optional[str] = None
+
 
