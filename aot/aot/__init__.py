@@ -20,22 +20,42 @@ def compile_cpp(source, lib_name, lib_path=None):
     with open(source_path, 'w') as source_file:
         source_file.write(source)
 
-    command = [
-        "clang",
-        "-std=c++14",
-        "-shared",
-        "-undefined",
-        "dynamic_lookup",
-        "-o",
-        lib_name,
-        source_path,
-		f"-I{TVM_PATH}/3rdparty/dmlc-core/include",
-		f"-I{TVM_PATH}/3rdparty/dlpack/include",
-		f"-I{TVM_PATH}/3rdparty/HalideIR/src",
-		f"-I{TVM_PATH}/include",
-		f"-L{TVM_PATH}/build",
-        "-ltvm"
-    ]
+    system = os.uname()[0]
+    if system == 'Darwin':
+        command = [
+            "clang",
+            "-std=c++14",
+            "-shared",
+            "-undefined",
+            "dynamic_lookup",
+            "-o",
+            lib_name,
+            source_path,
+		    f"-I{TVM_PATH}/3rdparty/dmlc-core/include",
+		    f"-I{TVM_PATH}/3rdparty/dlpack/include",
+		    f"-I{TVM_PATH}/3rdparty/HalideIR/src",
+		    f"-I{TVM_PATH}/include",
+		    f"-L{TVM_PATH}/build",
+            "-ltvm"
+        ]
+    else:
+        command = [
+            "clang",
+            "-std=c++14",
+            "-shared",
+            "-undefined",
+            "dynamic_lookup",
+            "-fPIC",
+            "-o",
+            lib_name,
+            source_path,
+		    f"-I{TVM_PATH}/3rdparty/dmlc-core/include",
+		    f"-I{TVM_PATH}/3rdparty/dlpack/include",
+		    f"-I{TVM_PATH}/3rdparty/HalideIR/src",
+		    f"-I{TVM_PATH}/include",
+		    f"-L{TVM_PATH}/build",
+            "-ltvm"
+        ]
 
     proc = subprocess.run(command)
     assert proc.returncode == 0
