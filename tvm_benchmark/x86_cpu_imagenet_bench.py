@@ -61,12 +61,12 @@ def build_module(network, target, target_host, ir="relay"):
     ctx = remote.context(str(target), 0)
     remote.upload(tmp.relpath(filename))
 
-    if isinstance(graph, nnvm.graph.Graph):
-        with open("nnvm_graph.json", "w") as outf:
-            print(graph.json(), file=outf)
-    else:
-        with open("relay_graph.json", "w") as outf:
-            print(graph, file=outf)
+    # if isinstance(graph, nnvm.graph.Graph):
+    #     with open("nnvm_graph.json", "w") as outf:
+    #         print(graph.json(), file=outf)
+    # else:
+    #     with open("relay_graph.json", "w") as outf:
+    #         print(graph, file=outf)
 
     rlib = remote.load_module(filename)
     module = runtime.create(graph, rlib, ctx)
@@ -83,6 +83,7 @@ if __name__ == "__main__":
                         ['resnet-18', 'resnet-34', 'resnet-50',
                          'vgg-16', 'vgg-19', 'densenet-121', 'inception_v3',
                          'mobilenet', 'mobilenet_v2', 'squeezenet_v1.0', 'squeezenet_v1.1', 'mlp', 'custom', 'dqn', 'dcgan'],
+                         required=True,
                         help='The name of neural network')
     parser.add_argument("--model", type=str, choices=
                         ['llvm'], default='llvm',
@@ -93,35 +94,38 @@ if __name__ == "__main__":
     parser.add_argument("--rpc-key", type=str, required=True)
     parser.add_argument("--repeat", type=int, default=10)
     parser.add_argument("--ir", type=str, choices=['relay', 'nnvm'], required=True)
-    parser.add_argument("--output", type=str, choices=['eval', 'time'], required=True)
+    parser.add_argument("--output", type=str, choices=['eval', 'time', 'file'], required=True)
+    parser.add_argument("--outfile", type=str)
     args = parser.parse_args()
 
     dtype = 'float32'
 
-    if args.network is None:
-        networks = ['squeezenet_v1.1', 'mobilenet', 'resnet-18', 'vgg-16']
-    else:
-        networks = [args.network]
-
     target = tvm.target.arm_cpu(model=args.model)
     target_host = None
+    network = args.network
 
     print("--------------------------------------------------")
     print("%-20s %-20s" % ("Network Name", "Mean Inference Time (std dev)"))
     print("--------------------------------------------------")
-    for network in networks:
-        module, ctx = build_module(network, target, target_host, ir=args.ir)
+    module, ctx = build_module(network, target, target_host, ir=args.ir)
 
-        if args.output == "eval":
-            print_progress("%-20s evaluating..." % network)
-            module.run()
-            output = module.get_output(0)
-            print(output)
-            print(output.shape)
-        elif args.output == "time":
-            print_progress("%-20s evaluating..." % network)
-            ftimer = module.module.time_evaluator("run", ctx, number=1, repeat=args.repeat)
-            prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
-            print("%-20s %-19s (%s)" % (network, "%.2f ms" % np.mean(prof_res), "%.2f ms" % np.std(prof_res)))
-        else:
-            assert False
+    if args.output == "eval":
+        print_progress("%-20s evaluating..." % network)
+        module.run()
+        output = module.get_output(0)
+        print(output)
+        print(output.shape)
+    elif args.output == "time":
+        print_progress("%-20s evaluating..." % network)
+        ftimer = module.module.time_evaluator("run", ctx, number=1, repeat=args.repeat)
+        prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
+        print("%-20s %-19s (%s)" % (network, "%.2f ms" % np.mean(prof_res), "%.2f ms" % np.std(prof_res)))
+    elif args.output == "file":
+        assert args.outfile is not None
+        print_progress("%-20s evaluating..." % network)
+        ftimer = module.module.time_evaluator("run", ctx, number=1, repeat=args.repeat)
+        prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
+        with open(args.outfile, "a") as outf:
+            print(f"{args.ir}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
+    else:
+        assert False
