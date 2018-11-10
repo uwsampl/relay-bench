@@ -8,6 +8,9 @@ import aot
 mod = Module()
 p = Prelude(mod)
 
+print(p.nat)
+raise
+
 def test_add():
     x = var('x', shape=())
     y = var('y', shape=())
