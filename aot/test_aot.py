@@ -8,7 +8,7 @@ import aot
 mod = Module()
 p = Prelude(mod)
 
-print(p.nat)
+print(aot.do_type(mod, p.nat))
 raise
 
 def test_add():

@@ -150,3 +150,8 @@ def compile(mod, func, name='default'):
     _LIB.append(load_lib(lib_name))
     fn = get_global_func(packed_name)
     return fn
+
+def do_type(mod, gtv):
+    assert isinstance(mod, relay.Module)
+    assert isinstance(gtv, relay.GlobalTypeVar)
+    return mod[gtv]
