@@ -137,7 +137,7 @@ class AoTCompiler(ExprFunctor):
 _LIB_COUNTER = 1
 _LIB = []
 
-def compile(func, name='default'):
+def compile(mod, func, name='default'):
     global _LIB, _LIB_COUNTER
     packed_name = f'relay.aot.{name}.{_LIB_COUNTER}'
     compiler = AoTCompiler()

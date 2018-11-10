@@ -1,18 +1,19 @@
 from tvm import relay
-from tvm.relay import var, Function, op
+from tvm.relay import var, Function, op, Module
+from tvm.relay.prelude import Prelude
 import numpy as np
 import tvm
 import aot
 
-def convert(val, dtype=None):
-    return tvm.nd.array(np.array(val).astype(dtype))
+mod = Module()
+p = Prelude(mod)
 
 def test_add():
     x = var('x', shape=())
     y = var('y', shape=())
     z = x + y
     func = Function([x, y], z)
-    cfunc = aot.compile(func)
+    cfunc = aot.compile(mod, func)
     a = tvm.nd.array(np.array(1.0, dtype='float32'))
     b = tvm.nd.array(np.array(1.0, dtype='float32'))
     c = tvm.nd.array(np.array(2.0, dtype='float32'))
@@ -25,7 +26,7 @@ def test_mult_op():
     z = x + y
     zz = op.exp(z)
     func = Function([x, y], zz)
-    cfunc = aot.compile(func)
+    cfunc = aot.compile(mod, func)
     a = tvm.nd.array(np.array(1.0, dtype='float32'))
     b = tvm.nd.array(np.array(1.0, dtype='float32'))
     output = cfunc(a, b)
