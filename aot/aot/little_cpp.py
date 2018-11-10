@@ -1,6 +1,8 @@
-from tvm.relay import Var
+from tvm.relay import Var, TypeVar
 from typing import Any, Optional, List, Tuple
 import attr
+
+#remember: template must not have 0 param.
 
 class LittleCppNode:
     pass
@@ -28,5 +30,3 @@ class CPPFunction(LittleCppNode):
     body: Any
     ret_type: Any
     name: Optional[str] = None
-
-

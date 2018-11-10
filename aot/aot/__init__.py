@@ -11,7 +11,6 @@ from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
 
-
 def compile_cpp(source, lib_name, lib_path=None):
     if lib_path is None:
         lib_path = os.curdir
@@ -19,8 +18,6 @@ def compile_cpp(source, lib_name, lib_path=None):
     source_path = os.path.join(lib_path, 'source.cc')
     with open(source_path, 'w') as source_file:
         source_file.write(source)
-
-    source_file.close()
 
     system = os.uname()[0]
     if system == 'Darwin':
@@ -148,11 +145,8 @@ def compile(func, name='default'):
     func = compiler.visit(func)
     source_code = to_source.to_source(packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
-    _LIB_COUNTER += 1
     compile_cpp(source_code, lib_name)
+    _LIB_COUNTER += 1
     _LIB.append(load_lib(lib_name))
-    a = tvm.nd.array(np.array(1.0, dtype='float32'))
-    b = tvm.nd.array(np.array(1.0, dtype='float32'))
     fn = get_global_func(packed_name)
     return fn
-
