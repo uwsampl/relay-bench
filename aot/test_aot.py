@@ -5,13 +5,11 @@ import numpy as np
 import tvm
 import aot
 
-mod = Module()
-p = Prelude(mod)
-
 #print(aot.do_type(mod, p.nat))
 #raise
 
 def test_add():
+    mod = Module()
     x = var('x', shape=())
     y = var('y', shape=())
     z = x + y
@@ -24,6 +22,7 @@ def test_add():
     np.testing.assert_allclose(output.asnumpy(), c.asnumpy())
 
 def test_mult_op():
+    mod = Module()
     x = var('x', shape=())
     y = var('y', shape=())
     z = x + y
@@ -35,6 +34,10 @@ def test_mult_op():
     output = cfunc(a, b)
     np.testing.assert_allclose(output.asnumpy(), np.exp(a.asnumpy() + b.asnumpy()))
 
+def test_double():
+    mod = Module()
+
 if __name__ == "__main__":
-    # test_add()
-    test_mult_op()
+    #test_add()
+    #test_mult_op()
+    test_double()
