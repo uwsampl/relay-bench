@@ -1,10 +1,6 @@
 from . import little_cpp
 from tvm import relay
 
-#  PackedFunc *pf = reinterpret_cast<PackedFunc*>({jit_func.handle.value});
-#         CHECK(pf);
-#         (*pf)({args});
-
 class ToSource:
     def __init__(self, gv_map):
         self.gv_map = gv_map
@@ -88,7 +84,7 @@ class ToSource:
             CHECK(pf);
             NDArray out = NDArray::Empty({{}}, dtype_f32, context);
             (*pf)({args}, out);
-            {self.do_cont("out")};
+            {self.do_cont("out")}
         """
 
     def visit_cpp_function(self, func, local):
