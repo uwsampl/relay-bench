@@ -79,6 +79,9 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
     elif name == 'dcgan':
         input_shape = (3, 64, 64)
         net, params = testing.dcgan.get_workload(batch_size, oshape=input_shape)
+    elif name == 'densenet':
+        input_shape = (3, 64, 64)
+        net, params = testing.densenet.get_workload(batch_size=batch_size)
     # elif name == 'mxnet':
     #     # an example for mxnet model
     #     from mxnet.gluon.model_zoo.vision import get_model

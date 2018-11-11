@@ -5,11 +5,22 @@ import itertools
 MODELS = [
     # "mlp",
     "dqn",
+    # "dcgan",
     # "resnet-18",
-    # "mobilenet",
+    # "densenet",
     ]
 
-IRS = ["relay", "nnvm"]
+IRS = [
+    "relay",
+    # "nnvm",
+    # "tf",
+    ]
+
+TARGETS = [
+    "arm_cpu",
+    # "gpu",
+    # "fpga",
+]
 
 REPEAT = 100
 
@@ -17,16 +28,17 @@ OUT_FILE = "graph-data.csv"
 
 def main():
     with open(OUT_FILE, "w") as outf:
-        print("ir, model, avg time (ms), std dev (ms)", file=outf)
+        print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
 
     subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:9190 --key foo"))
-    
+
     subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 9190"))
 
-    for ir, model in itertools.product(IRS, MODELS):
-        subprocess.run(["python3", "tvm_benchmark/x86_cpu_imagenet_bench.py",
+    for ir, target, model in itertools.product(IRS, TARGETS, MODELS):
+        subprocess.run(["python3", "tvm_benchmark/benchmark.py",
                         "--ir", ir,
                         "--network", model,
+                        "--target", target,
                         "--rpc-key", "foo",
                         "--repeat", str(REPEAT),
                         "--output", "file",

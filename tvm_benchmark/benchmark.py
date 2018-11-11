@@ -44,6 +44,8 @@ def build_module(network, target, target_host, ir="relay"):
         net, params, input_shape, graph, lib = build_relay_network(network, target, target_host)
     elif ir == "nnvm":
         net, params, input_shape, graph, lib = build_nnvm_network(network, target, target_host)
+    elif ir == "tf":
+        raise Exception("tf isn't supported yet!")
     else:
         raise Exception("ir must be `relay` or `nnvm`, but you used `{}`".format(ir))
 
@@ -61,12 +63,12 @@ def build_module(network, target, target_host, ir="relay"):
     ctx = remote.context(str(target), 0)
     remote.upload(tmp.relpath(filename))
 
-    # if isinstance(graph, nnvm.graph.Graph):
-    #     with open("nnvm_graph.json", "w") as outf:
-    #         print(graph.json(), file=outf)
-    # else:
-    #     with open("relay_graph.json", "w") as outf:
-    #         print(graph, file=outf)
+    if isinstance(graph, nnvm.graph.Graph):
+        with open("nnvm_graph.json", "w") as outf:
+            print(graph.json(), file=outf)
+    else:
+        with open("relay_graph.json", "w") as outf:
+            print(graph, file=outf)
 
     rlib = remote.load_module(filename)
     module = runtime.create(graph, rlib, ctx)
@@ -82,26 +84,38 @@ if __name__ == "__main__":
     parser.add_argument("--network", type=str, choices=
                         ['resnet-18', 'resnet-34', 'resnet-50',
                          'vgg-16', 'vgg-19', 'densenet-121', 'inception_v3',
-                         'mobilenet', 'mobilenet_v2', 'squeezenet_v1.0', 'squeezenet_v1.1', 'mlp', 'custom', 'dqn', 'dcgan'],
+                         'mobilenet', 'mobilenet_v2', 'squeezenet_v1.0', 'squeezenet_v1.1', 'mlp', 'custom', 'dqn', 'dcgan', 'densenet'],
                          required=True,
                         help='The name of neural network')
-    parser.add_argument("--model", type=str, choices=
-                        ['llvm'], default='llvm',
-                        help="The model of the test device. If your device is not listed in "
-                             "the choices list, pick the most similar one as argument.")
+    parser.add_argument("--target", type=str, choices=["arm_cpu", "gpu", "fpga"], required=True)
+    # parser.add_argument("--model", type=str, choices=
+    #                     ['llvm'], default='llvm',
+    #                     help="The model of the test device. If your device is not listed in "
+    #                          "the choices list, pick the most similar one as argument.")
     parser.add_argument("--host", type=str, default='localhost')
     parser.add_argument("--port", type=int, default=9190)
     parser.add_argument("--rpc-key", type=str, required=True)
     parser.add_argument("--repeat", type=int, default=10)
-    parser.add_argument("--ir", type=str, choices=['relay', 'nnvm'], required=True)
+    parser.add_argument("--ir", type=str, choices=['relay', 'nnvm', 'tf'], required=True)
     parser.add_argument("--output", type=str, choices=['eval', 'time', 'file'], required=True)
     parser.add_argument("--outfile", type=str)
     args = parser.parse_args()
 
     dtype = 'float32'
 
-    target = tvm.target.arm_cpu(model=args.model)
-    target_host = None
+    if args.target == "arm_cpu":
+        model = "rasp3b"
+        target = tvm.target.arm_cpu(model=model)
+        target_host = None
+    elif args.target == "gpu":
+        model = "1080ti"
+        target = tvm.target.create(f"cuda -model={model}")
+        target_host = None
+    elif args.target == "fpga":
+        raise Exception("fpga isn't supported yet!")
+    else:
+        assert False
+
     network = args.network
 
     print("--------------------------------------------------")
@@ -126,6 +140,6 @@ if __name__ == "__main__":
         ftimer = module.module.time_evaluator("run", ctx, number=1, repeat=args.repeat)
         prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
         with open(args.outfile, "a") as outf:
-            print(f"{args.ir}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
+            print(f"{args.ir}, {args.target}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
     else:
         assert False
