@@ -87,7 +87,7 @@ if __name__ == "__main__":
                          'mobilenet', 'mobilenet_v2', 'squeezenet_v1.0', 'squeezenet_v1.1', 'mlp', 'custom', 'dqn', 'dcgan', 'densenet'],
                          required=True,
                         help='The name of neural network')
-    parser.add_argument("--target", type=str, choices=["arm_cpu", "gpu", "fpga"], required=True)
+    parser.add_argument("--target", type=str, choices=["arm_cpu", "x86_cpu", "gpu", "fpga"], required=True)
     # parser.add_argument("--model", type=str, choices=
     #                     ['llvm'], default='llvm',
     #                     help="The model of the test device. If your device is not listed in "
@@ -106,6 +106,9 @@ if __name__ == "__main__":
     if args.target == "arm_cpu":
         model = "rasp3b"
         target = tvm.target.arm_cpu(model=model)
+        target_host = None
+    elif args.target == "x86_cpu":
+        target = tvm.target.create("llvm")
         target_host = None
     elif args.target == "gpu":
         model = "1080ti"
