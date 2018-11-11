@@ -1,5 +1,5 @@
 from tvm import relay
-from tvm.relay import var, Function, op, Module
+from tvm.relay import var, Function, op, Module, GlobalVar
 from tvm.relay.prelude import Prelude
 import numpy as np
 import tvm
@@ -36,6 +36,11 @@ def test_mult_op():
 
 def test_double():
     mod = Module()
+    x = var('x', shape=())
+    double = GlobalVar('double')
+    mod[double] = Function([x], x + x)
+    x = var('x', shape=())
+    cfunc = aot.compile(mod, Function([x], double(double(x))))
 
 if __name__ == "__main__":
     #test_add()

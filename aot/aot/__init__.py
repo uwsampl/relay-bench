@@ -78,20 +78,22 @@ def is_primitive(func: relay.Function):
     return isinstance(func, relay.Function) and func.attrs and func.attrs.Primitive.value == 1
 
 class AoTCompiler(ExprFunctor):
-    def __init__(self) -> None:
+    def __init__(self, mod) -> None:
         super().__init__()
+        self.mod = mod
         self.engine = compile_engine.get()
         self.bindings = [[]]
+        self.gv_map = {}
 
     def add_binding(self, var, value):
         self.bindings[-1].append((var, value))
 
     def optimize(self, expr: Expr) -> Expr:
-        infer_e = relay.ir_pass.infer_type(expr)
-        fused_e = relay.ir_pass.fuse_ops(infer_e)
-        fused_e = relay.ir_pass.infer_type(fused_e)
-        anf_fused = relay.ir_pass.to_anf(fused_e)
-        anf_fused = relay.ir_pass.infer_type(anf_fused)
+        infer_e = relay.ir_pass.infer_type(expr, self.mod)
+        fused_e = relay.ir_pass.fuse_ops(infer_e, self.mod)
+        fused_e = relay.ir_pass.infer_type(fused_e, self.mod)
+        anf_fused = relay.ir_pass.to_anf(fused_e, self.mod)
+        anf_fused = relay.ir_pass.infer_type(anf_fused, self.mod)
         return anf_fused
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
@@ -128,7 +130,9 @@ class AoTCompiler(ExprFunctor):
         return var
 
     def visit_global_var(self, gv):
-        raise
+        if gv not in self.gv_map:
+            self.gv_map[gv] = self.visit(self.mod[gv])
+        return gv
 
     def visit_function(self, func):
         if is_primitive(func):
@@ -143,7 +147,7 @@ _LIB = []
 def compile(mod, func, name='default'):
     global _LIB, _LIB_COUNTER
     packed_name = f'relay.aot.{name}.{_LIB_COUNTER}'
-    compiler = AoTCompiler()
+    compiler = AoTCompiler(mod)
     func = compiler.optimize(func)
     func = compiler.visit(func)
     source_code = to_source.to_source(packed_name, func)

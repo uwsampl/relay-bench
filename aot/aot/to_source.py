@@ -42,7 +42,7 @@ class ToSource:
         elif isinstance(node, relay.Var):
             res = self.name_map[node]
         else:
-            raise Exception("...")
+            raise Exception(str(node))
 
         self.local = old_local
 
