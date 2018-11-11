@@ -92,7 +92,6 @@ class ToSource:
         """
 
     def visit_cpp_function(self, func, local):
-        name = func.name = self.fresh_global_name()
         param_str = ""
 
         end = len(func.params) - 1
@@ -108,18 +107,18 @@ class ToSource:
         body = self.visit(func.body)
 
         if local:
-            func = f"""[=]({param_str}) {{
+            return f"""[=]({param_str}) {{
                 {body}
             }}
             """
         else:
+            name = self.fresh_global_name()
             self.declare += f"""
             NDArray {name}({param_str}) {{
                 {body}
             }}
             """
-            func = name
-        return func
+            return name
 
     def mk_register_api(self, name: str, func: little_cpp.CPPFunction) -> str:
         assert isinstance(func, little_cpp.CPPFunction)
@@ -136,7 +135,7 @@ class ToSource:
         source += f"""
         TVM_REGISTER_API("{name}")
         .set_body([](TVMArgs args, TVMRetValue* ret) {{
-            *ret = {func.name}({args});
+            *ret = {fname}({args});
         }});
         """
         return source
