@@ -64,15 +64,8 @@ def compile_cpp(source, lib_name, lib_path=None):
     ]
     assert subprocess.run(cleanup).returncode == 0
 
-
 def load_lib(name):
     return ctypes.CDLL(name, ctypes.RTLD_GLOBAL)
-
-# example_src = build_source()
-# compile_cpp(example_src, "libexample.so")
-# load_lib("libexample.so")
-# get_global_func("relay.aot.example")("Hello Relay")
-
 
 def is_primitive(func: relay.Function):
     return isinstance(func, relay.Function) and func.attrs and func.attrs.Primitive.value == 1
