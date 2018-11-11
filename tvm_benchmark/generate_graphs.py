@@ -17,7 +17,7 @@ IRS = [
     ]
 
 TARGETS = [
-    "arm_cpu",
+    # "arm_cpu",
     "x86_cpu",
     # "gpu",
     # "fpga",
