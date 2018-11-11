@@ -30,9 +30,9 @@ def main():
     with open(OUT_FILE, "w") as outf:
         print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
 
-    subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:9190 --key foo"))
+    server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:9190 --key foo"))
 
-    subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 9190"))
+    tracker = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 9190"))
 
     for ir, target, model in itertools.product(IRS, TARGETS, MODELS):
         subprocess.run(["python3", "tvm_benchmark/benchmark.py",
@@ -43,6 +43,9 @@ def main():
                         "--repeat", str(REPEAT),
                         "--output", "file",
                         "--outfile", OUT_FILE])
+
+    tracker.kill()
+    server.kill()
 
 if __name__ == "__main__":
     main()
