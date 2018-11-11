@@ -2,9 +2,8 @@
 
 import sys
 from tvm import relay
-from tvm.relay import testing
 
-def get_network(name, batch_size, dtype='float32'):
+def get_network(name, batch_size, dtype='float32', ir='relay'):
     """Get the symbol definition and random weight of a network
     
     Parameters
@@ -25,27 +24,33 @@ def get_network(name, batch_size, dtype='float32'):
     input_shape: tuple
         The shape of input tensor
     """
-    input_shape = (batch_size, 3, 224, 224)
+    if ir == 'relay':
+        from tvm.relay import testing
+    elif ir == 'nnvm':
+        from nnvm import testing
+    else:
+        raise Exception("ir must be `relay` or `nnvm`, but you used `{}`".format(ir))
 
+    input_shape = (batch_size, 3, 224, 224)
     if name == 'mobilenet':
-        net, params = relay.testing.mobilenet.get_workload(batch_size=batch_size, dtype=dtype)
+        net, params = testing.mobilenet.get_workload(batch_size=batch_size, dtype=dtype)
     elif name == 'mobilenet_v2':
-        net, params = relay.testing.mobilenet_v2.get_workload(batch_size=batch_size, dtype=dtype)
+        net, params = testing.mobilenet_v2.get_workload(batch_size=batch_size, dtype=dtype)
     elif name == 'inception_v3':
         input_shape = (batch_size, 3, 299, 299)
-        net, params = relay.testing.inception_v3.get_workload(batch_size=batch_size, dtype=dtype)
+        net, params = testing.inception_v3.get_workload(batch_size=batch_size, dtype=dtype)
     elif "resnet" in name:
         n_layer = int(name.split('-')[1])
         net, params = testing.resnet.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
     elif "vgg" in name:
         n_layer = int(name.split('-')[1])
-        net, params = relay.testing.vgg.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
+        net, params = testing.vgg.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
     elif "densenet" in name:
         n_layer = int(name.split('-')[1])
-        net, params = relay.testing.densenet.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
+        net, params = testing.densenet.get_workload(num_layers=n_layer, batch_size=batch_size, dtype=dtype)
     elif "squeezenet" in name:
         version = name.split("_v")[1]
-        net, params = relay.testing.squeezenet.get_workload(batch_size=batch_size, version=version, dtype=dtype)
+        net, params = testing.squeezenet.get_workload(batch_size=batch_size, version=version, dtype=dtype)
     elif name == 'custom':
         # an example for custom network
         # from tvm.relay.testing import init
@@ -66,14 +71,17 @@ def get_network(name, batch_size, dtype='float32'):
     elif name == 'mlp':
         image_shape = (1, 28, 28)
         input_shape = (batch_size,) + image_shape
-        net, params = relay.testing.mlp.get_workload(batch_size=batch_size, image_shape=image_shape)
+        net, params = testing.mlp.get_workload(batch_size=batch_size, image_shape=image_shape)
     elif name == 'dqn':
         image_shape = (4, 84, 84)
         input_shape = (batch_size,) + image_shape
-        net, params = relay.testing.dqn.get_workload(batch_size=batch_size, image_shape=image_shape)
+        net, params = testing.dqn.get_workload(batch_size=batch_size, image_shape=image_shape)
     elif name == 'dcgan':
         input_shape = (3, 64, 64)
-        net, params = relay.testing.dcgan.get_workload(batch_size, oshape=input_shape)
+        net, params = testing.dcgan.get_workload(batch_size, oshape=input_shape)
+    elif name == 'densenet':
+        input_shape = (3, 64, 64)
+        net, params = testing.densenet.get_workload(batch_size=batch_size)
     # elif name == 'mxnet':
     #     # an example for mxnet model
     #     from mxnet.gluon.model_zoo.vision import get_model
