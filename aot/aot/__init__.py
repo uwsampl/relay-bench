@@ -96,10 +96,10 @@ class AoTCompiler(ExprFunctor):
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
-        jit_func = self.engine.jit(cc_key)
         hash = relay.ir_pass.structural_hash(func)
         name = f"op{hash}"
         if not get_global_func(name, allow_missing=True):
+            jit_func = self.engine.jit(cc_key)
             register_func(name, jit_func)
         return PackedCall(name, len(func.params) + 1, args, output_type)
 
@@ -127,6 +127,9 @@ class AoTCompiler(ExprFunctor):
     def visit_var(self, var):
         return var
 
+    def visit_global_var(self, gv):
+        raise
+
     def visit_function(self, func):
         if is_primitive(func):
             body = self.mk_primitive_op(func, func.params, func.ret_type)
@@ -151,7 +154,37 @@ def compile(mod, func, name='default'):
     fn = get_global_func(packed_name)
     return fn
 
+def inter(strs, sep=", "):
+    ret = ""
+    for i in range(len(strs)):
+        ret += strs[i]
+        if i != len(strs) - 1:
+            ret += sep
+    return ret
+
 def do_type(mod, gtv):
     assert isinstance(mod, relay.Module)
     assert isinstance(gtv, relay.GlobalTypeVar)
-    return mod[gtv]
+    dt = mod[gtv]
+    assert isinstance(dt, relay.TypeData)
+    assert len(dt.tv) == 0
+    con = dt.constructors
+    con_name = [c.name_hint for c in con]
+    print(con[1].inp)
+    con_declare = [f"""
+    struct {x.name_hint} {{
+    }};
+    """ for x in con]
+    name = f'relay_{dt.header.var.name}'
+    node_name = f'{name}_node'
+    con_declare_str = inter(con_declare, "")
+    return f"""
+    struct {node_name};
+    using {name} = std::shared_ptr<{node_name}>;
+    struct {node_name} {{
+      enum class tag {{
+        {inter(con_name)}
+      }};
+      {con_declare_str}
+    }};
+    """
