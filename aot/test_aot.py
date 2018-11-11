@@ -41,6 +41,9 @@ def test_double():
     mod[double] = Function([x], x + x)
     x = var('x', shape=())
     cfunc = aot.compile(mod, Function([x], double(double(x))))
+    a = tvm.nd.array(np.array(1.5, dtype='float32'))
+    output = cfunc(a)
+    np.testing.assert_allclose(output.asnumpy(), np.array(6.0, dtype='float32'))
 
 if __name__ == "__main__":
     #test_add()

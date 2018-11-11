@@ -6,12 +6,15 @@ from tvm import relay
 #         (*pf)({args});
 
 class ToSource:
-    def __init__(self):
+    def __init__(self, gv_map):
+        self.gv_map = gv_map
         self.name_counter = 0
         self.source_content = ""
         self.name_map = {}
         self.cont = []
         self.local = True
+        self.declare = ""
+        self.declare_map = {}
 
     def fresh_global_name(self):
         name = f"global{self.name_counter}"
@@ -28,25 +31,27 @@ class ToSource:
         return cont(*args)
 
     def visit(self, node, local=True):
-        old_local = self.local
-        self.local = local
-
         if isinstance(node, little_cpp.PackedCall):
             res = self.visit_packed_call(node)
         elif isinstance(node, little_cpp.CPPFunction):
-            res = self.visit_cpp_function(node)
+            res = self.visit_cpp_function(node, local)
         elif isinstance(node, little_cpp.Decl):
             res = self.visit_decl(node)
         elif isinstance(node, little_cpp.Invoke):
             res = self.visit_invoke(node)
         elif isinstance(node, relay.Var):
             res = self.name_map[node]
+        elif isinstance(node, relay.GlobalVar):
+            res = self.visit_global_var(node)
         else:
             raise Exception(str(node))
 
-        self.local = old_local
-
         return res
+
+    def visit_global_var(self, gv):
+        if gv not in self.declare_map:
+            self.declare_map[gv] = self.visit(self.gv_map[gv], local=False)
+        return self.declare_map[gv]
 
     def visit_invoke(self, invoke):
         args_str = ""
@@ -86,7 +91,7 @@ class ToSource:
             {self.do_cont("out")};
         """
 
-    def visit_cpp_function(self, func):
+    def visit_cpp_function(self, func, local):
         name = func.name = self.fresh_global_name()
         param_str = ""
 
@@ -102,23 +107,24 @@ class ToSource:
 
         body = self.visit(func.body)
 
-        if self.local:
+        if local:
             func = f"""[=]({param_str}) {{
                 {body}
             }}
             """
         else:
-            func = f"""
+            self.declare += f"""
             NDArray {name}({param_str}) {{
                 {body}
             }}
             """
+            func = name
         return func
 
     def mk_register_api(self, name: str, func: little_cpp.CPPFunction) -> str:
         assert isinstance(func, little_cpp.CPPFunction)
-        source = ""
-        source += self.visit(func, False)
+        fname = self.visit(func, False)
+        source = self.declare
 
         args = ""
         end = len(func.params) - 1
@@ -148,7 +154,7 @@ def mk_file(body):
     {body}
     """
 
-def to_source(name, program) -> str:
+def to_source(gv_map, name, program) -> str:
     assert isinstance(program, little_cpp.CPPFunction)
-    convert = ToSource()
+    convert = ToSource(gv_map)
     return mk_file(convert.mk_register_api(name, program))

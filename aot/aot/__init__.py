@@ -150,7 +150,7 @@ def compile(mod, func, name='default'):
     compiler = AoTCompiler(mod)
     func = compiler.optimize(func)
     func = compiler.visit(func)
-    source_code = to_source.to_source(packed_name, func)
+    source_code = to_source.to_source(compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
     compile_cpp(source_code, lib_name)
     _LIB_COUNTER += 1
