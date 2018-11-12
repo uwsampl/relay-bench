@@ -56,6 +56,6 @@ def test_double():
 
 if __name__ == "__main__":
     #test_identity()
-    test_add()
+    #test_add()
     #test_mult_op()
-    #test_double()
+    test_double()

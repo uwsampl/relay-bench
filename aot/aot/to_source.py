@@ -1,6 +1,15 @@
 from . import little_cpp
 from tvm import relay
 
+class ExprWithStmt:
+    def __init__(self, expr, stmt=""):
+        assert isinstance(expr, str)
+        assert isinstance(stmt, str)
+        assert "ExprWithStmt" not in expr
+        assert "ExprWithStmt" not in stmt
+        self.expr = expr
+        self.stmt = stmt
+
 class ToSource:
     def __init__(self, gv_map):
         self.gv_map = gv_map
@@ -35,11 +44,12 @@ class ToSource:
         elif isinstance(node, little_cpp.Invoke):
             res = self.visit_invoke(node)
         elif isinstance(node, relay.Var):
-            res = ("", self.name_map[node])
+            res = ExprWithStmt(self.name_map[node])
         elif isinstance(node, relay.GlobalVar):
             res = self.visit_global_var(node)
         else:
             raise Exception(str(node))
+        assert isinstance(res, ExprWithStmt)
         return res
 
     def visit_type(self, node):
@@ -51,54 +61,56 @@ class ToSource:
 
     def visit_global_var(self, gv):
         if gv not in self.declare_map:
-            lhs, rhs = self.visit(self.gv_map[gv], local=False)
-            assert lhs == ""
-            self.declare_map[gv] = rhs
-        return ("", self.declare_map[gv])
+            vgv = self.visit(self.gv_map[gv], local=False)
+            assert vgv.stmt == ""
+            self.declare_map[gv] = vgv.expr
+        return ExprWithStmt(self.declare_map[gv])
 
     def visit_invoke(self, invoke):
         decl_str = ""
         args_str = ""
         for i, arg in enumerate(invoke.args):
             assert isinstance(arg, relay.Var)
-            lhs, rhs = self.visit(arg)
-            decl_str += lhs
-            args_str += rhs
+            va = self.visit(arg)
+            decl_str += va.stmt
+            args_str += va.expr
             if i != len(invoke.args) - 1:
                 args_str += ", "
 
         func = self.visit(invoke.call)
-        return (decl_str, f"{func}({args_str})")
+        return ExprWithStmt(f"{func.expr}({args_str})", decl_str + func.stmt)
 
     def visit_decl(self, decl):
         source = ""
         for var, value in decl.bindings:
             local_name = self.fresh_local_name(var)
             self.name_map[var] = local_name
-            value_str = self.visit(value)
-            source += f"auto {local_name} = {value_str};\n"
-        lhs, rhs = self.visit(decl.body)
-        source += lhs
-        return (source, rhs)
+            vv = self.visit(value)
+            source += vv.stmt
+            source += f"auto {local_name} = {vv.expr};\n"
+        vb = self.visit(decl.body)
+        source += vb.stmt
+        return ExprWithStmt(vb.expr, source)
 
     def visit_packed_call(self, call):
         decl_str = ""
         args_str = ""
         end = len(call.args) - 1
         for i, arg in enumerate(call.args):
-            lhs, rhs = self.visit(arg)
-            decl_str += lhs
-            args_str += rhs
+            va = self.visit(arg)
+            decl_str += va.stmt
+            args_str += va.expr
             if i != end:
                 args_str += ", "
 
         out_name = self.fresh_local_name()
-        return (f"""
+        return ExprWithStmt(out_name, f"""
+            {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
             NDArray {out_name} = NDArray::Empty({{}}, dtype_f32, context);
-            (*pf)({out_name}, out);
-        """, out_name)
+            (*pf)({args_str}, {out_name});
+        """)
 
     def visit_cpp_function(self, func, local):
         param_str = ""
@@ -111,29 +123,27 @@ class ToSource:
             if i != end:
                 param_str += ", "
 
-        lhs, rhs = self.visit(func.body)
-        body = lhs + f"""return {rhs};"""
+        vb = self.visit(func.body)
+        body = vb.stmt + f"""return {vb.expr};"""
 
         if local:
-            return ("", f"""[=]({param_str}) {{
+            return ExprWithStmt(f"""[=]({param_str}) {{
                 {body}
             }}
             """)
         else:
             name = self.fresh_global_name()
-            print(func)
-            print(func.ret_type)
             self.declare += f"""
             NDArray {name}({param_str}) {{
                 {body}
             }}
             """
-            return ("", name)
+            return ExprWithStmt(name)
 
     def mk_register_api(self, name: str, func: little_cpp.CPPFunction) -> str:
         assert isinstance(func, little_cpp.CPPFunction)
-        lhs, fname = self.visit(func, False)
-        assert lhs == ""
+        vf = self.visit(func, False)
+        assert vf.stmt == ""
         source = self.declare
 
         args = ""
@@ -146,7 +156,7 @@ class ToSource:
         source += f"""
         TVM_REGISTER_API("{name}")
         .set_body([](TVMArgs args, TVMRetValue* ret) {{
-            *ret = {fname}({args});
+            *ret = {vf.expr}({args});
         }});
         """
         return source
