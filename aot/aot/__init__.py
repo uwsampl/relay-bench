@@ -2,6 +2,7 @@ import ctypes
 import numpy as np
 import os
 import subprocess
+import tempfile
 import tvm
 from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import Expr, Let
@@ -16,7 +17,14 @@ def compile_cpp(source, lib_name, lib_path=None):
     if lib_path is None:
         lib_path = os.curdir
 
-    source_path = os.path.join(lib_path, 'source.cc')
+    debug_source_path = os.path.join(lib_path, 'source.cc')
+    # Write out the file for debugging.
+    with open(debug_source_path, 'w') as source_file:
+        source_file.write(source)
+
+    # with tempfile.TmporaryDirectory() as tmpdir:
+    tmpdir = tempfile.mkdtemp()
+    source_path = os.path.join(tmpdir, 'source.cc')
     with open(source_path, 'w') as source_file:
         source_file.write(source)
 

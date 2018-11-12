@@ -89,11 +89,11 @@ def test_abs():
     np.testing.assert_allclose(output.asnumpy(), np.array(34.0, dtype='float32'))
 
 if __name__ == "__main__":
-    #test_identity()
-    #test_add()
-    #test_mult_op()
-    #test_double()
-    #test_42()
-    #test_add_42()
-    #test_int_mult_3()
+    test_identity()
+    test_add()
+    test_mult_op()
+    test_double()
+    test_42()
+    test_add_42()
+    test_int_mult_3()
     test_abs()
