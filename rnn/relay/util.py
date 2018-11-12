@@ -50,12 +50,11 @@ def sample(rnn, category, start_letter='A'):
     output_name = start_letter
     for i in range(data.MAX_LENGTH):
         output, hidden = rnn(category_tensor, input, hidden)
-        topv, topi = output.value.topk(1)
-        topi = topi[0][0]
+        topi = np.argmax(output.data.asnumpy())
         if topi == data.N_LETTERS - 1:
             break
         else:
-            letter = data.topi_to_letter(input.data.asnumpy())
+            letter = data.topi_to_letter(topi)
             output_name += letter
             input = TensorValue(inputTensor(letter))
     return output_name
