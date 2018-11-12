@@ -8,6 +8,15 @@ import aot
 #print(aot.do_type(mod, p.nat))
 #raise
 
+def test_identity():
+    mod = Module()
+    x = var('x', shape=())
+    func = Function([x], x)
+    cfunc = aot.compile(mod, func)
+    a = tvm.nd.array(np.array(1.0, dtype='float32'))
+    output = cfunc(a)
+    np.testing.assert_allclose(output.asnumpy(), a.asnumpy())
+
 def test_add():
     mod = Module()
     x = var('x', shape=())
@@ -46,6 +55,7 @@ def test_double():
     np.testing.assert_allclose(output.asnumpy(), np.array(6.0, dtype='float32'))
 
 if __name__ == "__main__":
+    test_identity()
     #test_add()
     #test_mult_op()
-    test_double()
+    #test_double()
