@@ -6,7 +6,7 @@ import unicodedata
 import string
 import time
 import math
-from rnn import language_data as data
+from rnn.language_data import N_CATEGORIES
 from rnn.relay.util import categoryTensor, inputTensor
 import numpy as np
 import tvm
@@ -59,15 +59,15 @@ class Network:
 
 class RNNCellOnly(Network):
     def compute(self, input_size, hidden_size, output_size):
-        self.category_var = category = relay.var('category', shape=(1, data.N_CATEGORIES))
+        self.category_var = category = relay.var('category', shape=(1, N_CATEGORIES))
         self.input_var = inp = relay.var('input', shape=(1, input_size))
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
         combined = op.concatenate([category, inp, hidden], axis=1)
-        hidden = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
-        output = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
+        hidden = linear(N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
+        output = linear(N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
         output_combined = op.concatenate([hidden, output], axis=1)
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
-        # output = op.nn.dropout(output, 0.1) #attributes has not been registered
+        output = op.nn.dropout(output, 0.1)
         output = op.nn.log_softmax(output, axis=1)
         return [category, inp, hidden], relay.Tuple([output, hidden])
 

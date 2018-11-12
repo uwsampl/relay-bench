@@ -43,7 +43,7 @@ def bench_forward(input_size, hidden_size, output_size, iterations=1000):
     print("average time of PyTorch: " + avg_time_since(pytorch_start, iterations))
 
 def main():
-    # cProfile.run('bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 1000)')
+    # cProfile.run('bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 50)')
     bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 100)
 
 if __name__ == "__main__":
