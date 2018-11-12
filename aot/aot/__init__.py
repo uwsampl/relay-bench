@@ -135,6 +135,9 @@ class AoTCompiler(ExprFunctor):
         else:
             return CPPFunction(func.params, self.visit(func.body), func.checked_type.ret_type)
 
+    def visit_const(self, func):
+        raise
+
 _LIB_COUNTER = 1
 _LIB = []
 
