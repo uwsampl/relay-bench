@@ -8,7 +8,7 @@ from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import Expr, Let
 from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
-from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf
+from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
@@ -151,6 +151,9 @@ class AoTCompiler(ExprFunctor):
                      self.visit(i.true_branch),
                      self.visit(i.false_branch),
                      i.checked_type)
+
+    def visit_tuple(self, t):
+        return CPPTuple([self.visit(f) for f in t.fields], t.checked_type)
 
 _LIB_COUNTER = 1
 _LIB = []

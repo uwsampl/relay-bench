@@ -15,6 +15,9 @@ class ExprWithStmt:
     def __str__(self):
         return f"ExprWithStmt({self.expr}, {self.stmt})"
 
+    def __repr__(self):
+        return self.__str__()
+
 class ToSource:
     def __init__(self, gv_map):
         self.gv_map = gv_map
@@ -57,10 +60,17 @@ class ToSource:
             res = self.visit_constant(node)
         elif isinstance(node, little_cpp.CPPIf):
             res = self.visit_if(node)
+        elif isinstance(node, little_cpp.CPPTuple):
+            res = self.visit_tuple(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
         return res
+
+    def visit_tuple(self, node):
+        res = [self.visit(x) for x in node.fields]
+        print(res)
+        raise
 
     def visit_if(self, node):
         vc = self.visit(node.cond)

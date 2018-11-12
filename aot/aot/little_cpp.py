@@ -37,3 +37,8 @@ class CPPIf(LittleCppNode):
     true_branch: Any
     false_branch: Any
     relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPTuple(LittleCppNode):
+    fields: List[Any]
+    relay_type: Any
