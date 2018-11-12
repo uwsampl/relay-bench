@@ -60,4 +60,4 @@ def sample(rnn, category, start_letter='A'):
 # Get multiple samples from one category and multiple starting letters
 def samples(rnn, category, start_letters='ABC'):
      for start_letter in start_letters:
-         print(sample(rnn, category, start_letter))
+            sample(rnn, category, start_letter)
