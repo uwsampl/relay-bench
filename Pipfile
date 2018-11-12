@@ -10,6 +10,7 @@ matplotlib = "*"
 decorator = "*"
 attr = "*"
 attrs = "*"
+cairosvg = "*"
 
 [dev-packages]
 "autopep8" = "*"
