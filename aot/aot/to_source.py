@@ -12,6 +12,9 @@ class ExprWithStmt:
         self.expr = expr
         self.stmt = stmt
 
+    def __str__(self):
+        return f"ExprWithStmt({self.expr}, {self.stmt})"
+
 class ToSource:
     def __init__(self, gv_map):
         self.gv_map = gv_map
@@ -52,10 +55,30 @@ class ToSource:
             res = self.visit_global_var(node)
         elif isinstance(node, relay.Constant):
             res = self.visit_constant(node)
+        elif isinstance(node, little_cpp.CPPIf):
+            res = self.visit_if(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
         return res
+
+    def visit_if(self, node):
+        vc = self.visit(node.cond)
+        vt = self.visit(node.true_branch)
+        vf = self.visit(node.false_branch)
+        ret_name = self.fresh_local_name()
+        stmt = f"{self.visit_type(node.relay_type)} {ret_name};"
+        stmt += f"""
+        {vc.stmt}
+        if (NDToBool({vc.expr})) {{
+          {vt.stmt}
+          {ret_name} = {vt.expr};
+        }} else {{
+          {vf.stmt}
+          {ret_name} = {vf.expr};
+        }}
+        """
+        return ExprWithStmt(ret_name, stmt)
 
     def visit_type(self, node):
         if isinstance(node, relay.TensorType):
@@ -105,6 +128,16 @@ class ToSource:
         source += vb.stmt
         return ExprWithStmt(vb.expr, source)
 
+    def empty_nd(self, tt):
+        assert isinstance(tt, relay.ty.TensorType)
+        if tt.dtype == 'int32':
+            return 'dtype_i32'
+        elif tt.dtype == 'float32':
+            return 'dtype_f32'
+        elif tt.dtype == 'bool':
+            return 'dtype_u1'
+        raise Exception("unknown tensor dtype: " + str(tt))
+
     def visit_packed_call(self, call):
         decl_str = ""
         args_str = ""
@@ -121,7 +154,7 @@ class ToSource:
             {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
-            NDArray {out_name} = NDArray::Empty({{}}, dtype_f32, context);
+            NDArray {out_name} = NDArray::Empty({{}}, {self.empty_nd(call.output_type)}, context);
             (*pf)({args_str}, {out_name});
         """)
 
@@ -218,12 +251,24 @@ def mk_file(body):
     return f"""
     #include <tvm/tvm.h>
     #include <tvm/api_registry.h>
+    #include <iostream>
 
     using namespace tvm;
     using namespace runtime;
 
-    static DLDataType dtype_f32 = DLDataType {{ .code = 2, .bits = 32, .lanes = 1 }};
+    static DLDataType dtype_f32 = DLDataType {{ .code = DLDataTypeCode::kDLFloat, .bits = 32, .lanes = 1 }};
+    static DLDataType dtype_u32 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 32, .lanes = 1 }};
+    static DLDataType dtype_u1 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 1, .lanes = 1 }};
+    static DLDataType dtype_i32 = DLDataType {{ .code = DLDataTypeCode::kDLInt, .bits = 32, .lanes = 1 }};
     static DLContext context = DLContext {{ .device_type = DLDeviceType::kDLCPU, . device_id = 0 }};
+    bool NDToBool (const NDArray& nd) {{
+      DLContext cpu_ctx;
+      cpu_ctx.device_type = kDLCPU;
+      cpu_ctx.device_id = 0;
+      NDArray cpu_array = nd.CopyTo(cpu_ctx);
+      CHECK_EQ(TVMType2Type(cpu_array->dtype), Bool());
+      return reinterpret_cast<uint8_t*>(cpu_array->data)[0];
+    }}
     {body}
     """
 
