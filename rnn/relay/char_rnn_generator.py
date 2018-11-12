@@ -43,12 +43,12 @@ class RNNCellOnly:
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
 
         combined = op.concatenate([category, inp, hidden], axis=1)
-        hidden = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
-        output = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
-        output_combined = op.concatenate([hidden, output], axis=1)
+        hidden = linear(100 + data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
+        output = linear(data.N_CATEGORIES + input_size + hidden_size, 100 + output_size, combined, name='i2o')
+        output_combined = op.concatenate([hidden, output], axis=0)
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
-        output = op.nn.log_softmax(output, axis=1)
+        output = op.nn.log_softmax(output, axis=0)
         body = relay.Tuple([output, hidden])
         free_vars = relay.ir_pass.free_vars(body)
         for param in free_vars[3:]:

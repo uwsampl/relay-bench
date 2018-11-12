@@ -44,7 +44,7 @@ def bench_forward(input_size, hidden_size, output_size, iterations=1000):
 
 def main():
     # cProfile.run('bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 1000)')
-    bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 100)
+    bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 1)
 
 if __name__ == "__main__":
     main()
