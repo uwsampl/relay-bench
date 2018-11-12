@@ -41,13 +41,15 @@ def random_training_example():
     target_line_tensor = targetTensor(line)
     return category_tensor, input_line_tensor, target_line_tensor
 
+from tvm.relay.backend.interpreter import TensorValue
+
 def sample(rnn, category, start_letter='A'):
-    category_tensor = categoryTensor(category)
-    input = data.letter_to_topi(start_letter)
+    category_tensor = TensorValue(categoryTensor(category))
+    input = TensorValue(inputTensor(start_letter))
     hidden = rnn.hidden
     output_name = start_letter
     for i in range(data.MAX_LENGTH):
-        output, hidden, input, b = rnn(category_tensor, input, hidden)
+        output, hidden, input = rnn(category_tensor, input, hidden)
         if b.asnumpy():
             break
         else:
