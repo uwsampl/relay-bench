@@ -1,124 +1,152 @@
 from . import little_cpp
 from tvm import relay
+from tvm.relay import _module
+from tvm.relay.prelude import Prelude
 
-#  PackedFunc *pf = reinterpret_cast<PackedFunc*>({jit_func.handle.value});
-#         CHECK(pf);
-#         (*pf)({args});
+class ExprWithStmt:
+    def __init__(self, expr, stmt=""):
+        assert isinstance(expr, str)
+        assert isinstance(stmt, str)
+        assert "ExprWithStmt" not in expr
+        assert "ExprWithStmt" not in stmt
+        self.expr = expr
+        self.stmt = stmt
 
 class ToSource:
-    def __init__(self):
+    def __init__(self, gv_map):
+        self.gv_map = gv_map
         self.name_counter = 0
         self.source_content = ""
         self.name_map = {}
-        self.cont = []
         self.local = True
+        self.declare = ""
+        self.declare_map = {}
 
     def fresh_global_name(self):
         name = f"global{self.name_counter}"
         self.name_counter += 1
         return name
 
-    def fresh_local_name(self, var):
-        name = f"local_{var.name_hint}_{self.name_counter}"
+    def fresh_local_name(self, var=None):
+        if var is not None:
+            name = f"local_{var.name_hint}_{self.name_counter}"
+        else:
+            name = f"local_{self.name_counter}"
         self.name_counter += 1
         return name
 
-    def do_cont(self, *args):
-        cont = self.cont.pop()
-        return cont(*args)
-
+    # return (str, str) with lhs being stmts, and rhs being expression
     def visit(self, node, local=True):
-        old_local = self.local
-        self.local = local
-
         if isinstance(node, little_cpp.PackedCall):
             res = self.visit_packed_call(node)
         elif isinstance(node, little_cpp.CPPFunction):
-            res = self.visit_cpp_function(node)
+            res = self.visit_cpp_function(node, local)
         elif isinstance(node, little_cpp.Decl):
             res = self.visit_decl(node)
         elif isinstance(node, little_cpp.Invoke):
             res = self.visit_invoke(node)
         elif isinstance(node, relay.Var):
-            res = self.name_map[node]
+            res = ExprWithStmt(self.name_map[node])
+        elif isinstance(node, relay.GlobalVar):
+            res = self.visit_global_var(node)
         else:
-            raise Exception("...")
-
-        self.local = old_local
-
+            raise Exception(str(node))
+        assert isinstance(res, ExprWithStmt)
         return res
 
+    def visit_type(self, node):
+        if isinstance(node, relay.TensorType):
+            res = "NDArray"
+        else:
+            raise Exception(str(node))
+        return res
+
+    def visit_global_var(self, gv):
+        if gv not in self.declare_map:
+            vgv = self.visit(self.gv_map[gv], local=False)
+            assert vgv.stmt == ""
+            self.declare_map[gv] = vgv.expr
+        return ExprWithStmt(self.declare_map[gv])
+
     def visit_invoke(self, invoke):
+        decl_str = ""
         args_str = ""
         for i, arg in enumerate(invoke.args):
             assert isinstance(arg, relay.Var)
-            args_str += self.visit(arg)
+            va = self.visit(arg)
+            decl_str += va.stmt
+            args_str += va.expr
             if i != len(invoke.args) - 1:
                 args_str += ", "
 
         func = self.visit(invoke.call)
-        return f"{func}({args_str})"
+        return ExprWithStmt(f"{func.expr}({args_str})", decl_str + func.stmt)
 
     def visit_decl(self, decl):
         source = ""
         for var, value in decl.bindings:
             local_name = self.fresh_local_name(var)
             self.name_map[var] = local_name
-            value_str = self.visit(value)
-            source += f"auto {local_name} = {value_str};\n"
-        source += self.do_cont(self.visit(decl.body))
-        return source
+            vv = self.visit(value)
+            source += vv.stmt
+            source += f"auto {local_name} = {vv.expr};\n"
+        vb = self.visit(decl.body)
+        source += vb.stmt
+        return ExprWithStmt(vb.expr, source)
 
     def visit_packed_call(self, call):
-        args = ""
+        decl_str = ""
+        args_str = ""
         end = len(call.args) - 1
         for i, arg in enumerate(call.args):
-            varg = self.visit(arg)
-            args += self.name_map[arg]
+            va = self.visit(arg)
+            decl_str += va.stmt
+            args_str += va.expr
             if i != end:
-                args += ", "
+                args_str += ", "
 
-        return f"""
+        out_name = self.fresh_local_name()
+        return ExprWithStmt(out_name, f"""
+            {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
-            NDArray out = NDArray::Empty({{}}, dtype_f32, context);
-            (*pf)({args}, out);
-            {self.do_cont("out")};
-        """
+            NDArray {out_name} = NDArray::Empty({{}}, dtype_f32, context);
+            (*pf)({args_str}, {out_name});
+        """)
 
-    def visit_cpp_function(self, func):
-        name = func.name = self.fresh_global_name()
+    def visit_cpp_function(self, func, local):
         param_str = ""
 
         end = len(func.params) - 1
         for i, param in enumerate(func.params):
             pname = f"param{i}"
             self.name_map[param] = pname
-            param_str += f"const NDArray& {pname}"
+            param_str += f"const {self.visit_type(param.type_annotation)}& {pname}"
             if i != end:
                 param_str += ", "
 
-        self.cont.append(lambda end: f"return {end};")
+        vb = self.visit(func.body)
+        body = vb.stmt + f"""return {vb.expr};"""
 
-        body = self.visit(func.body)
-
-        if self.local:
-            func = f"""[=]({param_str}) {{
+        if local:
+            return ExprWithStmt(f"""[=]({param_str}) {{
                 {body}
             }}
-            """
+            """)
         else:
-            func = f"""
-            NDArray {name}({param_str}) {{
+            name = self.fresh_global_name()
+            self.declare += f"""
+            {self.visit_type(func.ret_type)} {name}({param_str}) {{
                 {body}
             }}
             """
-        return func
+            return ExprWithStmt(name)
 
     def mk_register_api(self, name: str, func: little_cpp.CPPFunction) -> str:
         assert isinstance(func, little_cpp.CPPFunction)
-        source = ""
-        source += self.visit(func, False)
+        vf = self.visit(func, False)
+        assert vf.stmt == ""
+        source = self.declare
 
         args = ""
         end = len(func.params) - 1
@@ -130,10 +158,45 @@ class ToSource:
         source += f"""
         TVM_REGISTER_API("{name}")
         .set_body([](TVMArgs args, TVMRetValue* ret) {{
-            *ret = {func.name}({args});
+            *ret = {vf.expr}({args});
         }});
         """
         return source
+
+def inter(strs, sep=", "):
+    ret = ""
+    for i in range(len(strs)):
+        ret += strs[i]
+        if i != len(strs) - 1:
+            ret += sep
+    return ret
+
+def do_type(mod, gtv):
+    assert isinstance(mod, relay.Module)
+    assert isinstance(gtv, relay.GlobalTypeVar)
+    dt = mod[gtv]
+    assert isinstance(dt, relay.TypeData)
+    assert len(dt.tv) == 0
+    con = dt.constructors
+    con_name = [c.name_hint for c in con]
+    print(con[1].inp)
+    con_declare = [f"""
+    struct {x.name_hint} {{
+    }};
+    """ for x in con]
+    name = f'relay_{dt.header.var.name}'
+    node_name = f'{name}_node'
+    con_declare_str = inter(con_declare, "")
+    return f"""
+    struct {node_name};
+    using {name} = std::shared_ptr<{node_name}>;
+    struct {node_name} {{
+      enum class tag {{
+        {inter(con_name)}
+      }};
+      {con_declare_str}
+    }};
+    """
 
 def mk_file(body):
     return f"""
@@ -148,7 +211,11 @@ def mk_file(body):
     {body}
     """
 
-def to_source(name, program) -> str:
+def to_source(mod, gv_map, name, program) -> str:
+    #p = Prelude(mod)
     assert isinstance(program, little_cpp.CPPFunction)
-    convert = ToSource()
-    return mk_file(convert.mk_register_api(name, program))
+    #decl = do_type(mod, p.nat)
+    convert = ToSource(gv_map)
+    ret = mk_file(convert.mk_register_api(name, program))
+    #print(ret)
+    return ret
