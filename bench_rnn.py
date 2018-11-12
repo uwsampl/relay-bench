@@ -24,13 +24,16 @@ def bench_forward(input_size, hidden_size, output_size, iterations=1000):
         relay.samples(relay_rnn, 'Chinese', 'CHI')
     print("average iteration time of relay: " + avg_time_since(relay_start, iterations))
 
-        # relay_loop_start = time.time()
-        # relay_rnn = relay.char_rnn_generator.RNN(data.N_LETTERS, hidden_size, data.N_LETTERS)
+    relay_loop_start = time.time()
+    relay_rnn = relay.char_rnn_generator.RNNLoop(data.N_LETTERS, hidden_size, data.N_LETTERS)
+    for i in range(iterations):
+        # Relay using RNN list
         # relay_rnn.samples('Russian', 'RUS')
         # relay_rnn.samples('German', 'GER')
         # relay_rnn.samples('Spanish', 'SPA')
         # relay_rnn.samples('Chinese', 'CHI')
         # print("time of relay: " + time_since(relay_loop_start))
+        pass
 
     pytorch_start = time.time()
     for i in range(iterations):
@@ -44,7 +47,7 @@ def bench_forward(input_size, hidden_size, output_size, iterations=1000):
 
 def main():
     # cProfile.run('bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 1000)')
-    bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 100)
+    bench_forward(data.N_LETTERS, N_HIDDEN, data.N_LETTERS, 10)
 
 if __name__ == "__main__":
     main()
