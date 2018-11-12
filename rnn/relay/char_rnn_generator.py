@@ -16,7 +16,7 @@ from tvm.relay import create_executor, Module
 from tvm.relay.prelude import Prelude
 
 def linear(input_size, output_size, x):
-    weight = relay.var('linear_weight', shape=(input_size, output_size))
+    weight = relay.var('linear_weight', shape=(output_size, input_size))
     bias = relay.var('linear_bias', shape=(output_size,))
     return op.add(op.nn.dense(x, weight), bias), weight, bias
 
