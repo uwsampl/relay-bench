@@ -49,7 +49,7 @@ class RNNCellOnly:
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
-        body = relay.Tuple([output, hidden, op.argmax(output)])
+        body = relay.Tuple([output, hidden])
         free_vars = relay.ir_pass.free_vars(body)
         for param in free_vars[3:]:
             self.parameters[param] = initialize(param)
