@@ -4,10 +4,10 @@ import itertools
 from visualize import visualize
 
 MODELS = [
-    "mlp",
-    "dqn",
+    # "mlp",
+    # "dqn",
     # "dcgan",
-    # "resnet-18",
+    "resnet-18",
     # "densenet",
     ]
 
@@ -24,7 +24,7 @@ TARGETS = [
     # "fpga",
 ]
 
-REPEAT = 10
+REPEAT = 1
 
 OUT_FILE = "graph-data.csv"
 
