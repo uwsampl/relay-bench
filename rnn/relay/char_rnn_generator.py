@@ -30,18 +30,38 @@ def initialize(param):
     return TensorValue(
         np.random.normal(0, 1, shape).astype('float32'))
 
-class RNNCellOnly:
-    def __init__(self, input_size, hidden_size, output_size):
-        mod = Module()
-        p = Prelude(mod)
-        ctx = tvm.context("llvm", 0)
-        intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
+class Network:
+    def __init__(self, *args):
+        self.mod = Module()
+        self.prelude = Prelude(self.mod)
+        self.context = tvm.cpu(0)
+        self.target = tvm.target.create('llvm')
+        self.executor = create_executor(mod=self.mod, ctx=self.context)
         self.parameters = {}
 
+        # Set up forward pass.
+        inputs, body = self.compute(*args)
+        self.inputs = inputs
+
+        free_vars = relay.ir_pass.free_vars(body)
+        for param in free_vars[len(inputs):]:
+            self.parameters[param] = initialize(param)
+        self.hidden = initialize(free_vars[2])
+        self.forward_compute = relay.Function(free_vars, body)
+        self.forward = self.executor.static_evaluate(self.forward_compute)
+        self.args = [None] * len(inputs) + list(self.parameters.values())
+
+    def __call__(self, *inputs):
+        for i, inp in enumerate(inputs):
+            self.args[i] = inp
+
+        return self.forward(*self.args)
+
+class RNNCellOnly(Network):
+    def compute(self, input_size, hidden_size, output_size):
         self.category_var = category = relay.var('category', shape=(1, data.N_CATEGORIES))
         self.input_var = inp = relay.var('input', shape=(1, input_size))
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
-
         combined = op.concatenate([category, inp, hidden], axis=1)
         hidden = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
         output = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
@@ -49,20 +69,10 @@ class RNNCellOnly:
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
-        body = relay.Tuple([output, hidden])
-        free_vars = relay.ir_pass.free_vars(body)
-        for param in free_vars[3:]:
-            self.parameters[param] = initialize(param)
-        self.hidden = initialize(free_vars[2])
-        assert len(relay.ir_pass.free_vars(body)) == 9
-        self.fwd = relay.Function(free_vars, body)
-        self.forward = intrp.static_evaluate(self.fwd)
+        return [category, inp, hidden], relay.Tuple([output, hidden])
 
     def warm(self):
         self.forward(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var), *self.parameters.values())
-
-    def __call__(self, category, input, hidden):
-        return self.forward(category, input, hidden, *self.parameters.values())
 
 # class RNNLoop:
 #     def __init__(self, input_size, hidden_size, output_size):
