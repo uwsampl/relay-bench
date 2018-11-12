@@ -4,9 +4,9 @@ import itertools
 
 MODELS = [
     # "mlp",
-    "dqn",
+    # "dqn",
     # "dcgan",
-    # "resnet-18",
+    "resnet-18",
     # "densenet",
     ]
 
