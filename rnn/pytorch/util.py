@@ -37,25 +37,25 @@ def targetTensor(line):
 
 # Sample from a category and starting letter
 def sample(rnn, category, start_letter='A'):
-     with torch.no_grad():  # no need to track history in sampling
-         category_tensor = categoryTensor(category)
-         input = inputTensor(start_letter)
-         hidden = rnn.initHidden()
+    with torch.no_grad():  # no need to track history in sampling
+        category_tensor = categoryTensor(category)
+        input = inputTensor(start_letter)
+        hidden = rnn.initHidden()
 
-         output_name = start_letter
+        output_name = start_letter
 
-         for i in range(data.MAX_LENGTH):
-             output, hidden = rnn(category_tensor, input[0], hidden)
-             topv, topi = output.topk(1)
-             topi = topi[0][0]
-             if topi == data.N_LETTERS - 1:
-                 break
-             else:
-                 letter = data.ALL_LETTERS[topi]
-                 output_name += letter
-             input = inputTensor(letter)
+        for i in range(data.MAX_LENGTH):
+            output, hidden = rnn(category_tensor, input[0], hidden)
+            topv, topi = output.topk(1)
+            topi = topi[0][0]
+            if topi == data.N_LETTERS - 1:
+                break
+            else:
+                letter = data.topi_to_letter(input.data.asnumpy())
+                output_name += letter
+            input = inputTensor(letter)
 
-         return output_name
+        return output_name
 
 # Get multiple samples from one category and multiple starting letters
 def samples(rnn, category, start_letters='ABC'):
