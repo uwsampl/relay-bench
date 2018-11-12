@@ -4,7 +4,8 @@ import os
 import subprocess
 import tvm
 from tvm import relay, get_global_func, target, register_func
-from tvm.relay.expr import ExprFunctor, Expr, Let
+from tvm.relay.expr import Expr, Let
+from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
 from .little_cpp import PackedCall, CPPFunction, Invoke, Decl
 from . import to_source
@@ -134,6 +135,9 @@ class AoTCompiler(ExprFunctor):
         else:
             return CPPFunction(func.params, self.visit(func.body), func.checked_type.ret_type)
 
+    def visit_constant(self, const):
+        return const
+
 _LIB_COUNTER = 1
 _LIB = []
 
@@ -143,10 +147,12 @@ def compile(mod, func, name='default'):
     compiler = AoTCompiler(mod)
     func = compiler.optimize(func)
     func = compiler.visit(func)
-    source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
+    params, source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
     compile_cpp(source_code, lib_name)
     _LIB_COUNTER += 1
     _LIB.append(load_lib(lib_name))
     fn = get_global_func(packed_name)
-    return fn
+    def wrap(*args):
+        return fn(*params, *args)
+    return wrap
