@@ -3,7 +3,7 @@ import subprocess
 import shlex
 import argparse
 
-def main(outdir):
+def visualize(outdir):
     # vega-lite -> svg
     subprocess.run(shlex.split("vl2svg tvm_benchmark/graph.json graph.svg"))
 
@@ -16,4 +16,4 @@ if __name__ == "__main__":
                         help="The output directory of the pdf.")
     args = parser.parse_args()
 
-    main(args.o)
+    visualize(args.o)

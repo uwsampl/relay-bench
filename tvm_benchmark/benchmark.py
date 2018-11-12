@@ -143,6 +143,7 @@ if __name__ == "__main__":
         ftimer = module.module.time_evaluator("run", ctx, number=1, repeat=args.repeat)
         prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
         with open(args.outfile, "a") as outf:
-            print(f"{args.ir}, {args.target}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
+            # print(f"{args.ir}, {args.target}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
+            print(f"{args.ir},{args.target},{network},{np.mean(prof_res):.2f}", file=outf)
     else:
         assert False

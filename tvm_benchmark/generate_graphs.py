@@ -1,12 +1,13 @@
 import subprocess
 import shlex
 import itertools
+from visualize import visualize
 
 MODELS = [
-    # "mlp",
-    # "dqn",
+    "mlp",
+    "dqn",
     # "dcgan",
-    "resnet-18",
+    # "resnet-18",
     # "densenet",
     ]
 
@@ -29,7 +30,8 @@ OUT_FILE = "graph-data.csv"
 
 def main():
     with open(OUT_FILE, "w") as outf:
-        print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
+        # print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
+        print("IR,Target,Model,Time", file=outf)
 
     server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:9190 --key foo"))
 
@@ -47,6 +49,8 @@ def main():
 
     tracker.kill()
     server.kill()
+
+    visualize("graph.pdf")
 
 if __name__ == "__main__":
     main()
