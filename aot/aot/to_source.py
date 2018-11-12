@@ -1,5 +1,7 @@
 from . import little_cpp
 from tvm import relay
+from tvm.relay import _module
+from tvm.relay.prelude import Prelude
 
 class ExprWithStmt:
     def __init__(self, expr, stmt=""):
@@ -134,7 +136,7 @@ class ToSource:
         else:
             name = self.fresh_global_name()
             self.declare += f"""
-            NDArray {name}({param_str}) {{
+            {self.visit_type(func.ret_type)} {name}({param_str}) {{
                 {body}
             }}
             """
@@ -161,6 +163,41 @@ class ToSource:
         """
         return source
 
+def inter(strs, sep=", "):
+    ret = ""
+    for i in range(len(strs)):
+        ret += strs[i]
+        if i != len(strs) - 1:
+            ret += sep
+    return ret
+
+def do_type(mod, gtv):
+    assert isinstance(mod, relay.Module)
+    assert isinstance(gtv, relay.GlobalTypeVar)
+    dt = mod[gtv]
+    assert isinstance(dt, relay.TypeData)
+    assert len(dt.tv) == 0
+    con = dt.constructors
+    con_name = [c.name_hint for c in con]
+    print(con[1].inp)
+    con_declare = [f"""
+    struct {x.name_hint} {{
+    }};
+    """ for x in con]
+    name = f'relay_{dt.header.var.name}'
+    node_name = f'{name}_node'
+    con_declare_str = inter(con_declare, "")
+    return f"""
+    struct {node_name};
+    using {name} = std::shared_ptr<{node_name}>;
+    struct {node_name} {{
+      enum class tag {{
+        {inter(con_name)}
+      }};
+      {con_declare_str}
+    }};
+    """
+
 def mk_file(body):
     return f"""
     #include <tvm/tvm.h>
@@ -174,7 +211,11 @@ def mk_file(body):
     {body}
     """
 
-def to_source(gv_map, name, program) -> str:
+def to_source(mod, gv_map, name, program) -> str:
+    #p = Prelude(mod)
     assert isinstance(program, little_cpp.CPPFunction)
+    #decl = do_type(mod, p.nat)
     convert = ToSource(gv_map)
-    return mk_file(convert.mk_register_api(name, program))
+    ret = mk_file(convert.mk_register_api(name, program))
+    #print(ret)
+    return ret

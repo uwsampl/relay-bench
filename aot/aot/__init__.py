@@ -6,7 +6,7 @@ import tvm
 from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import ExprFunctor, Expr, Let
 from tvm.relay.backend import compile_engine
-from .little_cpp import PackedCall, CPPFunction, Invoke
+from .little_cpp import PackedCall, CPPFunction, Invoke, Decl
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
@@ -117,7 +117,7 @@ class AoTCompiler(ExprFunctor):
         bindings = self.bindings.pop()
         body = self.visit(let)
 
-        return little_cpp.Decl(bindings, body)
+        return Decl(bindings, body)
 
     def visit_var(self, var):
         return var
@@ -130,9 +130,9 @@ class AoTCompiler(ExprFunctor):
     def visit_function(self, func):
         if is_primitive(func):
             body = self.mk_primitive_op(func, func.params, func.ret_type)
-            return CPPFunction(func.params, body, func.checked_type)
+            return CPPFunction(func.params, body, func.checked_type.ret_type)
         else:
-            return CPPFunction(func.params, self.visit(func.body), func.checked_type)
+            return CPPFunction(func.params, self.visit(func.body), func.checked_type.ret_type)
 
 _LIB_COUNTER = 1
 _LIB = []
@@ -143,45 +143,10 @@ def compile(mod, func, name='default'):
     compiler = AoTCompiler(mod)
     func = compiler.optimize(func)
     func = compiler.visit(func)
-    source_code = to_source.to_source(compiler.gv_map, packed_name, func)
+    source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
     compile_cpp(source_code, lib_name)
     _LIB_COUNTER += 1
     _LIB.append(load_lib(lib_name))
     fn = get_global_func(packed_name)
     return fn
-
-def inter(strs, sep=", "):
-    ret = ""
-    for i in range(len(strs)):
-        ret += strs[i]
-        if i != len(strs) - 1:
-            ret += sep
-    return ret
-
-def do_type(mod, gtv):
-    assert isinstance(mod, relay.Module)
-    assert isinstance(gtv, relay.GlobalTypeVar)
-    dt = mod[gtv]
-    assert isinstance(dt, relay.TypeData)
-    assert len(dt.tv) == 0
-    con = dt.constructors
-    con_name = [c.name_hint for c in con]
-    print(con[1].inp)
-    con_declare = [f"""
-    struct {x.name_hint} {{
-    }};
-    """ for x in con]
-    name = f'relay_{dt.header.var.name}'
-    node_name = f'{name}_node'
-    con_declare_str = inter(con_declare, "")
-    return f"""
-    struct {node_name};
-    using {name} = std::shared_ptr<{node_name}>;
-    struct {node_name} {{
-      enum class tag {{
-        {inter(con_name)}
-      }};
-      {con_declare_str}
-    }};
-    """
