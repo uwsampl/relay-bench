@@ -58,9 +58,19 @@ def test_42():
     output = cfunc()
     np.testing.assert_allclose(output.asnumpy(), np.array(42.0, dtype='float32'))
 
+def test_add_42():
+    mod = Module()
+    x = var('x', shape=())
+    func = Function([x], x + relay.const(42.0))
+    cfunc = aot.compile(mod, func)
+    a = tvm.nd.array(np.array(42.0, dtype='float32'))
+    output = cfunc(a)
+    np.testing.assert_allclose(output.asnumpy(), np.array(84.0, dtype='float32'))
+
 if __name__ == "__main__":
     #test_identity()
     #test_add()
     #test_mult_op()
     #test_double()
-    test_42()
+    #test_42()
+    test_add_42()
