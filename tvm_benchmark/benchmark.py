@@ -63,12 +63,12 @@ def build_module(network, target, target_host, ir="relay"):
     ctx = remote.context(str(target), 0)
     remote.upload(tmp.relpath(filename))
 
-    # if isinstance(graph, nnvm.graph.Graph):
-    #     with open("nnvm_graph.json", "w") as outf:
-    #         print(graph.json(), file=outf)
-    # else:
-    #     with open("relay_graph.json", "w") as outf:
-    #         print(graph, file=outf)
+    if isinstance(graph, nnvm.graph.Graph):
+        with open("nnvm_graph.json", "w") as outf:
+            print(graph.json(), file=outf)
+    else:
+        with open("relay_graph.json", "w") as outf:
+            print(nnvm.graph.load_json(graph).json(), file=outf)
 
     rlib = remote.load_module(filename)
     module = runtime.create(graph, rlib, ctx)

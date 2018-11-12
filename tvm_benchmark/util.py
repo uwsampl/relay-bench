@@ -77,8 +77,9 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
         input_shape = (batch_size,) + image_shape
         net, params = testing.dqn.get_workload(batch_size=batch_size, image_shape=image_shape)
     elif name == 'dcgan':
-        input_shape = (3, 64, 64)
-        net, params = testing.dcgan.get_workload(batch_size, oshape=input_shape)
+        random_len = 100
+        input_shape = (batch_size, random_len)
+        net, params = testing.dcgan.get_workload(batch_size, random_len=random_len)
     elif name == 'densenet':
         input_shape = (3, 64, 64)
         net, params = testing.densenet.get_workload(batch_size=batch_size)

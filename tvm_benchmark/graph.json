@@ -1,0 +1,21 @@
+{
+  "data": {
+    "url": "tvm_benchmark/example.csv",
+    "format": {
+      "type": "csv"
+    }
+  },
+  "mark": "bar",
+  "encoding": {
+    "column": {
+      "field": "Target", "type": "nominal"
+    },
+    "row": {
+      "field": "Model", "type": "nominal"
+    },
+    "x": {"field": "IR", "type": "nominal"},
+    "y": {
+      "field": "Time", "type": "quantitative"
+    }
+  }
+}

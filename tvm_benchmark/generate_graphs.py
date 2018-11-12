@@ -12,7 +12,7 @@ MODELS = [
 
 IRS = [
     "relay",
-    # "nnvm",
+    "nnvm",
     # "tf",
     ]
 
@@ -23,7 +23,7 @@ TARGETS = [
     # "fpga",
 ]
 
-REPEAT = 100
+REPEAT = 10
 
 OUT_FILE = "graph-data.csv"
 
