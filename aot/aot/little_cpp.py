@@ -30,3 +30,10 @@ class CPPFunction(LittleCppNode):
     body: Any
     ret_type: Any
     name: Optional[str] = None
+
+@attr.s(auto_attribs=True)
+class CPPIf(LittleCppNode):
+    cond: Any
+    true_branch: Any
+    false_branch: Any
+    relay_type: Any

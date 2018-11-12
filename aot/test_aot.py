@@ -67,10 +67,33 @@ def test_add_42():
     output = cfunc(a)
     np.testing.assert_allclose(output.asnumpy(), np.array(84.0, dtype='float32'))
 
+def test_int_mult_3():
+    mod = Module()
+    x = var('x', dtype='int32', shape=())
+    func = Function([x], x * relay.const(3))
+    cfunc = aot.compile(mod, func)
+    a = tvm.nd.array(np.array(4, dtype='int32'))
+    output = cfunc(a)
+    np.testing.assert_allclose(output.asnumpy(), np.array(12.0, dtype='int32'))
+
+def test_abs():
+    mod = Module()
+    x = var('x', shape=())
+    func = Function([x], relay.If(op.less(x, relay.const(0.0)), relay.const(-1.0) * x, x))
+    cfunc = aot.compile(mod, func)
+    a = tvm.nd.array(np.array(12.0, dtype='float32'))
+    output = cfunc(a)
+    np.testing.assert_allclose(output.asnumpy(), np.array(12.0, dtype='float32'))
+    a = tvm.nd.array(np.array(-34.0, dtype='float32'))
+    output = cfunc(a)
+    np.testing.assert_allclose(output.asnumpy(), np.array(34.0, dtype='float32'))
+
 if __name__ == "__main__":
     #test_identity()
     #test_add()
     #test_mult_op()
     #test_double()
     #test_42()
-    test_add_42()
+    #test_add_42()
+    #test_int_mult_3()
+    test_abs()
