@@ -51,7 +51,7 @@ def sample(rnn, category, start_letter='A'):
             if topi == data.N_LETTERS - 1:
                 break
             else:
-                letter = data.topi_to_letter(input.data.asnumpy())
+                letter = data.topi_to_letter(topi)
                 output_name += letter
             input = inputTensor(letter)
 
