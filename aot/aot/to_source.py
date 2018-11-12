@@ -212,10 +212,10 @@ def mk_file(body):
     """
 
 def to_source(mod, gv_map, name, program) -> str:
-    p = Prelude(mod)
+    #p = Prelude(mod)
     assert isinstance(program, little_cpp.CPPFunction)
-    decl = do_type(mod, p.nat)
+    #decl = do_type(mod, p.nat)
     convert = ToSource(gv_map)
-    ret = mk_file(decl + convert.mk_register_api(name, program))
-    print(ret)
+    ret = mk_file(convert.mk_register_api(name, program))
+    #print(ret)
     return ret
