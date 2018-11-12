@@ -21,6 +21,7 @@ class ToSource:
         self.local = True
         self.declare = ""
         self.declare_map = {}
+        self.input_const = []
 
     def fresh_global_name(self):
         name = f"global{self.name_counter}"
@@ -49,6 +50,8 @@ class ToSource:
             res = ExprWithStmt(self.name_map[node])
         elif isinstance(node, relay.GlobalVar):
             res = self.visit_global_var(node)
+        elif isinstance(node, relay.Constant):
+            res = self.visit_constant(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
@@ -60,6 +63,14 @@ class ToSource:
         else:
             raise Exception(str(node))
         return res
+
+    def visit_constant(self, const):
+        if const not in self.declare_map:
+            name = self.fresh_global_name()
+            self.declare_map[const] = name
+            self.declare += f"""NDArray {name};"""
+            self.input_const.append((name, const))
+        return ExprWithStmt(self.declare_map[const])
 
     def visit_global_var(self, gv):
         if gv not in self.declare_map:
@@ -150,17 +161,22 @@ class ToSource:
 
         args = ""
         end = len(func.params) - 1
+        init = ""
+        for i, (input_name, _) in enumerate(self.input_const):
+            init += f"{input_name} = args[{i}];"
         for i in range(len(func.params)):
-            args += f"args[{i}]"
+            args += f"args[{i+len(self.input_const)}]"
             if i != end:
                 args += ", "
 
         source += f"""
         TVM_REGISTER_API("{name}")
         .set_body([](TVMArgs args, TVMRetValue* ret) {{
+            {init}
             *ret = {vf.expr}({args});
         }});
         """
+        print(source)
         return source
 
 def inter(strs, sep=", "):
@@ -218,4 +234,4 @@ def to_source(mod, gv_map, name, program) -> str:
     convert = ToSource(gv_map)
     ret = mk_file(convert.mk_register_api(name, program))
     #print(ret)
-    return ret
+    return [value.data for name, value in convert.input_const], ret
