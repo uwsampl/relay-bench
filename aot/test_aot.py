@@ -55,7 +55,7 @@ def test_double():
     np.testing.assert_allclose(output.asnumpy(), np.array(6.0, dtype='float32'))
 
 if __name__ == "__main__":
-    test_identity()
-    #test_add()
+    #test_identity()
+    test_add()
     #test_mult_op()
     #test_double()
