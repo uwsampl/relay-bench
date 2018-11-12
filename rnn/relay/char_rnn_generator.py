@@ -38,9 +38,9 @@ class RNNCellOnly:
         intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
         self.parameters = {}
 
-        category = relay.var('category', shape=(1, data.N_CATEGORIES))
-        inp = relay.var('input', shape=(1, input_size))
-        hidden = relay.var('hidden', shape=(1, hidden_size))
+        self.category_var = category = relay.var('category', shape=(1, data.N_CATEGORIES))
+        self.input_var = inp = relay.var('input', shape=(1, input_size))
+        self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
 
         combined = op.concatenate([category, inp, hidden], axis=1)
         hidden = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
@@ -57,6 +57,9 @@ class RNNCellOnly:
         assert len(relay.ir_pass.free_vars(body)) == 9
         self.fwd = relay.Function(free_vars, body)
         self.forward = intrp.static_evaluate(self.fwd)
+
+    def warm(self):
+        self.forward(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var), *self.parameters.values())
 
     def __call__(self, category, input, hidden):
         return self.forward(category, input, hidden, *self.parameters.values())
