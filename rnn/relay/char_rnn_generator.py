@@ -76,28 +76,36 @@ class RNNCellOnly(Network):
     def warm(self):
         self.forward(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var), *self.parameters.values())
 
-# class RNNLoop:
-#     def __init__(self, input_size, hidden_size, output_size):
-#         mod = Module()
-#         p = Prelude(mod)
-#         ctx = tvm.context("llvm", 0)
-#         intrp = create_executor(mod=mod, ctx=ctx, target="llvm")
+
+class RNNLoop:
+    def __init__(self, input_size, hidden_size, output_size):
+
+        self.category_var = category = relay.var('category', shape=(1, data.N_CATEGORIES))
+        self.inp_topi_var = inp_topi = relay.var('input', shape=(), dtype='int32')
+        self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
+        n_letter = relay.const(data.N_LETTERS)
+        one_diag = relay.const(np.diag(np.ones(58)).astype('float32'))
+        boxed_one = relay.const(np.array([1]).astype('int32'))
+        inp = op.take(one_diag, op.multiply(boxed_one, inp_topi), axis=0)
+        combined = op.concatenate([category, inp, hidden], axis=1)
+        combined = op.concatenate([category, inp, hidden], axis=1)
+        hidden = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
+        output = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
+        output_combined = op.concatenate([hidden, output], axis=1)
+        output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
+        # output = op.nn.dropout(output, 0.1) #attributes has not been registered
+        output = op.nn.log_softmax(output, axis=1)
+        body = relay.Tuple([output, hidden])
+        free_vars = relay.ir_pass.free_vars(body)
+        for param in free_vars[3:]:
+            self.parameters[param] = initialize(param)
+        self.hidden = initialize(free_vars[2])
+        assert len(relay.ir_pass.free_vars(body)) == 9
+        self.fwd = relay.Function(free_vars, body)
+        self.forward = intrp.static_evaluate(self.fwd)
+
+>>>>>>> 35ee5a9... save
 #         self.fwd = relay.GlobalVar('fwd')
-#         self.hidden = init((1, hidden_size))
-#         category = relay.var('category', shape=(1, data.N_CATEGORIES))
-#         n_letter = relay.const(data.N_LETTERS)
-#         one_diag = relay.const(np.diag(np.ones(58)).astype('float32'))
-#         boxed_one = relay.const(np.array([1]).astype('int32'))
-#         inp_topi = relay.var('input', shape=(), dtype='int32')
-#         inp = op.take(one_diag, op.multiply(boxed_one, inp_topi), axis=0)
-#         hidden_var = relay.var('hidden', shape=(1, hidden_size))
-#         combined = op.concatenate([category, inp, hidden_var], axis=1)
-#         hidden, self.w0_var, self.b0_var = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined)
-#         output, self.w1_var, self.b1_var = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined)
-#         output_combined = op.concatenate([hidden, output], axis=1)
-#         output, self.w2_var, self.b2_var = linear(hidden_size + output_size, output_size, output_combined)
-#         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
-#         output = op.nn.log_softmax(output, axis=1)
 #         topi = op.argmax(output)
 #         body = relay.Tuple([output,
 #                             hidden,
@@ -155,30 +163,6 @@ class RNNCellOnly(Network):
 #         for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
 #             output_name += data.topi_to_letter(x)
 #         return output_name
-
-#     #def sample(self, category, start_letter='A'):
-#     #    category_tensor = categoryTensor(category)
-#     #    input = data.letter_to_topi(start_letter)
-#     #    hidden = self.hidden
-#     #    output_topi = [relay.const(data.letter_to_topi(start_letter))]
-#     #    for i in range(data.MAX_LENGTH):
-#     #        output, hidden, input, b = self.forward(category_tensor,
-#     #                                                input,
-#     #                                                hidden,
-#     #                                                self.w0,
-#     #                                                self.b0,
-#     #                                                self.w1,
-#     #                                                self.b1,
-#     #                                                self.w2,
-#     #                                                self.b2)
-#     #        if b.data.asnumpy():
-#     #            break
-#     #        else:
-#     #            output_topi.append(input)
-#     #    output_name = ''
-#     #    for x in output_topi:
-#     #        output_name += data.topi_to_letter(x.data.asnumpy())
-#     #    return output_name
 
 #     def samples(self, category, start_letters='ABC'):
 #         for start_letter in start_letters:
