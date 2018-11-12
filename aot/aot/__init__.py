@@ -23,7 +23,7 @@ def compile_cpp(source, lib_name, lib_path=None):
         source_file.write(source)
 
     # with tempfile.TmporaryDirectory() as tmpdir:
-    tmpdir = tempfile.mkdtemp()
+    tmpdir = tempfile.mkdtemp(prefix="relay_aot_compiler")
     source_path = os.path.join(tmpdir, 'source.cc')
     with open(source_path, 'w') as source_file:
         source_file.write(source)
