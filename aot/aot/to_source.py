@@ -146,7 +146,7 @@ class ToSource:
         source += vb.stmt
         return ExprWithStmt(vb.expr, source)
 
-    def empty_nd(self, tt):
+    def nd_dtype(self, tt):
         assert isinstance(tt, relay.ty.TensorType)
         if tt.dtype == 'int32':
             return 'dtype_i32'
@@ -155,6 +155,9 @@ class ToSource:
         elif tt.dtype == 'bool':
             return 'dtype_u1'
         raise Exception("unknown tensor dtype: " + str(tt))
+
+    def nd_shape(self, tt):
+        return f"{{{inter([str(s) for s in tt.shape])}}}"
 
     def visit_packed_call(self, call):
         decl_str = ""
@@ -167,7 +170,7 @@ class ToSource:
             decl_str += f"TupleValue {tuple_name} = {va.expr};\n"
             end = call.arity - 2
             for i in range(end + 1):
-                args_str += f"{tuple_name}->fields[{i}]"
+                args_str += f"ValueToND({tuple_name}->fields[{i}])"
                 if i != end:
                     args_str += ", "
             print(args_str)
@@ -185,7 +188,7 @@ class ToSource:
             {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
-            TensorValue {out_name} = TensorValueNode::make(NDArray::Empty({{}}, {self.empty_nd(call.output_type)}, context));
+            TensorValue {out_name} = TensorValueNode::make(NDArray::Empty({self.nd_shape(call.output_type)}, {self.nd_dtype(call.output_type)}, context));
             (*pf)({args_str}, {out_name}->data);
         """)
 
@@ -268,13 +271,18 @@ def mk_file(body):
     static DLDataType dtype_u1 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 1, .lanes = 1 }};
     static DLDataType dtype_i32 = DLDataType {{ .code = DLDataTypeCode::kDLInt, .bits = 32, .lanes = 1 }};
     static DLContext context = DLContext {{ .device_type = DLDeviceType::kDLCPU, . device_id = 0 }};
-    bool NDToBool (const NDArray& nd) {{
+    bool NDToBool(const NDArray& nd) {{
       DLContext cpu_ctx;
       cpu_ctx.device_type = kDLCPU;
       cpu_ctx.device_id = 0;
       NDArray cpu_array = nd.CopyTo(cpu_ctx);
       CHECK_EQ(TVMType2Type(cpu_array->dtype), Bool());
       return reinterpret_cast<uint8_t*>(cpu_array->data)[0];
+    }}
+    NDArray ValueToND(const Value& v) {{
+      const TensorValueNode* tv = v.as<TensorValueNode>();
+      CHECK(tv);
+      return tv->data;
     }}
     {body}
     """
