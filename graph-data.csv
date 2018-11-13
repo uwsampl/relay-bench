@@ -1,1 +1,7 @@
 IR,Target,Model,Time
+relay,x86_cpu,mlp,0.07,0.00
+relay,x86_cpu,dqn,1.07,0.00
+relay,x86_cpu,resnet-18,144.00,0.00
+nnvm,x86_cpu,mlp,0.08,0.00
+nnvm,x86_cpu,dqn,0.90,0.00
+nnvm,x86_cpu,resnet-18,118.98,0.00

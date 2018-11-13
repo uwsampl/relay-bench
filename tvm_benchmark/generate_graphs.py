@@ -52,7 +52,7 @@ def main():
     tracker.kill()
     server.kill()
 
-    visualize("graph.pdf")
+    visualize("../pl4ml/pldi19/fig/graph")
 
 if __name__ == "__main__":
     main()

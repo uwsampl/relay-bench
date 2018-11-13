@@ -107,3 +107,6 @@ data/
 data.zip
 .vscode/
 *.pyre/
+
+# default graph output directory
+/graph/
