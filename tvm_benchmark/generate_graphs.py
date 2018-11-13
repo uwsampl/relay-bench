@@ -4,8 +4,8 @@ import itertools
 from visualize import visualize
 
 MODELS = [
-    # "mlp",
-    # "dqn",
+    "mlp",
+    "dqn",
     # "dcgan",
     "resnet-18",
     # "densenet",
@@ -33,9 +33,9 @@ def main():
         # print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
         print("IR,Target,Model,Time", file=outf)
 
-    server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:9190 --key foo"))
+    server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:4242 --key foo --no-fork"))
 
-    tracker = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 9190"))
+    tracker = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 4242 --no-fork"))
 
     for ir, target, model in itertools.product(IRS, TARGETS, MODELS):
         subprocess.run(["python3", "tvm_benchmark/benchmark.py",
@@ -45,7 +45,9 @@ def main():
                         "--rpc-key", "foo",
                         "--repeat", str(REPEAT),
                         "--output", "file",
-                        "--outfile", OUT_FILE])
+                        "--outfile", OUT_FILE,
+                        "--port", "4242",
+                        ])
 
     tracker.kill()
     server.kill()

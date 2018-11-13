@@ -74,7 +74,7 @@ def build_module(network, target, target_host, ir="relay"):
     module = runtime.create(graph, rlib, ctx)
     data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
     module.set_input('data', data_tvm)
-    print([type(param) for param in params])
+    # print([type(param) for param in params])
     module.set_input(**params)
 
     # evaluate
@@ -145,6 +145,6 @@ if __name__ == "__main__":
         prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
         with open(args.outfile, "a") as outf:
             # print(f"{args.ir}, {args.target}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
-            print(f"{args.ir},{args.target},{network},{np.mean(prof_res):.2f}", file=outf)
+            print(f"{args.ir},{args.target},{network},{np.mean(prof_res):.2f},{np.std(prof_res):.2f}", file=outf)
     else:
         assert False

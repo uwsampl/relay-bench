@@ -3,11 +3,34 @@
     "url": "graph-data.csv",
     "format": { "type": "csv" }
   },
-  "mark": "bar",
+  "transform": [
+    {
+    "window": [{
+      "op": "max",
+      "field": "Time",
+      "as": "MaxTime"
+    }
+    ],
+    "groupby": [
+      "Model",
+      "Target"
+    ],
+    "frame": [null, null]
+  },
+  {
+    "calculate": "datum.MaxTime/datum.Time",
+    "as": "SpeedupRatio"
+  }],
+  "mark": "point",
   "encoding": {
     "column": { "field": "Target",  "type": "nominal" },
     "row":    { "field": "Model",   "type": "nominal" },
     "x":      { "field": "IR",      "type": "nominal" },
-    "y":      { "field": "Time",    "type": "quantitative" }
+    "y":      { "field": "SpeedupRatio",    "type": "quantitative",
+                "scale": {"type": "log"} },
+    "color": {
+      "field": "IR", "type": "nominal",
+      "scale": {"range": ["purple", "#ff0000", "teal"]}
+    }
   }
 }
