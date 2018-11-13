@@ -88,12 +88,29 @@ def test_abs():
     output = cfunc(a)
     np.testing.assert_allclose(output.asnumpy(), np.array(34.0, dtype='float32'))
 
+#def test_double():
+#    mod = Module()
+#    x = var('x', shape=())
+#    double = GlobalVar('double')
+#    mod[double] = Function([x], x + x)
+#    x = var('x', shape=())
+#    cfunc = aot.compile(mod, Function([x], double(double(x))))
+#    a = tvm.nd.array(np.array(1.5, dtype='float32'))
+#    output = cfunc(a)
+#    np.testing.assert_allclose(output.asnumpy(), np.array(6.0, dtype='float32'))
+
+def test_recur_sum_global():
+    mod = Module()
+    x = var('x', shape=())
+    func = Function([x], relay.If(op.less(x, relay.const(0.0)), relay.const(-1.0) * x, x))
+    pass
+
 if __name__ == "__main__":
-    test_identity()
-    test_add()
-    test_mult_op()
-    test_double()
-    test_42()
+    #test_identity()
+    #test_add()
+    #test_mult_op()
+    #test_double()
+    #test_42()
     test_add_42()
     test_int_mult_3()
-    test_abs()
+    #test_abs()
