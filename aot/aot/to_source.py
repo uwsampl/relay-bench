@@ -15,6 +15,9 @@ class ExprWithStmt:
     def __str__(self):
         return f"ExprWithStmt({self.expr}, {self.stmt})"
 
+    def __repr__(self):
+        return self.__str__()
+
 class ToSource:
     def __init__(self, gv_map):
         self.gv_map = gv_map
@@ -40,11 +43,11 @@ class ToSource:
         return name
 
     # return (str, str) with lhs being stmts, and rhs being expression
-    def visit(self, node, local=True):
+    def visit(self, node, local=True, name=None):
         if isinstance(node, little_cpp.PackedCall):
             res = self.visit_packed_call(node)
         elif isinstance(node, little_cpp.CPPFunction):
-            res = self.visit_cpp_function(node, local)
+            res = self.visit_cpp_function(node, local, name)
         elif isinstance(node, little_cpp.Decl):
             res = self.visit_decl(node)
         elif isinstance(node, little_cpp.Invoke):
@@ -57,10 +60,21 @@ class ToSource:
             res = self.visit_constant(node)
         elif isinstance(node, little_cpp.CPPIf):
             res = self.visit_if(node)
+        elif isinstance(node, little_cpp.CPPTuple):
+            res = self.visit_tuple(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
         return res
+
+    def visit_tuple(self, node):
+        expr = []
+        stmt_str = ""
+        for x in node.fields:
+            vx = self.visit(x)
+            expr.append(vx.expr)
+            stmt_str += vx.stmt
+        return ExprWithStmt(f"TupleValueNode::make({{{inter(expr)}}})", stmt_str)
 
     def visit_if(self, node):
         vc = self.visit(node.cond)
@@ -70,7 +84,7 @@ class ToSource:
         stmt = f"{self.visit_type(node.relay_type)} {ret_name};"
         stmt += f"""
         {vc.stmt}
-        if (NDToBool({vc.expr})) {{
+        if (NDToBool({vc.expr}->data)) {{
           {vt.stmt}
           {ret_name} = {vt.expr};
         }} else {{
@@ -82,7 +96,9 @@ class ToSource:
 
     def visit_type(self, node):
         if isinstance(node, relay.TensorType):
-            res = "NDArray"
+            res = "TensorValue"
+        elif isinstance(node, relay.TupleType):
+            res = "TupleValue"
         else:
             raise Exception(str(node))
         return res
@@ -91,15 +107,17 @@ class ToSource:
         if const not in self.declare_map:
             name = self.fresh_global_name()
             self.declare_map[const] = name
-            self.declare += f"""NDArray {name};"""
+            self.declare += f"TensorValue {name};\n"
             self.input_const.append((name, const))
         return ExprWithStmt(self.declare_map[const])
 
     def visit_global_var(self, gv):
         if gv not in self.declare_map:
-            vgv = self.visit(self.gv_map[gv], local=False)
+            name = self.fresh_global_name()
+            self.declare_map[gv] = name
+            vgv = self.visit(self.gv_map[gv], local=False, name=name)
             assert vgv.stmt == ""
-            self.declare_map[gv] = vgv.expr
+            assert vgv.expr == name
         return ExprWithStmt(self.declare_map[gv])
 
     def visit_invoke(self, invoke):
@@ -128,7 +146,7 @@ class ToSource:
         source += vb.stmt
         return ExprWithStmt(vb.expr, source)
 
-    def empty_nd(self, tt):
+    def nd_dtype(self, tt):
         assert isinstance(tt, relay.ty.TensorType)
         if tt.dtype == 'int32':
             return 'dtype_i32'
@@ -138,27 +156,43 @@ class ToSource:
             return 'dtype_u1'
         raise Exception("unknown tensor dtype: " + str(tt))
 
+    def nd_shape(self, tt):
+        return f"{{{inter([str(s) for s in tt.shape])}}}"
+
     def visit_packed_call(self, call):
         decl_str = ""
         args_str = ""
-        end = len(call.args) - 1
-        for i, arg in enumerate(call.args):
-            va = self.visit(arg)
+        if call.args_is_tuple:
+            assert len(call.args) == 1
+            va = self.visit(call.args[0])
             decl_str += va.stmt
-            args_str += va.expr
-            if i != end:
-                args_str += ", "
+            tuple_name = self.fresh_local_name();
+            decl_str += f"TupleValue {tuple_name} = {va.expr};\n"
+            end = call.arity - 2
+            for i in range(end + 1):
+                args_str += f"ValueToND({tuple_name}->fields[{i}])"
+                if i != end:
+                    args_str += ", "
+            print(args_str)
+        else:
+            end = call.arity - 2
+            for i, arg in enumerate(call.args):
+                va = self.visit(arg)
+                decl_str += va.stmt
+                args_str += f"{va.expr}->data"
+                if i != end:
+                    args_str += ", "
 
         out_name = self.fresh_local_name()
         return ExprWithStmt(out_name, f"""
             {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
-            NDArray {out_name} = NDArray::Empty({{}}, {self.empty_nd(call.output_type)}, context);
-            (*pf)({args_str}, {out_name});
+            TensorValue {out_name} = TensorValueNode::make(NDArray::Empty({self.nd_shape(call.output_type)}, {self.nd_dtype(call.output_type)}, context));
+            (*pf)({args_str}, {out_name}->data);
         """)
 
-    def visit_cpp_function(self, func, local):
+    def visit_cpp_function(self, func, local, name):
         param_str = ""
 
         end = len(func.params) - 1
@@ -178,7 +212,8 @@ class ToSource:
             }}
             """)
         else:
-            name = self.fresh_global_name()
+            if name is None:
+                name = self.fresh_global_name()
             self.declare += f"""
             {self.visit_type(func.ret_type)} {name}({param_str}) {{
                 {body}
@@ -196,7 +231,7 @@ class ToSource:
         end = len(func.params) - 1
         init = ""
         for i, (input_name, _) in enumerate(self.input_const):
-            init += f"{input_name} = args[{i}];"
+            init += f"{input_name} = args[{i}];\n"
         for i in range(len(func.params)):
             args += f"args[{i+len(self.input_const)}]"
             if i != end:
@@ -220,48 +255,23 @@ def inter(strs, sep=", "):
             ret += sep
     return ret
 
-def do_type(mod, gtv):
-    assert isinstance(mod, relay.Module)
-    assert isinstance(gtv, relay.GlobalTypeVar)
-    dt = mod[gtv]
-    assert isinstance(dt, relay.TypeData)
-    assert len(dt.tv) == 0
-    con = dt.constructors
-    con_name = [c.name_hint for c in con]
-    print(con[1].inp)
-    con_declare = [f"""
-    struct {x.name_hint} {{
-    }};
-    """ for x in con]
-    name = f'relay_{dt.header.var.name}'
-    node_name = f'{name}_node'
-    con_declare_str = inter(con_declare, "")
-    return f"""
-    struct {node_name};
-    using {name} = std::shared_ptr<{node_name}>;
-    struct {node_name} {{
-      enum class tag {{
-        {inter(con_name)}
-      }};
-      {con_declare_str}
-    }};
-    """
-
 def mk_file(body):
     return f"""
     #include <tvm/tvm.h>
     #include <tvm/api_registry.h>
+    #include <tvm/relay/interpreter.h>
     #include <iostream>
 
     using namespace tvm;
     using namespace runtime;
+    using namespace relay;
 
     static DLDataType dtype_f32 = DLDataType {{ .code = DLDataTypeCode::kDLFloat, .bits = 32, .lanes = 1 }};
     static DLDataType dtype_u32 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 32, .lanes = 1 }};
     static DLDataType dtype_u1 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 1, .lanes = 1 }};
     static DLDataType dtype_i32 = DLDataType {{ .code = DLDataTypeCode::kDLInt, .bits = 32, .lanes = 1 }};
     static DLContext context = DLContext {{ .device_type = DLDeviceType::kDLCPU, . device_id = 0 }};
-    bool NDToBool (const NDArray& nd) {{
+    bool NDToBool(const NDArray& nd) {{
       DLContext cpu_ctx;
       cpu_ctx.device_type = kDLCPU;
       cpu_ctx.device_id = 0;
@@ -269,14 +279,16 @@ def mk_file(body):
       CHECK_EQ(TVMType2Type(cpu_array->dtype), Bool());
       return reinterpret_cast<uint8_t*>(cpu_array->data)[0];
     }}
+    NDArray ValueToND(const Value& v) {{
+      const TensorValueNode* tv = v.as<TensorValueNode>();
+      CHECK(tv);
+      return tv->data;
+    }}
     {body}
     """
 
 def to_source(mod, gv_map, name, program) -> str:
-    #p = Prelude(mod)
     assert isinstance(program, little_cpp.CPPFunction)
-    #decl = do_type(mod, p.nat)
     convert = ToSource(gv_map)
     ret = mk_file(convert.mk_register_api(name, program))
-    #print(ret)
     return [value.data for name, value in convert.input_const], ret
