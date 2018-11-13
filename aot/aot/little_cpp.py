@@ -2,8 +2,6 @@ from tvm.relay import Var, TypeVar
 from typing import Any, Optional, List, Tuple
 import attr
 
-#remember: template must not have 0 param.
-
 class LittleCppNode:
     pass
 

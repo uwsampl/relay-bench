@@ -115,7 +115,7 @@ def test_recur_sum_global():
 #    np.testing.assert_allclose(output.asnumpy(), np.array(55, dtype='int32'))
 
 if __name__ == "__main__":
-    test_identity()
+    #test_identity()
     #test_add()
     #test_mult_op()
     #test_double()
@@ -123,4 +123,4 @@ if __name__ == "__main__":
     #test_add_42()
     #test_int_mult_3()
     #test_abs()
-    #test_recur_sum_global()
+    test_recur_sum_global()

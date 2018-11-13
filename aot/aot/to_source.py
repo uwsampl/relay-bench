@@ -85,7 +85,7 @@ class ToSource:
         stmt = f"{self.visit_type(node.relay_type)} {ret_name};"
         stmt += f"""
         {vc.stmt}
-        if (NDToBool({vc.expr})) {{
+        if (NDToBool({vc.expr}->data)) {{
           {vt.stmt}
           {ret_name} = {vt.expr};
         }} else {{
@@ -93,7 +93,6 @@ class ToSource:
           {ret_name} = {vf.expr};
         }}
         """
-        raise
         return ExprWithStmt(ret_name, stmt)
 
     def visit_type(self, node):
@@ -112,9 +111,8 @@ class ToSource:
         if const not in self.declare_map:
             name = self.fresh_global_name()
             self.declare_map[const] = name
-            self.declare += f"""NDArray {name};"""
+            self.declare += f"""TensorValue {name};"""
             self.input_const.append((name, const))
-        raise
         return ExprWithStmt(self.declare_map[const])
 
     def visit_global_var(self, gv):
@@ -138,7 +136,6 @@ class ToSource:
                 args_str += ", "
 
         func = self.visit(invoke.call)
-        raise
         return ExprWithStmt(f"{func.expr}({args_str})", decl_str + func.stmt)
 
     def visit_decl(self, decl):
@@ -151,7 +148,6 @@ class ToSource:
             source += f"auto {local_name} = {vv.expr};\n"
         vb = self.visit(decl.body)
         source += vb.stmt
-        raise
         return ExprWithStmt(vb.expr, source)
 
     def empty_nd(self, tt):
@@ -171,18 +167,17 @@ class ToSource:
         for i, arg in enumerate(call.args):
             va = self.visit(arg)
             decl_str += va.stmt
-            args_str += va.expr
+            args_str += f"{va.expr}->data"
             if i != end:
                 args_str += ", "
 
         out_name = self.fresh_local_name()
-        raise
         return ExprWithStmt(out_name, f"""
             {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
             CHECK(pf);
-            NDArray {out_name} = NDArray::Empty({{}}, {self.empty_nd(call.output_type)}, context);
-            (*pf)({args_str}, {out_name});
+            TensorValue {out_name} = TensorValueNode::make(NDArray::Empty({{}}, {self.empty_nd(call.output_type)}, context));
+            (*pf)({args_str}, {out_name}->data);
         """)
 
     def visit_cpp_function(self, func, local, name):
