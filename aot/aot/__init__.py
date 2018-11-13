@@ -6,9 +6,10 @@ import tempfile
 import tvm
 from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import Expr, Let
+from tvm.relay.adt import Constructor
 from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
-from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple
+from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple, CPPMatch, CPPConstructor
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
@@ -118,6 +119,8 @@ class AoTCompiler(ExprFunctor):
     def visit_call(self, call: Expr) -> Expr:
         if is_primitive(call.op):
             return self.mk_primitive_op(call.op, call.args, call.checked_type)
+        elif isinstance(call.op, Constructor):
+            return CPPConstructor(call.op.tag, [self.visit(arg) for arg in call.args])
         else:
             args = [self.visit(arg) for arg in call.args]
             fn = self.visit(call.op)
@@ -163,6 +166,11 @@ class AoTCompiler(ExprFunctor):
 
     def visit_tuple(self, t):
         return CPPTuple([self.visit(f) for f in t.fields], t.checked_type)
+
+    def visit_match(self, m):
+        return CPPMatch(self.visit(m.data),
+                        [(c.lhs, self.visit(c.rhs)) for c in m.pattern],
+                        m.checked_type)
 
 _LIB_COUNTER = 1
 _LIB = []
