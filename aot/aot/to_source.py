@@ -68,9 +68,14 @@ class ToSource:
         return res
 
     def visit_tuple(self, node):
-        res = [self.visit(x) for x in node.fields]
-        print(res)
+        expr = []
+        stmt_str = ""
+        for x in node.fields:
+            vx = self.visit(x)
+            expr.append(vx.expr)
+            stmt_str += vx.stmt
         raise
+        return ExprWithStmt(f"{{{inter(expr)}}}", stmt_str)
 
     def visit_if(self, node):
         vc = self.visit(node.cond)
@@ -88,14 +93,20 @@ class ToSource:
           {ret_name} = {vf.expr};
         }}
         """
+        raise
         return ExprWithStmt(ret_name, stmt)
 
     def visit_type(self, node):
         if isinstance(node, relay.TensorType):
-            res = "NDArray"
+            res = "TensorValue"
+        elif isinstance(node, relay.TupleType):
+            res = self.visit_tuple_type(node)
         else:
             raise Exception(str(node))
         return res
+
+    def visit_tuple_type(self, tup):
+        raise
 
     def visit_constant(self, const):
         if const not in self.declare_map:
@@ -103,6 +114,7 @@ class ToSource:
             self.declare_map[const] = name
             self.declare += f"""NDArray {name};"""
             self.input_const.append((name, const))
+        raise
         return ExprWithStmt(self.declare_map[const])
 
     def visit_global_var(self, gv):
@@ -126,6 +138,7 @@ class ToSource:
                 args_str += ", "
 
         func = self.visit(invoke.call)
+        raise
         return ExprWithStmt(f"{func.expr}({args_str})", decl_str + func.stmt)
 
     def visit_decl(self, decl):
@@ -138,6 +151,7 @@ class ToSource:
             source += f"auto {local_name} = {vv.expr};\n"
         vb = self.visit(decl.body)
         source += vb.stmt
+        raise
         return ExprWithStmt(vb.expr, source)
 
     def empty_nd(self, tt):
@@ -162,6 +176,7 @@ class ToSource:
                 args_str += ", "
 
         out_name = self.fresh_local_name()
+        raise
         return ExprWithStmt(out_name, f"""
             {decl_str}
             const PackedFunc *pf = runtime::Registry::Get("{call.name}");
@@ -233,41 +248,16 @@ def inter(strs, sep=", "):
             ret += sep
     return ret
 
-def do_type(mod, gtv):
-    assert isinstance(mod, relay.Module)
-    assert isinstance(gtv, relay.GlobalTypeVar)
-    dt = mod[gtv]
-    assert isinstance(dt, relay.TypeData)
-    assert len(dt.tv) == 0
-    con = dt.constructors
-    con_name = [c.name_hint for c in con]
-    print(con[1].inp)
-    con_declare = [f"""
-    struct {x.name_hint} {{
-    }};
-    """ for x in con]
-    name = f'relay_{dt.header.var.name}'
-    node_name = f'{name}_node'
-    con_declare_str = inter(con_declare, "")
-    return f"""
-    struct {node_name};
-    using {name} = std::shared_ptr<{node_name}>;
-    struct {node_name} {{
-      enum class tag {{
-        {inter(con_name)}
-      }};
-      {con_declare_str}
-    }};
-    """
-
 def mk_file(body):
     return f"""
     #include <tvm/tvm.h>
     #include <tvm/api_registry.h>
+    #include <tvm/relay/interpreter.h>
     #include <iostream>
 
     using namespace tvm;
     using namespace runtime;
+    using namespace relay;
 
     static DLDataType dtype_f32 = DLDataType {{ .code = DLDataTypeCode::kDLFloat, .bits = 32, .lanes = 1 }};
     static DLDataType dtype_u32 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 32, .lanes = 1 }};
@@ -286,10 +276,7 @@ def mk_file(body):
     """
 
 def to_source(mod, gv_map, name, program) -> str:
-    #p = Prelude(mod)
     assert isinstance(program, little_cpp.CPPFunction)
-    #decl = do_type(mod, p.nat)
     convert = ToSource(gv_map)
     ret = mk_file(convert.mk_register_api(name, program))
-    #print(ret)
     return [value.data for name, value in convert.input_const], ret

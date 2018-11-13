@@ -164,7 +164,6 @@ def compile(mod, func, name='default'):
     packed_name = f'relay.aot.{name}.{_LIB_COUNTER}'
     compiler = AoTCompiler(mod)
     func = compiler.optimize(func)
-    print(func)
     func = compiler.visit(func)
     params, source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
@@ -172,6 +171,10 @@ def compile(mod, func, name='default'):
     _LIB_COUNTER += 1
     _LIB.append(load_lib(lib_name))
     fn = get_global_func(packed_name)
+    def convert(a):
+        if isinstance(a, tvm.ndarray.NDArray):
+            return relay.backend.interpreter.TensorValue(a)
+        raise Exception(a)
     def wrap(*args):
-        return fn(*params, *args)
+        return fn(*[convert(a) for a in params], *[convert(a) for a in args])
     return wrap
