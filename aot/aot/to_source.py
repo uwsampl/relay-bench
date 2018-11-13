@@ -62,10 +62,16 @@ class ToSource:
             res = self.visit_if(node)
         elif isinstance(node, little_cpp.CPPTuple):
             res = self.visit_tuple(node)
+        elif isinstance(node, little_cpp.CPPConstructor):
+            res = self.visit_constructor(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
         return res
+
+    def visit_constructor(self, node):
+        args_str, stmt_str = self.visit_args(node.fields)
+        return ExprWithStmt(f"TagToCV({node.tag}, {{{args_str}}})")
 
     def visit_tuple(self, node):
         expr = []
@@ -99,6 +105,8 @@ class ToSource:
             res = "TensorValue"
         elif isinstance(node, relay.TupleType):
             res = "TupleValue"
+        elif isinstance(node, relay.TypeCall):
+            res = "ConValue" # typecall is only used at constructors at the moment
         else:
             raise Exception(str(node))
         return res
@@ -120,19 +128,22 @@ class ToSource:
             assert vgv.expr == name
         return ExprWithStmt(self.declare_map[gv])
 
-    def visit_invoke(self, invoke):
-        decl_str = ""
+    def visit_args(self, args):
         args_str = ""
-        for i, arg in enumerate(invoke.args):
+        stmt_str = ""
+        for i, arg in enumerate(args):
             assert isinstance(arg, relay.Var)
             va = self.visit(arg)
-            decl_str += va.stmt
             args_str += va.expr
-            if i != len(invoke.args) - 1:
+            stmt_str += va.stmt
+            if i != len(args) - 1:
                 args_str += ", "
+        return args_str, stmt_str
 
+    def visit_invoke(self, invoke):
+        args_str, stmt_str = self.visit_args(invoke.args)
         func = self.visit(invoke.call)
-        return ExprWithStmt(f"{func.expr}({args_str})", decl_str + func.stmt)
+        return ExprWithStmt(f"{func.expr}({args_str})", stmt_str + func.stmt)
 
     def visit_decl(self, decl):
         source = ""
@@ -283,6 +294,14 @@ def mk_file(body):
       const TensorValueNode* tv = v.as<TensorValueNode>();
       CHECK(tv);
       return tv->data;
+    }}
+    ConValue TagToCV(size_t tag, const tvm::Array<Value>& fields) {{
+      NodePtr<ConValueNode> n = make_node<ConValueNode>();
+      NodePtr<ConstructorNode> con = make_node<ConstructorNode>();
+      con->tag = tag;
+      n->con = Constructor(con);
+      n->fields = fields;
+      return ConValue(n);
     }}
     {body}
     """
