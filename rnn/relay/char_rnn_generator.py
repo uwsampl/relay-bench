@@ -15,6 +15,7 @@ from tvm.relay import op
 from tvm.relay import create_executor, Module
 from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
+from aot import aot
 
 def linear(input_size, output_size, x, name=None):
     if name is None:
@@ -48,7 +49,8 @@ class Network:
             self.parameters[param] = initialize(param)
         self.hidden = initialize(free_vars[2])
         self.forward_compute = relay.Function(free_vars, body)
-        self.forward = self.executor.static_evaluate(self.forward_compute)
+        self.forward = aot.compile(self.mod, self.forward_compute)
+        #self.forward = self.executor.static_evaluate(self.forward_compute)
         self.args = [None] * len(inputs) + list(self.parameters.values())
 
     def __call__(self, *inputs):
@@ -67,7 +69,7 @@ class RNNCellOnly(Network):
         output = linear(N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
         output_combined = op.concatenate([hidden, output], axis=1)
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
-        output = op.nn.dropout(output, 0.1)
+        #output = op.nn.dropout(output, 0.1) #dropout isnt simplified, commented out for now
         output = op.nn.log_softmax(output, axis=1)
         return [category, inp, hidden], relay.Tuple([output, hidden])
 

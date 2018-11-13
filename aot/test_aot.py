@@ -88,12 +88,39 @@ def test_abs():
     output = cfunc(a)
     np.testing.assert_allclose(output.asnumpy(), np.array(34.0, dtype='float32'))
 
+def test_recur_sum_global():
+    mod = Module()
+    x = var('x', dtype='int32', shape=())
+    sum = GlobalVar('sum')
+    c = relay.const(0)
+    mod[sum] = Function([x],
+                        relay.If(op.less(x, c), c, x + sum(x - relay.const(1))),
+                        relay.TensorType(dtype='int32', shape=()))
+    cfunc = aot.compile(mod, Function([], sum(relay.const(10))))
+    output = cfunc()
+    np.testing.assert_allclose(output.asnumpy(), np.array(55, dtype='int32'))
+
+#def test_recur_sum_local():
+#    mod = Module()
+#    x = var('x', dtype='int32', shape=())
+#    t = relay.TensorType(dtype='int32', shape=())
+#    sum = relay.Var('sum', type_annotation=relay.FuncType([t], t))
+#    c = relay.const(0)
+#    func = Function([x],
+#                    relay.If(op.less(x, c), c, x + sum(x - relay.const(1))),
+#                    t)
+#    body = relay.Let(sum, func, sum(relay.const(10)))
+#    cfunc = aot.compile(mod, Function([], body))
+#    output = cfunc()
+#    np.testing.assert_allclose(output.asnumpy(), np.array(55, dtype='int32'))
+
 if __name__ == "__main__":
-    test_identity()
-    test_add()
-    test_mult_op()
-    test_double()
-    test_42()
-    test_add_42()
-    test_int_mult_3()
-    test_abs()
+    #test_identity()
+    #test_add()
+    #test_mult_op()
+    #test_double()
+    #test_42()
+    #test_add_42()
+    #test_int_mult_3()
+    #test_abs()
+    test_recur_sum_global()

@@ -2,8 +2,6 @@ from tvm.relay import Var, TypeVar
 from typing import Any, Optional, List, Tuple
 import attr
 
-#remember: template must not have 0 param.
-
 class LittleCppNode:
     pass
 
@@ -18,6 +16,7 @@ class PackedCall(LittleCppNode):
     arity: int
     args: Any
     output_type: Any
+    args_is_tuple: bool
 
 @attr.s(auto_attribs=True)
 class Invoke(LittleCppNode):
@@ -36,4 +35,9 @@ class CPPIf(LittleCppNode):
     cond: Any
     true_branch: Any
     false_branch: Any
+    relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPTuple(LittleCppNode):
+    fields: List[Any]
     relay_type: Any

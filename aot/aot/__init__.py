@@ -8,7 +8,7 @@ from tvm import relay, get_global_func, target, register_func
 from tvm.relay.expr import Expr, Let
 from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
-from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf
+from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
@@ -99,13 +99,21 @@ class AoTCompiler(ExprFunctor):
         return anf_fused
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
+        if len(args) == 1 and isinstance(args[0].checked_type, relay.TupleType):
+            args_is_tuple = True
+            num_param = len(args[0].checked_type.fields)
+        else:
+            for x in args:
+                assert isinstance(x.checked_type, relay.TensorType)
+            args_is_tuple = False
+            num_param = len(func.params)
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
         hash = relay.ir_pass.structural_hash(func)
         name = f"op{hash}"
         if not get_global_func(name, allow_missing=True):
             jit_func = self.engine.jit(cc_key)
             register_func(name, jit_func)
-        return PackedCall(name, len(func.params) + 1, args, output_type)
+        return PackedCall(name, num_param + 1, args, output_type, args_is_tuple)
 
     def visit_call(self, call: Expr) -> Expr:
         if is_primitive(call.op):
@@ -133,6 +141,7 @@ class AoTCompiler(ExprFunctor):
 
     def visit_global_var(self, gv):
         if gv not in self.gv_map:
+            self.gv_map[gv] = "to be updated"
             self.gv_map[gv] = self.visit(self.mod[gv])
         return gv
 
@@ -152,6 +161,9 @@ class AoTCompiler(ExprFunctor):
                      self.visit(i.false_branch),
                      i.checked_type)
 
+    def visit_tuple(self, t):
+        return CPPTuple([self.visit(f) for f in t.fields], t.checked_type)
+
 _LIB_COUNTER = 1
 _LIB = []
 
@@ -167,6 +179,12 @@ def compile(mod, func, name='default'):
     _LIB_COUNTER += 1
     _LIB.append(load_lib(lib_name))
     fn = get_global_func(packed_name)
+    def convert(a):
+        if isinstance(a, tvm.ndarray.NDArray):
+            return relay.backend.interpreter.TensorValue(a)
+        if isinstance(a, relay.backend.interpreter.TensorValue):
+            return a
+        raise Exception(a)
     def wrap(*args):
-        return fn(*params, *args)
+        return fn(*[convert(a) for a in params], *[convert(a) for a in args])
     return wrap
