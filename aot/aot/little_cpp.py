@@ -41,3 +41,14 @@ class CPPIf(LittleCppNode):
 class CPPTuple(LittleCppNode):
     fields: List[Any]
     relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPMatch(LittleCppNode):
+    data: Any
+    clause: List[Tuple[Any, Any]]
+    relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPConstructor(LittleCppNode):
+    tag: int
+    fields: List[Any]
