@@ -74,7 +74,7 @@ def build_module(network, target, target_host, ir="relay"):
     module = runtime.create(graph, rlib, ctx)
     data_tvm = tvm.nd.array((np.random.uniform(size=input_shape)).astype(dtype))
     module.set_input('data', data_tvm)
-    print([type(param) for param in params])
+    # print([type(param) for param in params])
     module.set_input(**params)
 
     # evaluate
