@@ -43,11 +43,11 @@ class ToSource:
         return name
 
     # return (str, str) with lhs being stmts, and rhs being expression
-    def visit(self, node, local=True):
+    def visit(self, node, local=True, name=None):
         if isinstance(node, little_cpp.PackedCall):
             res = self.visit_packed_call(node)
         elif isinstance(node, little_cpp.CPPFunction):
-            res = self.visit_cpp_function(node, local)
+            res = self.visit_cpp_function(node, local, name)
         elif isinstance(node, little_cpp.Decl):
             res = self.visit_decl(node)
         elif isinstance(node, little_cpp.Invoke):
@@ -107,9 +107,11 @@ class ToSource:
 
     def visit_global_var(self, gv):
         if gv not in self.declare_map:
-            vgv = self.visit(self.gv_map[gv], local=False)
+            name = self.fresh_global_name()
+            self.declare_map[gv] = name
+            vgv = self.visit(self.gv_map[gv], local=False, name=name)
             assert vgv.stmt == ""
-            self.declare_map[gv] = vgv.expr
+            assert vgv.expr == name
         return ExprWithStmt(self.declare_map[gv])
 
     def visit_invoke(self, invoke):
@@ -168,7 +170,7 @@ class ToSource:
             (*pf)({args_str}, {out_name});
         """)
 
-    def visit_cpp_function(self, func, local):
+    def visit_cpp_function(self, func, local, name):
         param_str = ""
 
         end = len(func.params) - 1
@@ -188,7 +190,8 @@ class ToSource:
             }}
             """)
         else:
-            name = self.fresh_global_name()
+            if name is None:
+                name = self.fresh_global_name()
             self.declare += f"""
             {self.visit_type(func.ret_type)} {name}({param_str}) {{
                 {body}

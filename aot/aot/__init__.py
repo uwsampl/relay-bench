@@ -133,6 +133,7 @@ class AoTCompiler(ExprFunctor):
 
     def visit_global_var(self, gv):
         if gv not in self.gv_map:
+            self.gv_map[gv] = "to be updated"
             self.gv_map[gv] = self.visit(self.mod[gv])
         return gv
 
@@ -163,6 +164,7 @@ def compile(mod, func, name='default'):
     packed_name = f'relay.aot.{name}.{_LIB_COUNTER}'
     compiler = AoTCompiler(mod)
     func = compiler.optimize(func)
+    print(func)
     func = compiler.visit(func)
     params, source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
