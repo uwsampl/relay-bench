@@ -100,6 +100,12 @@ def test_recur_sum_global():
     output = cfunc()
     np.testing.assert_allclose(output.asnumpy(), np.array(55, dtype='int32'))
 
+def test_nat_3():
+    mod = Module()
+    p = Prelude(mod)
+    cfunc = aot.compile(mod, Function([], p.s(p.s(p.s(p.z())))))
+    output = cfunc()
+
 def test_nat_add():
     mod = Module()
     p = Prelude(mod)
@@ -131,4 +137,5 @@ if __name__ == "__main__":
     #test_int_mult_3()
     #test_abs()
     #test_recur_sum_global()
-    test_nat_add()
+    test_nat_3()
+    #test_nat_add()
