@@ -105,6 +105,12 @@ def test_nat_3():
     p = Prelude(mod)
     cfunc = aot.compile(mod, Function([], p.s(p.s(p.s(p.z())))))
     output = cfunc()
+    n = 0
+    while output.con.tag == 1:
+        n += 1
+        output = output.fields[0]
+    assert output.con.tag == 0
+    assert n == 3
 
 def test_nat_add():
     mod = Module()
