@@ -74,8 +74,7 @@ class ToSource:
             vx = self.visit(x)
             expr.append(vx.expr)
             stmt_str += vx.stmt
-        raise
-        return ExprWithStmt(f"{{{inter(expr)}}}", stmt_str)
+        return ExprWithStmt(f"TupleValueNode::make({{{inter(expr)}}})", stmt_str)
 
     def visit_if(self, node):
         vc = self.visit(node.cond)
@@ -99,19 +98,16 @@ class ToSource:
         if isinstance(node, relay.TensorType):
             res = "TensorValue"
         elif isinstance(node, relay.TupleType):
-            res = self.visit_tuple_type(node)
+            res = "TupleValue"
         else:
             raise Exception(str(node))
         return res
-
-    def visit_tuple_type(self, tup):
-        raise
 
     def visit_constant(self, const):
         if const not in self.declare_map:
             name = self.fresh_global_name()
             self.declare_map[const] = name
-            self.declare += f"""TensorValue {name};"""
+            self.declare += f"TensorValue {name};\n"
             self.input_const.append((name, const))
         return ExprWithStmt(self.declare_map[const])
 
@@ -163,13 +159,26 @@ class ToSource:
     def visit_packed_call(self, call):
         decl_str = ""
         args_str = ""
-        end = len(call.args) - 1
-        for i, arg in enumerate(call.args):
-            va = self.visit(arg)
+        if call.args_is_tuple:
+            assert len(call.args) == 1
+            va = self.visit(call.args[0])
             decl_str += va.stmt
-            args_str += f"{va.expr}->data"
-            if i != end:
-                args_str += ", "
+            tuple_name = self.fresh_local_name();
+            decl_str += f"TupleValue {tuple_name} = {va.expr};\n"
+            end = call.arity - 2
+            for i in range(end + 1):
+                args_str += f"{tuple_name}->fields[{i}]"
+                if i != end:
+                    args_str += ", "
+            print(args_str)
+        else:
+            end = call.arity - 2
+            for i, arg in enumerate(call.args):
+                va = self.visit(arg)
+                decl_str += va.stmt
+                args_str += f"{va.expr}->data"
+                if i != end:
+                    args_str += ", "
 
         out_name = self.fresh_local_name()
         return ExprWithStmt(out_name, f"""
@@ -219,7 +228,7 @@ class ToSource:
         end = len(func.params) - 1
         init = ""
         for i, (input_name, _) in enumerate(self.input_const):
-            init += f"{input_name} = args[{i}];"
+            init += f"{input_name} = args[{i}];\n"
         for i in range(len(func.params)):
             args += f"args[{i+len(self.input_const)}]"
             if i != end:

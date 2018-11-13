@@ -99,13 +99,21 @@ class AoTCompiler(ExprFunctor):
         return anf_fused
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
+        if len(args) == 1 and isinstance(args[0].checked_type, relay.TupleType):
+            args_is_tuple = True
+            num_param = len(args[0].checked_type.fields)
+        else:
+            for x in args:
+                assert isinstance(x.checked_type, relay.TensorType)
+            args_is_tuple = False
+            num_param = len(func.params)
         cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
         hash = relay.ir_pass.structural_hash(func)
         name = f"op{hash}"
         if not get_global_func(name, allow_missing=True):
             jit_func = self.engine.jit(cc_key)
             register_func(name, jit_func)
-        return PackedCall(name, len(func.params) + 1, args, output_type)
+        return PackedCall(name, num_param + 1, args, output_type, args_is_tuple)
 
     def visit_call(self, call: Expr) -> Expr:
         if is_primitive(call.op):
@@ -174,6 +182,8 @@ def compile(mod, func, name='default'):
     def convert(a):
         if isinstance(a, tvm.ndarray.NDArray):
             return relay.backend.interpreter.TensorValue(a)
+        if isinstance(a, relay.backend.interpreter.TensorValue):
+            return a
         raise Exception(a)
     def wrap(*args):
         return fn(*[convert(a) for a in params], *[convert(a) for a in args])
