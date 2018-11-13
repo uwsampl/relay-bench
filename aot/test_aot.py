@@ -100,24 +100,26 @@ def test_recur_sum_global():
     output = cfunc()
     np.testing.assert_allclose(output.asnumpy(), np.array(55, dtype='int32'))
 
+def nat_to_int(n):
+    if n.con.tag == 1:
+        return 1 + nat_to_int(n.fields[0])
+    else:
+        assert n.con.tag == 0
+        return 0
+
 def test_nat_3():
     mod = Module()
     p = Prelude(mod)
     cfunc = aot.compile(mod, Function([], p.s(p.s(p.s(p.z())))))
     output = cfunc()
-    n = 0
-    while output.con.tag == 1:
-        n += 1
-        output = output.fields[0]
-    assert output.con.tag == 0
-    assert n == 3
+    assert nat_to_int(output) == 3
 
 def test_nat_add():
     mod = Module()
     p = Prelude(mod)
-    x = relay.Var('x', p.nat())
-    y = relay.Var('y', p.nat())
-    cfunc = aot.compile(mod, Function([x, y], p.add(x, y)))
+    cfunc = aot.compile(mod, Function([], p.add(p.s(p.s(p.s(p.z()))), p.s(p.s(p.s(p.s(p.z())))))))
+    output = cfunc()
+    assert nat_to_int(output) == 7
 
 #def test_recur_sum_local():
 #    mod = Module()
@@ -143,5 +145,5 @@ if __name__ == "__main__":
     #test_int_mult_3()
     #test_abs()
     #test_recur_sum_global()
-    test_nat_3()
-    #test_nat_add()
+    #test_nat_3()
+    test_nat_add()
