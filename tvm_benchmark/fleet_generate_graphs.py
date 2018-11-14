@@ -5,15 +5,15 @@ import itertools
 
 MODELS = [
 #    "mlp",
-#    "dqn",
-     "dcgan",
-#    "resnet-18",
+    "dqn",
+   # "dcgan",
+    "resnet-18",
     # "densenet",
-#    "mobilenet",
+    "mobilenet",
     ]
 
 IRS = [
-#    "relay",
+    "relay",
     "nnvm",
     # "tf",
     ]
@@ -21,11 +21,11 @@ IRS = [
 TARGETS = [
     ("arm_cpu", "rpi3b"),
     # "x86_cpu",
-#    ("gpu", "1080ti"),
+    ("gpu", "titanx"),
     # "fpga",
 ]
 
-REPEAT = 100
+REPEAT = 10
 
 OUT_FILE = "graph-data.csv"
 
