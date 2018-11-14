@@ -6,7 +6,7 @@ import unicodedata
 import string
 import time
 import math
-from rnn.language_data import N_CATEGORIES
+from rnn.language_data import N_CATEGORIES, N_LETTERS
 from rnn.relay.util import categoryTensor, inputTensor
 import numpy as np
 import tvm
@@ -71,40 +71,30 @@ class RNNCellOnly(Network):
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         #output = op.nn.dropout(output, 0.1) #dropout isnt simplified, commented out for now
         output = op.nn.log_softmax(output, axis=1)
-        return [category, inp, hidden], relay.Tuple([output, hidden])
+        return [self.category_var, self.input_var, self.hidden_var], relay.Tuple([output, hidden])
 
     def warm(self):
         self.forward(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var), *self.parameters.values())
 
-
-class RNNLoop:
-    def __init__(self, input_size, hidden_size, output_size):
-
-        self.category_var = category = relay.var('category', shape=(1, data.N_CATEGORIES))
+class RNNLoop(NetWork):
+    def compute(self, input_size, hidden_size, output_size):
+        self.category_var = category = relay.var('category', shape=(1, N_CATEGORIES))
         self.inp_topi_var = inp_topi = relay.var('input', shape=(), dtype='int32')
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
-        n_letter = relay.const(data.N_LETTERS)
+        n_letter = relay.const(N_LETTERS)
         one_diag = relay.const(np.diag(np.ones(58)).astype('float32'))
         boxed_one = relay.const(np.array([1]).astype('int32'))
         inp = op.take(one_diag, op.multiply(boxed_one, inp_topi), axis=0)
         combined = op.concatenate([category, inp, hidden], axis=1)
         combined = op.concatenate([category, inp, hidden], axis=1)
-        hidden = linear(data.N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
-        output = linear(data.N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
+        hidden = linear(N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
+        output = linear(N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
         output_combined = op.concatenate([hidden, output], axis=1)
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
         body = relay.Tuple([output, hidden])
-        free_vars = relay.ir_pass.free_vars(body)
-        for param in free_vars[3:]:
-            self.parameters[param] = initialize(param)
-        self.hidden = initialize(free_vars[2])
-        assert len(relay.ir_pass.free_vars(body)) == 9
-        self.fwd = relay.Function(free_vars, body)
-        self.forward = intrp.static_evaluate(self.fwd)
-
->>>>>>> 35ee5a9... save
+        return [self.category_var, self.inp_topi_var, self.hidden_var]
 #         self.fwd = relay.GlobalVar('fwd')
 #         topi = op.argmax(output)
 #         body = relay.Tuple([output,
