@@ -23,8 +23,8 @@
   }],
   "mark": "point",
   "encoding": {
-    "column": { "field": "Target",  "type": "nominal" },
-    "row":    { "field": "Model",   "type": "nominal" },
+    "row":    { "field": "Target",  "type": "nominal" },
+    "column": { "field": "Model",   "type": "nominal" },
     "x":      { "field": "IR",      "type": "nominal" },
     "y":      { "field": "SpeedupRatio",    "type": "quantitative",
                 "scale": {"type": "log"} },
