@@ -7,10 +7,9 @@
     {
     "window": [{
       "op": "max",
-      "field": "Time",
-      "as": "MaxTime"
-    }
-    ],
+      "field": "NNVM",
+      "as": "NNVMTime"
+    }],
     "groupby": [
       "Model",
       "Target"
@@ -18,19 +17,16 @@
     "frame": [null, null]
   },
   {
-    "calculate": "datum.MaxTime/datum.Time",
-    "as": "SpeedupRatio"
+    "calculate": "datum.Time/datum.NNVMTime",
+    "as": "SlowdownRatio"
   }],
   "mark": "point",
   "encoding": {
     "row":    { "field": "Target",  "type": "nominal" },
     "column": { "field": "Model",   "type": "nominal" },
     "x":      { "field": "IR",      "type": "nominal" },
-    "y":      { "field": "SpeedupRatio",    "type": "quantitative",
+    "y":      { "field": "SlowdownRatio",    "type": "quantitative",
                 "scale": {"type": "log"} },
-    "color": {
-      "field": "IR", "type": "nominal",
-      "scale": {"range": ["purple", "#ff0000", "teal"]}
-    }
+    "color": { "field": "IR", "type": "nominal" }
   }
 }
