@@ -42,6 +42,11 @@ class ToSource:
         self.name_counter += 1
         return name
 
+    def fresh_label_name(self):
+        name = f"label_{self.name_counter}"
+        self.name_counter += 1
+        return name
+
     # return (str, str) with lhs being stmts, and rhs being expression
     def visit(self, node, local=True, name=None):
         if isinstance(node, little_cpp.PackedCall):
@@ -64,6 +69,8 @@ class ToSource:
             res = self.visit_tuple(node)
         elif isinstance(node, little_cpp.CPPConstructor):
             res = self.visit_constructor(node)
+        elif isinstance(node, little_cpp.CPPMatch):
+            res = self.visit_match(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
@@ -72,6 +79,86 @@ class ToSource:
     def visit_constructor(self, node):
         args_str, stmt_str = self.visit_args(node.fields)
         return ExprWithStmt(f"TagToCV({node.tag}, {{{args_str}}})")
+
+    def pattern_var(self, pat, var_set):
+        if isinstance(pat, relay.PatternConstructor):
+            for x in pat.pat:
+                self.pattern_var(x, var_set)
+        elif isinstance(pat, relay.PatternVar):
+            assert pat.var not in var_set
+            var_set.add(pat.var)
+        else:
+            raise Exception(str(pat))
+
+    def visit_match(self, node):
+        vd = self.visit(node.data)
+        stmt_str = vd.stmt
+
+        pattern_var_set = set()
+        for c in node.clause:
+            self.pattern_var(c[0], pattern_var_set)
+
+        for v in pattern_var_set:
+            bind_name = self.fresh_local_name()
+            self.name_map[v] = bind_name
+            stmt_str += f"{self.visit_type(v.checked_type)} {bind_name};\n"
+
+        # match data_name to pat, and fill the var accordingly.
+        # go to fail_label or ok_label base on failure/success.
+        def visit_pattern(pat, data_name, fail_label, ok_label):
+            if isinstance(pat, relay.PatternConstructor):
+                ok_case = ""
+                bind_names = []
+                assert len(pat.con.inp) == len(pat.pat)
+                for i, input_type in enumerate(pat.con.inp):
+                    bind_name = self.fresh_local_name()
+                    bind_names.append(bind_name)
+                    t = self.visit_type(input_type)
+                    ok_case += f"{t} {bind_name} = Downcast<{t}>({data_name}->fields[{i}]);\n"
+                for bind_name, p in zip(bind_names, pat.pat):
+                    next_label = self.fresh_label_name()
+                    ok_case += visit_pattern(p, bind_name, fail_label, next_label)
+                    ok_case += f"{next_label}:\n"
+                ok_case += f"goto {ok_label};"
+                return f"""
+                CHECK({data_name}->con->tag != -1);
+                if ({data_name}->con->tag == {pat.con.tag}) {{
+                  {ok_case}
+                }} else {{
+                  goto {fail_label};
+                }}
+                """
+            elif isinstance(pat, relay.PatternVar):
+                return f"""
+                {self.name_map[v]} = {data_name};
+                """
+            else:
+                raise Exception(str(pat))
+
+        in_name = self.fresh_local_name()
+        out_name = self.fresh_local_name()
+        stmt_str += f"ConValue {in_name} = {vd.expr};\n"
+        stmt_str += f"{self.visit_type(node.relay_type)} {out_name};\n"
+        match_finish_label = self.fresh_label_name()
+        for c in node.clause:
+            vc = self.visit(c[1])
+            fail_label = self.fresh_label_name()
+            ok_label = self.fresh_label_name()
+            stmt_str += f"""{{
+              {visit_pattern(c[0], in_name, fail_label, ok_label)}
+            }}
+            """
+            stmt_str += f"""{{
+              {ok_label}:
+              {vc.stmt}
+              {out_name} = {vc.expr};
+              goto {match_finish_label};
+            }}
+            """
+            stmt_str += f"{fail_label}:\n"
+        stmt_str += """CHECK(false) << "does not match any";\n"""
+        stmt_str += f"{match_finish_label}: ;"
+        return ExprWithStmt(out_name, stmt_str)
 
     def visit_tuple(self, node):
         expr = []

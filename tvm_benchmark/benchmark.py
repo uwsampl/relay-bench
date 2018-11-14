@@ -112,7 +112,7 @@ if __name__ == "__main__":
         target = tvm.target.create("llvm")
         target_host = None
     elif args.target == "gpu":
-        model = "1080ti"
+        model = "titanx"
         target = tvm.target.create(f"cuda -model={model}")
         target_host = None
     elif args.target == "fpga":
@@ -145,6 +145,6 @@ if __name__ == "__main__":
         prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
         with open(args.outfile, "a") as outf:
             # print(f"{args.ir}, {args.target}, {network}, {np.mean(prof_res):.2f}, {np.std(prof_res):.2f}", file=outf)
-            print(f"{args.ir},{args.target},{network},{np.mean(prof_res):.2f},{np.std(prof_res):.2f}", file=outf)
+            print(f"{args.ir},{args.target},{network},{np.mean(prof_res)},{np.std(prof_res)}", file=outf)
     else:
         assert False
