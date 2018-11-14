@@ -172,6 +172,10 @@ class AoTCompiler(ExprFunctor):
                         [(c.lhs, self.visit(c.rhs)) for c in m.pattern],
                         m.checked_type)
 
+    def visit_op(self, op):
+        print(op)
+        raise
+
 _LIB_COUNTER = 1
 _LIB = []
 

@@ -64,11 +64,10 @@ class RNNCellOnly(Network):
         self.category_var = category = relay.var('category', shape=(1, N_CATEGORIES))
         self.input_var = inp = relay.var('input', shape=(1, input_size))
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
-        combined = op.concatenate([category, inp, hidden], axis=1)
+        combined = op.concatenate2(op.concatenate2(category, inp, axis=1), hidden, axis=1)
         hidden = linear(N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
         output = linear(N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
-        output_combined = op.concatenate([hidden, output], axis=1)
-        return [category, inp, hidden], relay.Tuple([output_combined]) # can comment out this line, will still has problem
+        output_combined = op.concatenate2(hidden, output, axis=1)
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         #output = op.nn.dropout(output, 0.1) #dropout isnt simplified, commented out for now
         output = op.nn.log_softmax(output, axis=1)
