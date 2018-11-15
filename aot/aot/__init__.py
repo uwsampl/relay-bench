@@ -55,8 +55,6 @@ def compile_cpp(source, lib_name, flags=None, lib_path=None):
             "clang",
             "-std=c++14",
             "-shared",
-            "-undefined",
-            "dynamic_lookup",
             "-fPIC",
             "-o",
             lib_name,
@@ -243,7 +241,7 @@ def compile(mod, func, name='default'):
     func = compiler.visit(func)
     params, source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
-    compile_cpp(source_code, lib_nam, flags=["-O3"])
+    compile_cpp(source_code, lib_name, flags=["-O3"])
     _LIB_COUNTER += 1
     _LIB.append(load_lib(os.path.join(os.getcwd(), lib_name)))
     fn = get_global_func(packed_name)
