@@ -144,7 +144,7 @@ if __name__ == "__main__":
         ftimer = module.module.time_evaluator("run", ctx, number=1, repeat=args.repeat)
         prof_res = np.array(ftimer().results) * 1000  # multiply 1000 for converting to millisecond
         with open(args.outfile, "a") as outf:
-            nnvm_time = np.mean(prof_res) if args.ir == "nnvm" else 0
+            nnvm_time = np.mean(prof_res) if args.ir == "nnvm" else "null"
             for res in prof_res:
                 print(f"{args.ir},{args.target},{network},{res},{nnvm_time}", file=outf)
             # print(f"{args.ir},{args.target},{network},{np.mean(prof_res)},{np.std(prof_res)},{nnvm_time}", file=outf)
