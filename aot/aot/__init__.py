@@ -80,6 +80,50 @@ def load_lib(name):
 def is_primitive(func: relay.Function):
     return isinstance(func, relay.Function) and func.attrs and func.attrs.Primitive.value == 1
 
+def fuse_check(e):
+    # shouldnt derive from functor! we dont want memo!
+    class ExprVisitor(ExprFunctor):
+        def visit_tuple(self, t):
+            for x in t.fields:
+                self.visit(x)
+
+        def visit_call(self, c):
+            self.visit(c.op)
+            for a in c.args:
+                self.visit(a)
+
+        def visit_var(self, v):
+            pass
+
+        def visit_let(self, l):
+            self.visit(l.var)
+            self.visit(l.value)
+            self.visit(l.body)
+
+        def visit_function(self, f):
+            for x in f.args:
+                self.visit(x)
+            self.visit(f.body)
+
+        def visit_global_var(self, gv):
+            pass
+
+        def visit_constructor(self, c):
+            pass
+
+        def visit_op(self, op):
+            pass
+
+    class CheckFused(ExprVisitor):
+        def visit_function(self, f):
+            if not is_primitive(f):
+                self.visit(f.body)
+
+        def visit_op(self, op):
+            raise Exception('should has no op outside of prim')
+
+    CheckFused().visit(e)
+
 class AoTCompiler(ExprFunctor):
     def __init__(self, mod) -> None:
         super().__init__()
@@ -94,9 +138,13 @@ class AoTCompiler(ExprFunctor):
     def optimize(self, expr: Expr) -> Expr:
         infer_e = relay.ir_pass.infer_type(expr, self.mod)
         fused_e = relay.ir_pass.fuse_ops(infer_e, self.mod)
+        fuse_check(fused_e)
         fused_e = relay.ir_pass.infer_type(fused_e, self.mod)
+        fuse_check(fused_e)
         anf_fused = relay.ir_pass.to_anf(fused_e, self.mod)
+        fuse_check(anf_fused)
         anf_fused = relay.ir_pass.infer_type(anf_fused, self.mod)
+        fuse_check(anf_fused)
         return anf_fused
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
@@ -171,6 +219,10 @@ class AoTCompiler(ExprFunctor):
         return CPPMatch(self.visit(m.data),
                         [(c.lhs, self.visit(c.rhs)) for c in m.pattern],
                         m.checked_type)
+
+    def visit_op(self, op):
+        print(op)
+        raise Exception('op outside of primitive')
 
 _LIB_COUNTER = 1
 _LIB = []
