@@ -25,7 +25,7 @@ def bench_forward(input_size, hidden_size, output_size, iterations=1000):
     print("average iteration time of relay: " + avg_time_since(relay_start, iterations))
 
     relay_loop_start = time.time()
-    #relay_rnn = relay.char_rnn_generator.RNNLoop(data.N_LETTERS, hidden_size, data.N_LETTERS)
+    relay_rnn = relay.char_rnn_generator.RNNLoop(data.N_LETTERS, hidden_size, data.N_LETTERS)
     for i in range(iterations):
         # Relay using RNN list
         # relay_rnn.samples('Russian', 'RUS')
