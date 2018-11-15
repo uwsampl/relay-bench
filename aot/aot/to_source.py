@@ -271,7 +271,6 @@ class ToSource:
                 args_str += f"ValueToND({tuple_name}->fields[{i}])"
                 if i != end:
                     args_str += ", "
-            print(args_str)
         else:
             end = call.arity - 2
             for i, arg in enumerate(call.args):

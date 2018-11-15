@@ -17,14 +17,6 @@ from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
 from aot import aot
 
-def linear(input_size, output_size, x, name=None):
-    if name is None:
-        name = ""
-
-    weight = relay.var(f'{name}linear_weight', shape=(output_size, input_size))
-    bias = relay.var(f'{name}linear_bias', shape=(output_size,))
-    return op.add(op.nn.dense(x, weight), bias)
-
 def initialize(param):
     ty = param.type_annotation
     shape = [int(i) for i in ty.shape]
@@ -32,26 +24,32 @@ def initialize(param):
         np.random.normal(0, 1, shape).astype('float32'))
 
 class Network:
+    def add_param(self, name="", shape=()):
+        x = relay.var(name, shape=shape)
+        self.parameters.append((x, initialize(x)))
+        return x
+
+    def linear(self, input_size, output_size, x, name=""):
+        weight = self.add_param(f'{name}linear_weight', shape=(output_size, input_size))
+        bias = self.add_param(f'{name}linear_bias', shape=(output_size,))
+        return op.add(op.nn.dense(x, weight), bias)
+
     def __init__(self, *args):
         self.mod = Module()
         self.prelude = Prelude(self.mod)
         self.context = tvm.cpu(0)
         self.target = tvm.target.create('llvm')
         self.executor = create_executor(mod=self.mod, ctx=self.context)
-        self.parameters = {}
+        self.parameters = []
 
         # Set up forward pass.
         inputs, body = self.compute(*args)
         self.inputs = inputs
 
-        free_vars = relay.ir_pass.free_vars(body)
-        for param in free_vars[len(inputs):]:
-            self.parameters[param] = initialize(param)
-        self.hidden = initialize(free_vars[2])
-        self.forward_compute = relay.Function(free_vars, body)
+        self.forward_compute = relay.Function(inputs + list([p[0] for p in self.parameters]), body)
         self.forward = aot.compile(self.mod, self.forward_compute)
         #self.forward = self.executor.static_evaluate(self.forward_compute)
-        self.args = [None] * len(inputs) + list(self.parameters.values())
+        self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
 
     def __call__(self, *inputs):
         for i, inp in enumerate(inputs):
@@ -64,20 +62,22 @@ class RNNCellOnly(Network):
         self.category_var = category = relay.var('category', shape=(1, N_CATEGORIES))
         self.input_var = inp = relay.var('input', shape=(1, input_size))
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
+        self.hidden = initialize(self.hidden_var)
         combined = op.concatenate2(op.concatenate2(category, inp, axis=1), hidden, axis=1)
-        hidden = linear(N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
-        output = linear(N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
+        hidden = self.linear(N_CATEGORIES + input_size + hidden_size, hidden_size, combined, name='i2h')
+        output = self.linear(N_CATEGORIES + input_size + hidden_size, output_size, combined, name='i2o')
         output_combined = op.concatenate2(hidden, output, axis=1)
-        output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
+        output = self.linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         #output = op.nn.dropout(output, 0.1) #dropout isnt simplified, commented out for now
         output = op.nn.log_softmax(output, axis=1)
         return [self.category_var, self.input_var, self.hidden_var], relay.Tuple([output, hidden])
 
     def warm(self):
-        self.forward(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var), *self.parameters.values())
+        self(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var))
 
-class RNNLoop(NetWork):
+class RNNLoop(Network):
     def compute(self, input_size, hidden_size, output_size):
+        raise
         self.category_var = category = relay.var('category', shape=(1, N_CATEGORIES))
         self.inp_topi_var = inp_topi = relay.var('input', shape=(), dtype='int32')
         self.hidden_var = hidden = relay.var('hidden', shape=(1, hidden_size))
@@ -93,26 +93,16 @@ class RNNLoop(NetWork):
         output = linear(hidden_size + output_size, output_size, output_combined, name='o2o')
         # output = op.nn.dropout(output, 0.1) #attributes has not been registered
         output = op.nn.log_softmax(output, axis=1)
-        body = relay.Tuple([output, hidden])
-        return [self.category_var, self.inp_topi_var, self.hidden_var]
+        topi = op.argmax(output)
+        body = relay.Tuple([output,
+                            hidden,
+                            topi,
+                            op.equal(topi, op.subtract(n_letter, relay.const(1)))])
+        inp_para = [self.category_var, self.inp_topi_var, self.hidden_var]
+        self.fwd = relay.Var('fwd')
+
+        return inp_para, body
 #         self.fwd = relay.GlobalVar('fwd')
-#         topi = op.argmax(output)
-#         body = relay.Tuple([output,
-#                             hidden,
-#                             topi,
-#                             op.equal(topi, op.subtract(n_letter, relay.const(1)))])
-#         assert len(relay.ir_pass.free_vars(body)) == 9
-#         inp_para = [category, inp_topi, hidden_var]
-#         weight_para = [self.w0_var, self.b0_var, self.w1_var, self.b1_var, self.w2_var, self.b2_var]
-#         para = inp_para + weight_para
-#         self.w0 = init((data.N_CATEGORIES + input_size + hidden_size, hidden_size))
-#         self.b0 = init(hidden_size)
-#         self.w1 = init((data.N_CATEGORIES + input_size + hidden_size, output_size))
-#         self.b1 = init(output_size)
-#         self.w2 = init((hidden_size + output_size, output_size))
-#         self.b2 = init(output_size)
-#         mod[self.fwd] = relay.Function(para, body)
-#         self.forward = intrp.static_evaluate(self.fwd)
 
 #         self.loop_fwd = relay.GlobalVar('loop_fwd')
 #         max = relay.var('max', shape=(), dtype='int32')

@@ -114,6 +114,9 @@ def fuse_check(e):
         def visit_op(self, op):
             pass
 
+        def visit_constant(self, const):
+            pass
+
     class CheckFused(ExprVisitor):
         def visit_function(self, f):
             if not is_primitive(f):
