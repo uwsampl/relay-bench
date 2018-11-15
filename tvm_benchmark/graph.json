@@ -20,13 +20,16 @@
     "calculate": "datum.Time/datum.NNVMTime",
     "as": "SlowdownRatio"
   }],
-  "mark": "point",
+  "mark": {
+    "type": "boxplot",
+    "extent": 1.5
+  },
   "encoding": {
     "row":    { "field": "Target",  "type": "nominal" },
     "column": { "field": "Model",   "type": "nominal" },
     "x":      { "field": "IR",      "type": "nominal" },
     "y":      { "field": "SlowdownRatio",    "type": "quantitative",
-                "scale": {"type": "log"} },
+                "axis": {"title": "(Inference Time) / NNVM"}, "scale": {"type": "log"} },
     "color": { "field": "IR", "type": "nominal" }
   }
 }

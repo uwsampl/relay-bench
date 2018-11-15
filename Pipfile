@@ -11,6 +11,7 @@ decorator = "*"
 attr = "*"
 attrs = "*"
 cairosvg = "*"
+paramiko = "*"
 
 [dev-packages]
 "autopep8" = "*"

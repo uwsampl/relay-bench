@@ -2,12 +2,13 @@ import subprocess
 import shlex
 import itertools
 from visualize import visualize
+import paramiko
 
 MODELS = [
     "mlp",
     "dqn",
     # "dcgan",
-    "resnet-18",
+    # "resnet-18",
     # "densenet",
     ]
 
@@ -24,14 +25,14 @@ TARGETS = [
     # "fpga",
 ]
 
-REPEAT = 1
+REPEAT = 1000
 
 OUT_FILE = "graph-data.csv"
 
 def main():
     with open(OUT_FILE, "w") as outf:
         # print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
-        print("IR,Target,Model,Time", file=outf)
+        print("IR,Target,Model,Time,NNVM", file=outf)
 
     server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:4242 --key foo --no-fork"))
 

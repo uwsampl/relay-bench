@@ -31,12 +31,7 @@ OUT_FILE = "graph-data.csv"
 
 def main():
     with open(OUT_FILE, "w") as outf:
-        # print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
-        print("IR,Target,Model,Time", file=outf)
-
- #   server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:4242 --key foo --no-fork"))
-
-#    tracker = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 4242 --no-fork"))
+        print("IR,Target,Model,Time,NNVM", file=outf)
 
     for ir, (target, key), model in itertools.product(IRS, TARGETS, MODELS):
         subprocess.run(["python3.6", "tvm_benchmark/benchmark.py",
@@ -47,14 +42,13 @@ def main():
                         "--repeat", str(REPEAT),
                         "--output", "file",
                         "--outfile", OUT_FILE,
-			"--host", "fleet",
+                        "--host", "fleet",
                         "--port", "9190",
                         ])
 
-   # tracker.kill()
-   # server.kill()
-
-    # visualize("../pl4ml/pldi19/fig/graph")
+    with open("tvm_benchmark/tf_results.csv", "r") as tf_res, open(OUT_FILE, "a") as outf:
+        for line in tf_res:
+            outf.write(line)
 
 if __name__ == "__main__":
     main()
