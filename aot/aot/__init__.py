@@ -9,7 +9,7 @@ from tvm.relay.expr import Expr, Let
 from tvm.relay.adt import Constructor
 from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
-from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple, CPPMatch, CPPConstructor
+from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple, CPPMatch, CPPConstructor, CPPTupleGetItem
 from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
@@ -68,11 +68,11 @@ def compile_cpp(source, lib_name, lib_path=None):
 
     proc = subprocess.run(command)
     assert proc.returncode == 0
-    cleanup = [
-        "rm",
-        source_path
-    ]
-    assert subprocess.run(cleanup).returncode == 0
+    #cleanup = [
+    #    "rm",
+    #    source_path
+    #]
+    #assert subprocess.run(cleanup).returncode == 0
 
 def load_lib(name):
     return ctypes.CDLL(name, ctypes.RTLD_GLOBAL)
@@ -112,6 +112,9 @@ def fuse_check(e):
             pass
 
         def visit_op(self, op):
+            pass
+
+        def visit_constant(self, const):
             pass
 
     class CheckFused(ExprVisitor):
@@ -223,6 +226,9 @@ class AoTCompiler(ExprFunctor):
     def visit_op(self, op):
         print(op)
         raise Exception('op outside of primitive')
+
+    def visit_tuple_getitem(self, t):
+        return CPPTupleGetItem(self.visit(t.tuple_value), t.index, t.checked_type)
 
 _LIB_COUNTER = 1
 _LIB = []

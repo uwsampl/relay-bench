@@ -52,3 +52,9 @@ class CPPMatch(LittleCppNode):
 class CPPConstructor(LittleCppNode):
     tag: int
     fields: List[Any]
+
+@attr.s(auto_attribs=True)
+class CPPTupleGetItem(LittleCppNode):
+    tuple_value: Any
+    index: int
+    relay_type: Any
