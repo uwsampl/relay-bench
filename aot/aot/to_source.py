@@ -71,10 +71,17 @@ class ToSource:
             res = self.visit_constructor(node)
         elif isinstance(node, little_cpp.CPPMatch):
             res = self.visit_match(node)
+        elif isinstance(node, little_cpp.CPPTupleGetItem):
+            res = self.visit_tuple_getitem(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
         return res
+
+    def visit_tuple_getitem(self, node):
+        vt = self.visit(node.tuple_value)
+        e = f"{vt.expr}->fields[{node.index}]"
+        return ExprWithStmt(f"{self.downcast(e, self.visit_type(node.relay_type))}", vt.stmt)
 
     def visit_constructor(self, node):
         args_str, stmt_str = self.visit_args(node.fields)
@@ -89,6 +96,9 @@ class ToSource:
             var_set.add(pat.var)
         else:
             raise Exception(str(pat))
+
+    def downcast(self, expr_str, ty_str):
+        return f"Downcast<{ty_str}>({expr_str})"
 
     def visit_match(self, node):
         vd = self.visit(node.data)
@@ -114,7 +124,8 @@ class ToSource:
                     bind_name = self.fresh_local_name()
                     bind_names.append(bind_name)
                     t = self.visit_type(input_type)
-                    ok_case += f"{t} {bind_name} = Downcast<{t}>({data_name}->fields[{i}]);\n"
+                    e = f"{data_name}->fields[{i}]"
+                    ok_case += f"{t} {bind_name} = {self.downcast(e, t)}\n"
                 for bind_name, p in zip(bind_names, pat.pat):
                     next_label = self.fresh_label_name()
                     ok_case += visit_pattern(p, bind_name, fail_label, next_label)
@@ -318,13 +329,14 @@ class ToSource:
             """
             return ExprWithStmt(name)
 
-    def mk_register_api(self, name: str, func: little_cpp.CPPFunction) -> str:
-        assert isinstance(func, little_cpp.CPPFunction)
+    def mk_register_api(self, name: str, func) -> str:
         vf = self.visit(func, False)
         assert vf.stmt == ""
         source = self.declare
 
         args = ""
+        if isinstance(func, relay.GlobalVar):
+            func = self.gv_map[func]
         end = len(func.params) - 1
         init = ""
         for i, (input_name, _) in enumerate(self.input_const):
@@ -393,7 +405,6 @@ def mk_file(body):
     """
 
 def to_source(mod, gv_map, name, program) -> str:
-    assert isinstance(program, little_cpp.CPPFunction)
     convert = ToSource(gv_map)
     ret = mk_file(convert.mk_register_api(name, program))
     return [value.data for name, value in convert.input_const], ret
