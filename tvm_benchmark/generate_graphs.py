@@ -34,6 +34,12 @@ def main():
         # print("ir, target, model, avg time (ms), std dev (ms)", file=outf)
         print("IR,Target,Model,Time,NNVM", file=outf)
 
+    # https://stackoverflow.com/questions/35304525/nested-ssh-using-python-paramiko
+    vm=paramiko.SSHClient()
+    vm.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    
+    vm.connect('sampa-gw.cs.washington.edu',username='joshpoll',password='xxxxxx')
+
     server = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_server --tracker 0.0.0.0:4242 --key foo --no-fork"))
 
     tracker = subprocess.Popen(shlex.split("python3 -m tvm.exec.rpc_tracker --port 4242 --no-fork"))
