@@ -243,7 +243,7 @@ def compile(mod, func, name='default'):
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
     compile_cpp(source_code, lib_name)
     _LIB_COUNTER += 1
-    _LIB.append(load_lib(lib_name))
+    _LIB.append(load_lib(os.path.join(os.getcwd(), lib_name)))
     fn = get_global_func(packed_name)
     def convert(a):
         if isinstance(a, int):
