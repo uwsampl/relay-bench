@@ -21,8 +21,7 @@
     "as": "SlowdownRatio"
   }],
   "mark": {
-    "type": "boxplot",
-    "extent": 1.5
+    "type": "point"
   },
   "encoding": {
     "row":    { "field": "Target",  "type": "nominal" },
