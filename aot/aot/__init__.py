@@ -246,11 +246,15 @@ def compile(mod, func, name='default'):
     _LIB.append(load_lib(lib_name))
     fn = get_global_func(packed_name)
     def convert(a):
+        if isinstance(a, int):
+            a = tvm.nd.array(np.array(a, dtype='int32'))
+        if isinstance(a, np.ndarray):
+            a = tvm.nd.array(a)
         if isinstance(a, tvm.ndarray.NDArray):
             return relay.backend.interpreter.TensorValue(a)
         if isinstance(a, relay.backend.interpreter.TensorValue):
             return a
-        raise Exception(a)
+        raise Exception(a, type(a))
     def wrap(*args):
         return fn(*[convert(a) for a in params], *[convert(a) for a in args])
     return wrap
