@@ -74,7 +74,7 @@ def test_int_mult_3():
     cfunc = aot.compile(mod, func)
     a = tvm.nd.array(np.array(4, dtype='int32'))
     output = cfunc(a)
-    np.testing.assert_allclose(output.asnumpy(), np.array(12.0, dtype='int32'))
+    np.testing.assert_allclose(output.asnumpy(), np.array(12, dtype='int32'))
 
 def test_abs():
     mod = Module()
@@ -107,6 +107,13 @@ def nat_to_int(n):
         assert n.con.tag == 0
         return 0
 
+def int_to_nat(p, i):
+    if i > 0:
+        return p.s(int_to_nat(p, i - 1))
+    else:
+        assert i == 0
+        return p.z()
+
 def test_nat_3():
     mod = Module()
     p = Prelude(mod)
@@ -120,6 +127,30 @@ def test_nat_add():
     cfunc = aot.compile(mod, Function([], p.add(p.s(p.s(p.s(p.z()))), p.s(p.s(p.s(p.s(p.z())))))))
     output = cfunc()
     assert nat_to_int(output) == 7
+
+def test_add_convert():
+    mod = Module()
+    p = Prelude(mod)
+    cfunc = aot.compile(mod, p.add)
+    output = cfunc(int_to_nat(p, 12), int_to_nat(p, 34))
+    assert nat_to_int(output) == 46
+
+def test_ref():
+    mod = relay.Module()
+    three_with_ref = relay.GlobalVar('three_with_ref')
+    i = relay.Var('i')
+    iv = relay.Var('iv')
+    u = relay.Var('u')
+    uv = relay.Var('uv')
+    body = relay.add(iv, uv)
+    body = relay.Let(uv, relay.RefRead(i), body)
+    body = relay.Let(u, relay.RefWrite(i, relay.const(2)), body)
+    body = relay.Let(iv, relay.RefRead(i), body)
+    body = relay.Let(i, relay.RefNew(relay.const(1)), body)
+    mod[three_with_ref] = relay.Function([], body)
+    cfunc = aot.compile(mod, three_with_ref)
+    output = cfunc()
+    np.testing.assert_allclose(output.asnumpy(), np.array(3, dtype='int32'))
 
 #def test_recur_sum_local():
 #    mod = Module()
@@ -146,4 +177,6 @@ if __name__ == "__main__":
     #test_abs()
     #test_recur_sum_global()
     #test_nat_3()
-    test_nat_add()
+    #test_nat_add()
+    #test_add_convert()
+    test_ref()

@@ -58,3 +58,18 @@ class CPPTupleGetItem(LittleCppNode):
     tuple_value: Any
     index: int
     relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPRefNew(LittleCppNode):
+    value: Any
+    relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPRefRead(LittleCppNode):
+    ref: Any
+    relay_type: Any
+
+@attr.s(auto_attribs=True)
+class CPPRefWrite(LittleCppNode):
+    ref: Any
+    value: Any

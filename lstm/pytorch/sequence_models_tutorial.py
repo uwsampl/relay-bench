@@ -28,8 +28,8 @@ for sent in training_data:
 
 # These will usually be more like 32 or 64 dimensional.
 # We will keep them small, so we can see how the weights change as we train.
-EMBEDDING_DIM = 6
-HIDDEN_DIM = 6
+EMBEDDING_DIM = 16
+HIDDEN_DIM = 32
 
 class LSTMTagger(nn.Module):
 
@@ -73,3 +73,7 @@ def bm():
                 sentence_in = prepare_sequence(0, sentence, word_to_ix)
                 tag_scores = model(sentence_in)
     print(avg_time_since(t, 1))
+
+
+if __name__ == '__main__':
+    bm()
