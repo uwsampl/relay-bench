@@ -1,0 +1,22 @@
+{
+  "data": {
+    "url": "tvm_benchmark/vta-results.csv",
+    "format": { "type": "csv" }
+  },
+  "facet": {
+    "column": { "field": "Model", "type": "nominal" }
+  },
+  "spec": {
+    "layer": [
+      {
+        "mark": {"type": "point", "filled": true},
+        "encoding": {
+        "y":      { "field": "IR", "type": "nominal" },
+        "x":      { "field": "ms_per_image", "type": "quantitative",
+                    "aggregate": "mean" },
+        "color": { "field": "Target", "type": "nominal" }
+        }
+      }
+    ]
+  }
+}
