@@ -55,7 +55,15 @@ class LSTM(Network):
 
 def bm():
     lstm = LSTM(16, 32)
+    N_ITER = 100
+    inp = lstm.prelude.nil()
+    for _ in range(N_ITER):
+        x = np.random.randn(1, 16).astype('float32')
+        inp = (lstm.prelude.cons, x, inp)
+    hidden = np.random.randn(1, 32).astype('float32')
+    cell = np.random.randn(1, 32).astype('float32')
     t = time.time()
+    lstm(inp, hidden, cell)
     print(avg_time_since(t, 1))
 
 if __name__ == '__main__':

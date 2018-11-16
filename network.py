@@ -44,6 +44,7 @@ class Network:
         self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
 
     def __call__(self, *inputs):
+        assert len(self.inputs) == len(inputs)
         for i, inp in enumerate(inputs):
             self.args[i] = inp
 
