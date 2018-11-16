@@ -10,6 +10,7 @@ from tvm.relay.adt import Constructor
 from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
 from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple, CPPMatch, CPPConstructor, CPPTupleGetItem
+from .little_cpp import CPPRefNew, CPPRefRead, CPPRefWrite
 from . import to_source
 from .convert import convert
 
@@ -82,8 +83,9 @@ def load_lib(name):
 def is_primitive(func: relay.Function):
     return isinstance(func, relay.Function) and func.attrs and func.attrs.Primitive.value == 1
 
-def fuse_check(e):
-    # shouldnt derive from functor! we dont want memo!
+def fuse_check(e, mod):
+    vgv = set()
+
     class ExprVisitor(ExprFunctor):
         def visit_tuple(self, t):
             for x in t.fields:
@@ -113,7 +115,9 @@ def fuse_check(e):
             self.visit(i.false_branch)
 
         def visit_global_var(self, gv):
-            pass
+            if gv not in vgv:
+                vgv.add(gv)
+                self.visit(mod[gv])
 
         def visit_constructor(self, c):
             pass
@@ -123,6 +127,16 @@ def fuse_check(e):
 
         def visit_constant(self, const):
             pass
+
+        def visit_ref_new(self, r):
+            self.visit(r.value)
+
+        def visit_ref_read(self, r):
+            self.visit(r.ref)
+
+        def visit_ref_write(self, r):
+            self.visit(r.ref)
+            self.visit(r.value)
 
     class CheckFused(ExprVisitor):
         def visit_function(self, f):
@@ -148,13 +162,13 @@ class AoTCompiler(ExprFunctor):
     def optimize(self, expr: Expr) -> Expr:
         infer_e = relay.ir_pass.infer_type(expr, self.mod)
         fused_e = relay.ir_pass.fuse_ops(infer_e, self.mod)
-        fuse_check(fused_e)
+        fuse_check(fused_e, self.mod)
         fused_e = relay.ir_pass.infer_type(fused_e, self.mod)
-        fuse_check(fused_e)
+        fuse_check(fused_e, self.mod)
         anf_fused = relay.ir_pass.to_anf(fused_e, self.mod)
-        fuse_check(anf_fused)
+        fuse_check(anf_fused, self.mod)
         anf_fused = relay.ir_pass.infer_type(anf_fused, self.mod)
-        fuse_check(anf_fused)
+        fuse_check(anf_fused, self.mod)
         return anf_fused
 
     def mk_primitive_op(self, func: Expr, args, output_type) -> Expr:
@@ -235,6 +249,15 @@ class AoTCompiler(ExprFunctor):
 
     def visit_tuple_getitem(self, t):
         return CPPTupleGetItem(self.visit(t.tuple_value), t.index, t.checked_type)
+
+    def visit_ref_new(self, r):
+        return CPPRefNew(self.visit(r.value), r.checked_type)
+
+    def visit_ref_read(self, r):
+        return CPPRefRead(self.visit(r.ref), r.checked_type)
+
+    def visit_ref_write(self, r):
+        return CPPRefWrite(self.visit(r.ref), self.visit(r.value))
 
 _LIB_COUNTER = 1
 _LIB = []

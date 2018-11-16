@@ -73,10 +73,31 @@ class ToSource:
             res = self.visit_match(node)
         elif isinstance(node, little_cpp.CPPTupleGetItem):
             res = self.visit_tuple_getitem(node)
+        elif isinstance(node, little_cpp.CPPRefNew):
+            res = self.visit_ref_new(node)
+        elif isinstance(node, little_cpp.CPPRefRead):
+            res = self.visit_ref_read(node)
+        elif isinstance(node, little_cpp.CPPRefWrite):
+            res = self.visit_ref_write(node)
         else:
             raise Exception(str(node))
         assert isinstance(res, ExprWithStmt)
         return res
+
+    def visit_ref_new(self, node):
+        vv = self.visit(node.value)
+        return ExprWithStmt(f"RefValueNode::make({vv.expr})", vv.stmt)
+
+    def visit_ref_read(self, node):
+        vr = self.visit(node.ref)
+        e = f"{vr.expr}->value"
+        return ExprWithStmt(f"{self.downcast(e, self.visit_type(node.relay_type))}", vr.stmt)
+
+    def visit_ref_write(self, node):
+        vr = self.visit(node.ref)
+        vv = self.visit(node.value)
+        stmt = vr.stmt + vv.stmt + f"{vr.expr}->value={vv.expr};\n"
+        return ExprWithStmt("TupleValueNode::make({})", stmt)
 
     def visit_tuple_getitem(self, node):
         vt = self.visit(node.tuple_value)
