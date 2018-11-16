@@ -75,9 +75,6 @@ class SlowLSTM(nn.Module):
         c_t = c_t.view(c_t.size(0), 1, -1)
         return h_t, (h_t, c_t)
 
-    def sample_mask(self):
-        pass
-
 
 class LSTM(nn.Module):
 
