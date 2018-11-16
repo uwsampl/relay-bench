@@ -11,6 +11,7 @@ from tvm.relay.expr_functor import ExprFunctor
 from tvm.relay.backend import compile_engine
 from .little_cpp import PackedCall, CPPFunction, Invoke, Decl, CPPIf, CPPTuple, CPPMatch, CPPConstructor, CPPTupleGetItem
 from . import to_source
+from .convert import convert
 
 TVM_PATH = os.environ['TVM_PATH']
 
@@ -105,6 +106,11 @@ def fuse_check(e):
             for x in f.args:
                 self.visit(x)
             self.visit(f.body)
+
+        def visit_if(self, i):
+            self.visit(i.cond)
+            self.visit(i.true_branch)
+            self.visit(i.false_branch)
 
         def visit_global_var(self, gv):
             pass
@@ -245,16 +251,6 @@ def compile(mod, func, name='default'):
     _LIB_COUNTER += 1
     _LIB.append(load_lib(os.path.join(os.getcwd(), lib_name)))
     fn = get_global_func(packed_name)
-    def convert(a):
-        if isinstance(a, int):
-            a = tvm.nd.array(np.array(a, dtype='int32'))
-        if isinstance(a, np.ndarray):
-            a = tvm.nd.array(a)
-        if isinstance(a, tvm.ndarray.NDArray):
-            return relay.backend.interpreter.TensorValue(a)
-        if isinstance(a, relay.backend.interpreter.TensorValue):
-            return a
-        raise Exception(a, type(a))
     def wrap(*args):
         return fn(*[convert(a) for a in params], *[convert(a) for a in args])
     return wrap

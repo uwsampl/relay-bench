@@ -107,6 +107,13 @@ def nat_to_int(n):
         assert n.con.tag == 0
         return 0
 
+def int_to_nat(p, i):
+    if i > 0:
+        return p.s(int_to_nat(p, i - 1))
+    else:
+        assert i == 0
+        return p.z()
+
 def test_nat_3():
     mod = Module()
     p = Prelude(mod)
@@ -120,6 +127,13 @@ def test_nat_add():
     cfunc = aot.compile(mod, Function([], p.add(p.s(p.s(p.s(p.z()))), p.s(p.s(p.s(p.s(p.z())))))))
     output = cfunc()
     assert nat_to_int(output) == 7
+
+def test_add_convert():
+    mod = Module()
+    p = Prelude(mod)
+    cfunc = aot.compile(mod, p.add)
+    output = cfunc(int_to_nat(p, 12), int_to_nat(p, 34))
+    assert nat_to_int(output) == 46
 
 #def test_recur_sum_local():
 #    mod = Module()
@@ -146,4 +160,5 @@ if __name__ == "__main__":
     #test_abs()
     #test_recur_sum_global()
     #test_nat_3()
-    test_nat_add()
+    #test_nat_add()
+    test_add_convert()
