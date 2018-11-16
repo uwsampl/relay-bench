@@ -73,3 +73,7 @@ def bm():
                 sentence_in = prepare_sequence(0, sentence, word_to_ix)
                 tag_scores = model(sentence_in)
     print(avg_time_since(t, 1))
+
+
+if __name__ == '__main__':
+    bm()
