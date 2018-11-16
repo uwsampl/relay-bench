@@ -18,10 +18,33 @@ from tvm.relay import create_executor, Module
 from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
 from aot import aot
+from network import *
 
 class SlowLSTM(Network):
-    def comput(self):
-        pass
+    def compute(self, embedding_dim, hidden_dim):
+        fwd_input = relay.var('fwd_input', shape=(embedding_dim,))
+        fwd_hidden = relay.var('fwd_hidden', shape=(hidden_dim,))
+        fwd_cell = relay.var('fwd_cell', shape=(hidden_dim,))
+        embedding_t = relay.TensorType(dtype='float32', shape=(embedding_dim,))
+        hidden_t = relay.TensorType(dtype='float32', shape=(hidden_dim,))
+        ret_t = relay.TupleType([hidden_t, hidden_t])
+        self.fwd_cell = relay.Var('fwd_cell', relay.FuncType([embedding_t, hidden_t, hidden_t], ret_t))
+        fwd_cell_func = relay.Function([fwd_input, fwd_hidden, fwd_cell], relay.Tuple([fwd_hidden, fwd_cell]), ret_t)
+
+        self.input = relay.Var('input', self.prelude.l(embedding_t))
+        self.hidden = relay.var('hidden', shape=(hidden_dim,))
+        self.cell = relay.var('cell', shape=(hidden_dim,))
+        nil_case = relay.Clause(relay.PatternConstructor(self.prelude.nil), self.prelude.nil())
+        x = relay.Var('x', type_annotation=embedding_t)
+        y = relay.Var('y', type_annotation=self.prelude.l(embedding_t))
+        fwd_res = self.fwd_cell(x, self.hidden, self.cell)
+        hidden_output = fwd_res[0]
+        cell_output = fwd_res[1]
+        cons_case = relay.Clause(relay.PatternConstructor(self.prelude.cons,
+                                                          [relay.PatternVar(x), relay.PatternVar(y)]),
+                                 self.prelude.cons(hidden_output, self.recurse(y, hidden_output, cell_output)))
+        body = relay.Let(self.fwd_cell, fwd_cell_func, relay.Match(self.input, [nil_case, cons_case]))
+        return [self.input, self.hidden, self.cell], body, self.prelude.l(hidden_t)
 
 # class SlowLSTM(nn.Module):
 
@@ -151,5 +174,8 @@ class SlowLSTM(Network):
 
 def bm():
     t = time.time()
-    slstm = SlowLSTM()
+    slstm = SlowLSTM(16, 32)
     print(avg_time_since(t, 1))
+
+if __name__ == '__main__':
+    bm()

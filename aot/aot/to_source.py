@@ -125,7 +125,7 @@ class ToSource:
                     bind_names.append(bind_name)
                     t = self.visit_type(input_type)
                     e = f"{data_name}->fields[{i}]"
-                    ok_case += f"{t} {bind_name} = {self.downcast(e, t)}\n"
+                    ok_case += f"{t} {bind_name} = {self.downcast(e, t)};\n"
                 for bind_name, p in zip(bind_names, pat.pat):
                     next_label = self.fresh_label_name()
                     ok_case += visit_pattern(p, bind_name, fail_label, next_label)
@@ -141,7 +141,7 @@ class ToSource:
                 """
             elif isinstance(pat, relay.PatternVar):
                 return f"""
-                {self.name_map[v]} = {data_name};
+                {self.name_map[pat.var]} = {data_name};
                 """
             else:
                 raise Exception(str(pat))
@@ -205,6 +205,8 @@ class ToSource:
             res = "TupleValue"
         elif isinstance(node, relay.TypeCall):
             res = "ConValue" # typecall is only used at constructors at the moment
+        elif isinstance(node, relay.TypeVar):
+            res = "TensorValue"
         else:
             raise Exception(str(node))
         return res
