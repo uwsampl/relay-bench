@@ -24,7 +24,7 @@ class Network:
         bias = self.add_param(f'{name}linear_bias', shape=(output_size,))
         return op.add(op.nn.dense(x, weight), bias)
 
-    def __init__(self, *args):
+    def __init__(self, do_aot, *args):
         self.mod = Module()
         self.prelude = Prelude(self.mod)
         self.context = tvm.cpu(0)
@@ -39,8 +39,10 @@ class Network:
 
         forward_compute = relay.Function(inputs + list([p[0] for p in self.parameters]), body, ret_type)
         self.mod[self.forward_var] = forward_compute
-        self.forward = aot.compile(self.mod, self.forward_var)
-        #self.forward = self.executor.static_evaluate(self.forward_var)
+        if do_aot:
+            self.forward = aot.compile(self.mod, self.forward_var)
+        else:
+            self.forward = self.executor.static_evaluate(self.forward_var)
         self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
 
     def __call__(self, *inputs):
@@ -48,7 +50,7 @@ class Network:
         for i, inp in enumerate(inputs):
             self.args[i] = inp
 
-        return self.forward(*self.args)
+        return self.forward(*[aot.convert(a) for a in self.args])
 
     def recurse(self, *inputs):
         return self.forward_var(*inputs, *[p[0] for p in self.parameters])
