@@ -138,6 +138,9 @@ def fuse_check(e, mod):
             self.visit(r.ref)
             self.visit(r.value)
 
+        def visit_tuple_getitem(self, t):
+            self.visit(t.tuple_value)
+
     class CheckFused(ExprVisitor):
         def visit_function(self, f):
             if not is_primitive(f):
