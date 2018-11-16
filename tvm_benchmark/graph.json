@@ -3,33 +3,40 @@
     "url": "graph-data.csv",
     "format": { "type": "csv" }
   },
-  "transform": [
+  "facet": {
+    "row":    { "field": "Target", "type": "nominal" },
+    "column": { "field": "Model", "type": "nominal" }
+  },
+  "spec": {
+    "transform": [
+      {
+      "window": [{
+        "op": "max",
+        "field": "NNVM",
+        "as": "NNVMTime"
+      }],
+      "groupby": [
+        "Model",
+        "Target"
+      ],
+      "frame": [null, null]
+    },
     {
-    "window": [{
-      "op": "max",
-      "field": "NNVM",
-      "as": "NNVMTime"
+      "calculate": "datum.Time/datum.NNVMTime",
+      "as": "SlowdownRatio"
     }],
-    "groupby": [
-      "Model",
-      "Target"
-    ],
-    "frame": [null, null]
-  },
-  {
-    "calculate": "datum.Time/datum.NNVMTime",
-    "as": "SlowdownRatio"
-  }],
-  "mark": {
-    "type": "boxplot",
-    "extent": 1.5
-  },
-  "encoding": {
-    "row":    { "field": "Target",  "type": "nominal" },
-    "column": { "field": "Model",   "type": "nominal" },
-    "x":      { "field": "IR",      "type": "nominal" },
-    "y":      { "field": "SlowdownRatio",    "type": "quantitative",
-                "axis": {"title": "(Inference Time) / NNVM"}, "scale": {"type": "log"} },
-    "color": { "field": "IR", "type": "nominal" }
+    "layer": [
+      {
+        "mark": {"type": "point", "filled": true},
+        "encoding": {
+        "y":      { "field": "IR", "type": "nominal" },
+        "x":      { "field": "SlowdownRatio", "type": "quantitative",
+                    "aggregate": "mean",
+                    "axis": {"title": "(Inference Time) / NNVM"},
+                    "scale": {"type": "log"} },
+        "color": { "field": "IR", "type": "nominal" }
+        }
+      }
+    ]
   }
 }

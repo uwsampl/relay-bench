@@ -305,7 +305,7 @@ class ToSource:
 
         end = len(func.params) - 1
         for i, param in enumerate(func.params):
-            pname = f"param{i}"
+            pname = self.fresh_local_name()
             self.name_map[param] = pname
             param_str += f"const {self.visit_type(param.type_annotation)}& {pname}"
             if i != end:
@@ -353,7 +353,7 @@ class ToSource:
             *ret = {vf.expr}({args});
         }});
         """
-        print(source)
+        # print(source)
         return source
 
 def inter(strs, sep=", "):
