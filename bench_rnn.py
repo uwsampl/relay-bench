@@ -2,15 +2,9 @@ import cProfile
 import time
 import math
 from rnn import pytorch, language_data as data, relay
+from benchmark import avg_time_since
 
 N_HIDDEN = 128
-
-def avg_time_since(since, iterations):
-    now = time.time()
-    ms = round(1000 * ((now - since)/iterations))
-    s = math.floor(ms / 1000)
-    m = math.floor(s / 60)
-    return '%dm %ds %dms' % (m, s % 60, ms % 1000)
 
 def bench_forward(input_size, hidden_size, output_size, iterations=1000):
     relay_rnn = relay.char_rnn_generator.RNNCellOnly(data.N_LETTERS, hidden_size, data.N_LETTERS)

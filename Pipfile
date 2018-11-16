@@ -12,6 +12,7 @@ attr = "*"
 attrs = "*"
 cairosvg = "*"
 paramiko = "*"
+nltk = "*"
 
 [dev-packages]
 "autopep8" = "*"
