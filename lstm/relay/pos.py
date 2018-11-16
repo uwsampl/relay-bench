@@ -22,29 +22,36 @@ from network import *
 
 class SlowLSTM(Network):
     def compute(self, embedding_dim, hidden_dim):
-        fwd_input = relay.var('fwd_input', shape=(embedding_dim,))
-        fwd_hidden = relay.var('fwd_hidden', shape=(hidden_dim,))
-        fwd_cell = relay.var('fwd_cell', shape=(hidden_dim,))
-        embedding_t = relay.TensorType(dtype='float32', shape=(embedding_dim,))
-        hidden_t = relay.TensorType(dtype='float32', shape=(hidden_dim,))
-        ret_t = relay.TupleType([hidden_t, hidden_t])
-        self.fwd_cell = relay.Var('fwd_cell', relay.FuncType([embedding_t, hidden_t, hidden_t], ret_t))
-        fwd_cell_func = relay.Function([fwd_input, fwd_hidden, fwd_cell], relay.Tuple([fwd_hidden, fwd_cell]), ret_t)
+        fwd_input = relay.var('fwd_input', shape=(1, embedding_dim,))
+        fwd_hidden = relay.var('fwd_hidden', shape=(1, hidden_dim,))
+        fwd_cell = relay.var('fwd_cell', shape=(1, hidden_dim,))
+        self.fwd_cell = relay.Var('fwd_cell')
+        combined = op.concatenate2(fwd_input, fwd_hidden, axis=1)
+        input_dim = embedding_dim + hidden_dim
+        a = op.sigmoid(self.linear(input_dim, hidden_dim, combined, 'a'))
+        b = op.sigmoid(self.linear(input_dim, hidden_dim, combined, 'b'))
+        c = op.tanh(self.linear(input_dim, hidden_dim, combined, 'c'))
+        d = op.sigmoid(self.linear(input_dim, hidden_dim, combined, 'd'))
+        new_cell = fwd_cell * a + b * c
+        new_hidden = op.tanh(new_cell) * d
+        fwd_body = relay.Tuple([new_hidden, new_cell])
+        fwd_cell_func = relay.Function([fwd_input, fwd_hidden, fwd_cell], fwd_body)
 
-        self.input = relay.Var('input', self.prelude.l(embedding_t))
-        self.hidden = relay.var('hidden', shape=(hidden_dim,))
-        self.cell = relay.var('cell', shape=(hidden_dim,))
+        self.input = relay.Var('input', self.prelude.l(relay.TensorType(dtype='float32', shape=(1, embedding_dim,))))
+        self.hidden = relay.var('hidden', shape=(1, hidden_dim,))
+        self.cell = relay.var('cell', shape=(1, hidden_dim,))
         nil_case = relay.Clause(relay.PatternConstructor(self.prelude.nil), self.prelude.nil())
-        x = relay.Var('x', type_annotation=embedding_t)
-        y = relay.Var('y', type_annotation=self.prelude.l(embedding_t))
+        x = relay.Var('x')
+        y = relay.Var('y')
         fwd_res = self.fwd_cell(x, self.hidden, self.cell)
         hidden_output = fwd_res[0]
         cell_output = fwd_res[1]
         cons_case = relay.Clause(relay.PatternConstructor(self.prelude.cons,
                                                           [relay.PatternVar(x), relay.PatternVar(y)]),
                                  self.prelude.cons(hidden_output, self.recurse(y, hidden_output, cell_output)))
-        body = relay.Let(self.fwd_cell, fwd_cell_func, relay.Match(self.input, [nil_case, cons_case]))
-        return [self.input, self.hidden, self.cell], body, self.prelude.l(hidden_t)
+        body = relay.Match(self.input, [nil_case, cons_case])
+        body = relay.Let(self.fwd_cell, fwd_cell_func, body)
+        return [self.input, self.hidden, self.cell], body, None
 
 # class SlowLSTM(nn.Module):
 
@@ -93,15 +100,11 @@ class SlowLSTM(Network):
 #         c = c.view(h.size(0), -1)
 #         x = x.view(x.size(0), -1)
 #         # Linear mappings
-#         i_t = th.mm(x, self.w_xi) + th.mm(h, self.w_hi) + self.b_i
-#         f_t = th.mm(x, self.w_xf) + th.mm(h, self.w_hf) + self.b_f
-#         o_t = th.mm(x, self.w_xo) + th.mm(h, self.w_ho) + self.b_o
 #         # activations
 #         i_t.sigmoid_()
 #         f_t.sigmoid_()
 #         o_t.sigmoid_()
 #         # cell computations
-#         c_t = th.mm(x, self.w_xc) + th.mm(h, self.w_hc) + self.b_c
 #         c_t.tanh_()
 #         c_t = th.mul(c, f_t) + th.mul(i_t, c_t)
 #         h_t = th.mul(o_t, th.tanh(c_t))
