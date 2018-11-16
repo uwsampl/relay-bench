@@ -166,4 +166,6 @@ def main():
         print(' ')
 
 if __name__ == '__main__':
-    main()
+    # should not run test_speed, as it is way too similar to char-rnn-generator
+    # main()
+    pass
