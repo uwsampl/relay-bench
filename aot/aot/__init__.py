@@ -14,7 +14,10 @@ from . import to_source
 
 TVM_PATH = os.environ['TVM_PATH']
 
-def compile_cpp(source, lib_name, lib_path=None):
+def compile_cpp(source, lib_name, flags=None, lib_path=None):
+    if flags is None:
+        flags = []
+
     if lib_path is None:
         lib_path = os.curdir
 
@@ -46,14 +49,12 @@ def compile_cpp(source, lib_name, lib_path=None):
 		    f"-I{TVM_PATH}/include",
 		    f"-L{TVM_PATH}/build",
             "-ltvm"
-        ]
+        ] + flags
     else:
         command = [
             "clang",
             "-std=c++14",
             "-shared",
-            "-undefined",
-            "dynamic_lookup",
             "-fPIC",
             "-o",
             lib_name,
@@ -64,7 +65,7 @@ def compile_cpp(source, lib_name, lib_path=None):
 		    f"-I{TVM_PATH}/include",
 		    f"-L{TVM_PATH}/build",
             "-ltvm"
-        ]
+        ] + flags
 
     proc = subprocess.run(command)
     assert proc.returncode == 0
@@ -224,8 +225,7 @@ class AoTCompiler(ExprFunctor):
                         m.checked_type)
 
     def visit_op(self, op):
-        print(op)
-        raise Exception('op outside of primitive')
+        raise Exception(f'op outside of primitive: {op}')
 
     def visit_tuple_getitem(self, t):
         return CPPTupleGetItem(self.visit(t.tuple_value), t.index, t.checked_type)
@@ -241,16 +241,20 @@ def compile(mod, func, name='default'):
     func = compiler.visit(func)
     params, source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
-    compile_cpp(source_code, lib_name)
+    compile_cpp(source_code, lib_name, flags=["-O3"])
     _LIB_COUNTER += 1
-    _LIB.append(load_lib(lib_name))
+    _LIB.append(load_lib(os.path.join(os.getcwd(), lib_name)))
     fn = get_global_func(packed_name)
     def convert(a):
+        if isinstance(a, int):
+            a = tvm.nd.array(np.array(a, dtype='int32'))
+        if isinstance(a, np.ndarray):
+            a = tvm.nd.array(a)
         if isinstance(a, tvm.ndarray.NDArray):
             return relay.backend.interpreter.TensorValue(a)
         if isinstance(a, relay.backend.interpreter.TensorValue):
             return a
-        raise Exception(a)
+        raise Exception(a, type(a))
     def wrap(*args):
         return fn(*[convert(a) for a in params], *[convert(a) for a in args])
     return wrap
