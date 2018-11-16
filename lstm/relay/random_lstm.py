@@ -16,6 +16,11 @@ from tvm.relay import create_executor, Module
 from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
 from aot import aot
+from network import *
+
+class SlowLSTM(Network):
+    def comput(self):
+        pass
 
 # class SlowLSTM(nn.Module):
 
@@ -25,7 +30,7 @@ from aot import aot
 #     http://www.bioinf.jku.at/publications/older/2604.pdf
 #     """
 
-#     def __init__(self, input_size, hidden_size, bias=True):
+#     def __init__(self, input_size, hidden_size):
 #         super(SlowLSTM, self).__init__()
 #         self.input_size = input_size
 #         self.hidden_size = hidden_size
@@ -47,14 +52,10 @@ from aot import aot
 #         self.b_c = T(hidden_size).fill_(0)
 
 #         # Wrap biases as parameters if desired, else as variables without gradients
-#         if bias:
-#             W = P
-#         else:
-#             W = V
-#         self.b_i = W(self.b_i)
-#         self.b_f = W(self.b_f)
-#         self.b_o = W(self.b_o)
-#         self.b_c = W(self.b_c)
+#         self.b_i = P(self.b_i)
+#         self.b_f = P(self.b_f)
+#         self.b_o = P(self.b_o)
+#         self.b_c = P(self.b_c)
 #         self.reset_parameters()
 
 #     def reset_parameters(self):
@@ -86,6 +87,7 @@ from aot import aot
 #         return h_t, (h_t, c_t)
 
 def main():
+    slstm = SlowLSTM()
     pass
 
 if __name__ == "__main__":
