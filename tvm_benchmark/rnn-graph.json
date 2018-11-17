@@ -1,0 +1,28 @@
+{
+  "data": {
+    "url": "rnn-data.csv",
+    "format": { "type": "csv" }
+  },
+  "transform": [
+    {"filter": {"field": "Hidden Size", "lt": 2000}}
+  ],
+  "encoding": {
+    "x": {
+      "field": "Hidden Size",
+      "type": "quantitative",
+      "scale": {"type": "log"}
+    }
+  },
+  "layer": [
+    {
+      "mark": "point",
+      "encoding": {        
+        "y": {"field": "Time", "type": "quantitative", "aggregate": "mean", "scale": {"type": "log"},
+        "axis": {
+          "title": "Mean Inference Time"
+        }},
+        "color": {"field": "Compilation Strategy", "type": "nominal"}
+      }
+    }
+  ]
+}

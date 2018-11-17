@@ -1,26 +1,28 @@
 {
   "data": {
-    "url": "tvm_benchmark/vta-results.csv",
+    "url": "tvm_benchmark/vta-resultsv2.csv",
     "format": { "type": "csv" }
   },
   "facet": {
     "column": { "field": "Model", "type": "nominal" }
   },
+  "transform": [
+    {
+      "filter": { "field": "Model", "oneOf": ["ResNet-18", "ResNet-34", "ResNet-50"] }
+    }
+  ],
   "spec": {
     "layer": [
       {
-        "mark": {"type": "point", "filled": true},
+        "mark": "bar",
         "encoding": {
-        "y":      { "field": "IR", "type": "nominal",
+        "x":      { "field": "Target × IR", "type": "nominal" },
+        "y":      { "field": "ms_per_image", "type": "quantitative",
+                    "aggregate": "mean",
                     "axis": {
-                      "title": "IR",
-                      "offset": 5,
-                      "ticks": false,
-                      "domain": false
+                      "title": "Mean Inference Time (ms)"
                     } },
-        "x":      { "field": "ms_per_image", "type": "quantitative",
-                    "aggregate": "mean" },
-        "color": { "field": "Target", "type": "nominal" }
+        "color": { "field": "Target × IR", "type": "nominal" }
         }
       }
     ]
