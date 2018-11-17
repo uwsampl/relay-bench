@@ -11,7 +11,14 @@
       {
         "mark": "bar",
         "encoding": {
-        "x":      { "field": "Target", "type": "nominal", "axis": {"title": null} },
+        "x":      { "field": "Target", "type": "nominal",
+                    "axis": {
+                      "title": null,
+                      "labels": false,
+                      "ticks": false,
+                      "domain": false
+                    }
+                  },
         "y":      { "field": "ms_per_image", "type": "quantitative",
                     "aggregate": "mean",
                     "axis": {
