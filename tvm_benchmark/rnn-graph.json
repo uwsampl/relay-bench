@@ -1,0 +1,29 @@
+{
+  "data": {
+    "url": "rnn-data.csv",
+    "format": { "type": "csv" }
+  },
+  "transform": [
+    {"filter": {"field": "Hidden Size", "lt": 2000}}
+  ],
+  "width": 500,
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "mark": "point",
+  "encoding": {
+    "x": {
+      "field": "Hidden Size",
+      "type": "quantitative",
+      "scale": {"type": "log"}
+    },
+    "y": {"field": "Time", "type": "quantitative", "aggregate": "mean", "scale": {"type": "log"},
+    "axis": {
+      "title": "Mean Inference Time (ms)"
+    }},
+    "color": {
+      "field": "Execution Strategy", "type": "nominal"
+    }
+  }
+}

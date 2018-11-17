@@ -1,0 +1,41 @@
+{
+  "data": {
+    "url": "tvm_benchmark/vta-resultsv2.csv",
+    "format": { "type": "csv" }
+  },
+  "facet": {
+    "row": {
+      "field": "Model",
+      "type": "nominal",
+      "header": { "labelAngle": 0 }
+    }
+  },
+  "spec": {
+    "layer": [
+      {
+        "width": 400,
+        "autosize": {
+          "type": "fit",
+          "contains": "padding"
+        },
+        "mark": "bar",
+        "encoding": {
+        "y":      { "field": "Target", "type": "nominal",
+                    "axis": {
+                      "title": null,
+                      "labels": false,
+                      "ticks": false,
+                      "domain": false
+                    }
+                  },
+        "x":      { "field": "ms_per_image", "type": "quantitative",
+                    "aggregate": "mean",
+                    "axis": {
+                      "title": "Mean Inference Time (ms)"
+                    } },
+        "color": { "field": "Target", "type": "nominal" }
+        }
+      }
+    ]
+  }
+}
