@@ -35,7 +35,8 @@
                     "axis": {"title": "(Inference Time) / NNVM"},
                     "scale": {"type": "log"} },
         "size": {"value": 60},
-        "color": { "field": "IR", "type": "nominal" }
+        "color": { "field": "IR", "type": "nominal", "scale": {"scheme": "dark2"}
+      }
         }
       }
     ]
