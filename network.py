@@ -10,8 +10,7 @@ from aot import aot
 def initialize(param):
     ty = param.type_annotation
     shape = [int(i) for i in ty.shape]
-    return TensorValue(
-        np.random.normal(0, 1, shape).astype('float32'))
+    return np.random.normal(0, 1, shape).astype('float32')
 
 class Network:
     def add_param(self, name="", shape=()):
@@ -24,12 +23,15 @@ class Network:
         bias = self.add_param(f'{name}linear_bias', shape=(output_size,))
         return op.add(op.nn.dense(x, weight), bias)
 
-    def __init__(self, do_aot, *args):
+    def __init__(self, do_aot, use_gpu, *args):
+        assert isinstance(do_aot, bool)
+        assert isinstance(use_gpu, bool)
         self.mod = Module()
         self.prelude = Prelude(self.mod)
-        self.context = tvm.cpu(0)
-        self.target = tvm.target.create('llvm')
-        self.executor = create_executor(mod=self.mod, ctx=self.context)
+        self.use_gpu = use_gpu
+        self.context = tvm.gpu(0) if use_gpu else tvm.cpu(0)
+        self.target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
+        self.executor = create_executor(mod=self.mod, ctx=self.context, target=self.target)
         self.parameters = []
         self.forward_var = relay.GlobalVar('forward_var')
 
@@ -40,7 +42,7 @@ class Network:
         forward_compute = relay.Function(inputs + list([p[0] for p in self.parameters]), body, ret_type)
         self.mod[self.forward_var] = forward_compute
         if do_aot:
-            self.forward = aot.compile(self.mod, self.forward_var)
+            self.forward = aot.compile(self.mod, self.forward_var, ctx=self.context, tgt=self.target, use_gpu=self.use_gpu)
         else:
             self.forward = self.executor.static_evaluate(self.forward_var)
         self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
@@ -50,7 +52,7 @@ class Network:
         for i, inp in enumerate(inputs):
             self.args[i] = inp
 
-        return self.forward(*[aot.convert(a) for a in self.args])
+        return self.forward(*[aot.convert(a, self.context) for a in self.args])
 
     def recurse(self, *inputs):
         return self.forward_var(*inputs, *[p[0] for p in self.parameters])

@@ -44,8 +44,8 @@ def random_training_example():
 from tvm.relay.backend.interpreter import TensorValue
 
 def sample(rnn, category, start_letter='A'):
-    category_tensor = TensorValue(categoryTensor(category))
-    input = TensorValue(inputTensor(start_letter))
+    category_tensor = categoryTensor(category)
+    input = inputTensor(start_letter)
     hidden = rnn.hidden
 
     output_name = start_letter
@@ -60,7 +60,7 @@ def sample(rnn, category, start_letter='A'):
             letter = data.topi_to_letter(topi)
             output_name += letter
             # This is slow
-            input = TensorValue(inputTensor(letter))
+            input = inputTensor(letter)
     return output_name
 
 def samples(rnn, category, start_letters='ABC'):

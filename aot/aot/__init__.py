@@ -141,6 +141,11 @@ def fuse_check(e, mod):
         def visit_tuple_getitem(self, t):
             self.visit(t.tuple_value)
 
+        def visit_match(self, m):
+            self.visit(m.data)
+            for c in m.pattern:
+                self.visit(c.rhs)
+
     class CheckFused(ExprVisitor):
         def visit_function(self, f):
             if not is_primitive(f):
@@ -152,9 +157,10 @@ def fuse_check(e, mod):
     CheckFused().visit(e)
 
 class AoTCompiler(ExprFunctor):
-    def __init__(self, mod) -> None:
+    def __init__(self, mod, tgt) -> None:
         super().__init__()
         self.mod = mod
+        self.tgt = tgt
         self.engine = compile_engine.get()
         self.bindings = [[]]
         self.gv_map = {}
@@ -183,11 +189,11 @@ class AoTCompiler(ExprFunctor):
                 assert isinstance(x.checked_type, relay.TensorType)
             args_is_tuple = False
             num_param = len(func.params)
-        cc_key = compile_engine.CCacheKey(func, target.create('llvm'))
+        cc_key = compile_engine.CCacheKey(func, self.tgt)
         hash = relay.ir_pass.structural_hash(func)
         name = f"op{hash}"
         if not get_global_func(name, allow_missing=True):
-            jit_func = self.engine.jit(cc_key)
+            jit_func = self.engine.jit(cc_key, self.tgt)
             register_func(name, jit_func)
         return PackedCall(name, num_param + 1, args, output_type, args_is_tuple)
 
@@ -265,18 +271,18 @@ class AoTCompiler(ExprFunctor):
 _LIB_COUNTER = 1
 _LIB = []
 
-def compile(mod, func, name='default'):
+def compile(mod, func, *, ctx, tgt, use_gpu, name='default'):
     global _LIB, _LIB_COUNTER
     packed_name = f'relay.aot.{name}.{_LIB_COUNTER}'
-    compiler = AoTCompiler(mod)
+    compiler = AoTCompiler(mod, tgt)
     func = compiler.optimize(func)
     func = compiler.visit(func)
-    params, source_code = to_source.to_source(mod, compiler.gv_map, packed_name, func)
+    params, source_code = to_source.to_source(mod, compiler.gv_map, use_gpu, packed_name, func)
     lib_name = f"librelay_aot_{_LIB_COUNTER}.so"
     compile_cpp(source_code, lib_name, flags=["-O3"])
     _LIB_COUNTER += 1
     _LIB.append(load_lib(os.path.join(os.getcwd(), lib_name)))
     fn = get_global_func(packed_name)
     def wrap(*args):
-        return fn(*[convert(a) for a in params], *[convert(a) for a in args])
+        return fn(*[convert(a, ctx) for a in params], *[convert(a, ctx) for a in args])
     return wrap
