@@ -13,7 +13,6 @@ import tvm
 from tvm import relay
 from tvm.relay import op
 from tvm.relay import create_executor, Module
-from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
 from aot import aot
 from network import *
@@ -32,9 +31,6 @@ class RNNCellOnly(Network):
         #output = op.nn.dropout(output, 0.1) #dropout isnt simplified, commented out for now
         output = op.nn.log_softmax(output, axis=1)
         return [self.category_var, self.input_var, self.hidden_var], relay.Tuple([output, hidden]), None
-
-    def warm(self):
-        self(initialize(self.category_var), initialize(self.input_var), initialize(self.hidden_var))
 
 class RNNLoop(Network):
     def compute(self, input_size, hidden_size, output_size):
@@ -79,14 +75,4 @@ class RNNLoop(Network):
         input = letter_to_topi(start_letter)
         hidden = self.hidden
         output = self(20, category_tensor, input, hidden)
-#         output_name = ''
-#         for x in [data.letter_to_topi(start_letter)] + self.woosh(output):
-#             output_name += data.topi_to_letter(x)
-#         return output_name
-#     def woosh(self, l):
-#         if l.con.name_hint == 'cons':
-#             return [np.asscalar(l.fields[0].data.asnumpy())] + self.woosh(l.fields[1])
-#         else:
-#             assert l.con.name_hint == 'nil'
-#             return []
 

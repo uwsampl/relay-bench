@@ -1,3 +1,24 @@
+MODEL,TARGET,HIDDEN_SIZE,TIME
+relay_cell_compile_gpu,pipsqueak,16,335
+relay_cell_interpret_gpu,pipsqueak,16,353
+relay_cell_compile_gpu,pipsqueak,32,322
+relay_cell_interpret_gpu,pipsqueak,32,328
+relay_cell_compile_gpu,pipsqueak,64,112
+relay_cell_interpret_gpu,pipsqueak,64,298
+relay_cell_compile_gpu,pipsqueak,128,329
+relay_cell_interpret_gpu,pipsqueak,128,352
+relay_cell_compile_gpu,pipsqueak,256,88
+relay_cell_interpret_gpu,pipsqueak,256,363
+relay_cell_compile_gpu,pipsqueak,512,361
+relay_cell_interpret_gpu,pipsqueak,512,389
+relay_cell_compile_gpu,pipsqueak,1024,517
+relay_cell_interpret_gpu,pipsqueak,1024,497
+relay_cell_compile_gpu,pipsqueak,2048,838
+relay_cell_interpret_gpu,pipsqueak,2048,866
+relay_cell_compile_gpu,pipsqueak,4096,2565
+relay_cell_interpret_gpu,pipsqueak,4096,2598
+relay_cell_compile_gpu,pipsqueak,8192,8787
+relay_cell_interpret_gpu,pipsqueak,8192,8887
 Execution Strategy,Target,Hidden Size,Time
 UnderGrad-Interpreted Cell,pipsqueak,16,110
 UnderGrad-Interpreted Cell,pipsqueak,16,110

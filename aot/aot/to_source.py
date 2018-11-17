@@ -237,7 +237,7 @@ class ToSource:
             name = self.fresh_global_name()
             self.declare_map[const] = name
             self.declare += f"TensorValue {name};\n"
-            self.input_const.append((name, const))
+            self.input_const.append((name, const.data.asnumpy()))
         return ExprWithStmt(self.declare_map[const])
 
     def visit_global_var(self, gv):
@@ -387,7 +387,8 @@ def inter(strs, sep=", "):
             ret += sep
     return ret
 
-def mk_file(body):
+def mk_file(body, use_gpu):
+    device_type = "DLDeviceType::kDLGPU" if use_gpu else "DLDeviceType::kDLCPU"
     return f"""
     #include <tvm/tvm.h>
     #include <tvm/api_registry.h>
@@ -402,7 +403,7 @@ def mk_file(body):
     static DLDataType dtype_u32 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 32, .lanes = 1 }};
     static DLDataType dtype_u1 = DLDataType {{ .code = DLDataTypeCode::kDLUInt, .bits = 1, .lanes = 1 }};
     static DLDataType dtype_i32 = DLDataType {{ .code = DLDataTypeCode::kDLInt, .bits = 32, .lanes = 1 }};
-    static DLContext context = DLContext {{ .device_type = DLDeviceType::kDLCPU, . device_id = 0 }};
+    static DLContext context = DLContext {{ .device_type = {device_type}, .device_id = 0 }};
     bool NDToBool(const NDArray& nd) {{
       DLContext cpu_ctx;
       cpu_ctx.device_type = kDLCPU;
@@ -427,7 +428,7 @@ def mk_file(body):
     {body}
     """
 
-def to_source(mod, gv_map, name, program) -> str:
+def to_source(mod, gv_map, use_gpu, name, program) -> str:
     convert = ToSource(gv_map)
-    ret = mk_file(convert.mk_register_api(name, program))
-    return [value.data for name, value in convert.input_const], ret
+    ret = mk_file(convert.mk_register_api(name, program), use_gpu)
+    return [value for name, value in convert.input_const], ret
