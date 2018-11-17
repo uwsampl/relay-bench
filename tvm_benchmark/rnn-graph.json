@@ -19,9 +19,9 @@
       "encoding": {        
         "y": {"field": "Time", "type": "quantitative", "aggregate": "mean", "scale": {"type": "log"},
         "axis": {
-          "title": "Mean Inference Time"
+          "title": "Mean Inference Time (ms)"
         }},
-        "color": {"field": "Compilation Strategy", "type": "nominal"}
+        "color": {"field": "Execution Strategy", "type": "nominal"}
       }
     }
   ]
