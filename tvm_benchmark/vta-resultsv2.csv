@@ -1,153 +1,101 @@
-bitstream,Model,type,Target × IR,ms_per_image
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.8713
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.3466
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,63.9373
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.1579
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,71.4474
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.2096
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.1245
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.2648
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.2368
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.3167
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,70.0189
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,NNVM × FPGA,64.4076
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,64.894
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.8065
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.295
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,73.0178
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.0576
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.0629
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.3263
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,69.4892
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.3933
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,UnderGrad × FPGA,65.0812
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,95.322
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,103.225
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,94.982
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,95.0182
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,95.1968
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,94.996
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,95.2235
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,95.0563
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,102.682
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,NNVM × FPGA,95.1824
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.9122
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.4147
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,97.2131
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.6414
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,102.892
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.5986
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.5264
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.4338
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,104.119
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,UnderGrad × FPGA,96.5597
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,187.376
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,181.985
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,185.557
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,181.641
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,188.766
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,185.171
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,181.921
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,182.292
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,187.975
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,NNVM × FPGA,181.174
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,188.193
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,191.434
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,185.929
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,191.943
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,186.987
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,186.219
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,193.936
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,186.96
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,193.036
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,UnderGrad × FPGA,186.154
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.6837
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,31.9232
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.4449
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.6782
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.657
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.7431
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.49
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,29.1385
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.7353
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,NNVM × FPGA,28.66
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,29.2703
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,28.9353
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,28.8774
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,29.0981
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,28.8588
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,29.5145
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,32.2221
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,28.9723
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,28.904
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,UnderGrad × FPGA,28.7851
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,51.9648
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,51.8483
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,52.3514
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,52.0634
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,51.692
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,51.9769
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,51.7986
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,52.0074
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,52.0598
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,NNVM × FPGA,51.8787
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,52.8667
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,58.1732
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.7136
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.307
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.4691
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.4466
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.4499
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.4118
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.1245
-0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,UnderGrad × FPGA,53.4946
-ultra96,ResNet-18,fp32,NNVM × CPU,307.09263500000003
-ultra96,ResNet-18,fp32,NNVM × CPU,308.23745400000001
-ultra96,ResNet-18,fp32,NNVM × CPU,307.01353499999999
-ultra96,ResNet-18,fp32,NNVM × CPU,307.72369100000003
-ultra96,ResNet-18,fp32,NNVM × CPU,306.15379799999999
-ultra96,ResNet-18,fp32,NNVM × CPU,306.01788800000003
-ultra96,ResNet-18,fp32,NNVM × CPU,305.758126
-ultra96,ResNet-18,fp32,NNVM × CPU,305.91294699999997
-ultra96,ResNet-18,fp32,NNVM × CPU,306.63197399999996
-ultra96,ResNet-18,fp32,NNVM × CPU,305.58295499999997
-ultra96,ResNet-34,fp32,NNVM × CPU,568.61071600000002
-ultra96,ResNet-34,fp32,NNVM × CPU,572.07768800000008
-ultra96,ResNet-34,fp32,NNVM × CPU,569.151839
-ultra96,ResNet-34,fp32,NNVM × CPU,568.95184899999992
-ultra96,ResNet-34,fp32,NNVM × CPU,573.13465500000007
-ultra96,ResNet-34,fp32,NNVM × CPU,570.56268
-ultra96,ResNet-34,fp32,NNVM × CPU,568.689347
-ultra96,ResNet-34,fp32,NNVM × CPU,568.91912000000002
-ultra96,ResNet-34,fp32,NNVM × CPU,568.75412800000004
-ultra96,ResNet-34,fp32,NNVM × CPU,573.27884799999993
-ultra96,ResNet-50,fp32,NNVM × CPU,715.66797699999995
-ultra96,ResNet-50,fp32,NNVM × CPU,712.69468500000005
-ultra96,ResNet-50,fp32,NNVM × CPU,711.56017599999996
-ultra96,ResNet-50,fp32,NNVM × CPU,712.90056700000002
-ultra96,ResNet-50,fp32,NNVM × CPU,711.21937400000002
-ultra96,ResNet-50,fp32,NNVM × CPU,711.70445800000005
-ultra96,ResNet-50,fp32,NNVM × CPU,711.72642900000005
-ultra96,ResNet-50,fp32,NNVM × CPU,711.97931000000005
-ultra96,ResNet-50,fp32,NNVM × CPU,713.874775
-ultra96,ResNet-50,fp32,NNVM × CPU,711.50443699999994
-ultra96,DCGAN,fp32,NNVM × CPU,329.3701428
-ultra96,DCGAN,fp32,NNVM × CPU,328.840359
-ultra96,DCGAN,fp32,NNVM × CPU,329.9469256
-ultra96,DCGAN,fp32,NNVM × CPU,327.5162638
-ultra96,DCGAN,fp32,NNVM × CPU,331.4161308
-ultra96,DCGAN,fp32,NNVM × CPU,328.7465934
-ultra96,DCGAN,fp32,NNVM × CPU,327.710626
-ultra96,DCGAN,fp32,NNVM × CPU,327.4367324
-ultra96,DCGAN,fp32,NNVM × CPU,327.095554
-ultra96,DCGAN,fp32,NNVM × CPU,328.6401716
-ultra96,MobileNet,fp32,NNVM × CPU,131.14218199999999
-ultra96,MobileNet,fp32,NNVM × CPU,130.165584
-ultra96,MobileNet,fp32,NNVM × CPU,130.07867400000001
-ultra96,MobileNet,fp32,NNVM × CPU,133.00491500000001
-ultra96,MobileNet,fp32,NNVM × CPU,129.94968300000002
-ultra96,MobileNet,fp32,NNVM × CPU,130.566607
-ultra96,MobileNet,fp32,NNVM × CPU,130.40797600000002
-ultra96,MobileNet,fp32,NNVM × CPU,130.30274599999998
-ultra96,MobileNet,fp32,NNVM × CPU,129.912722
-ultra96,MobileNet,fp32,NNVM × CPU,130.239295
+bitstream,Model,type,Target,ms_per_image
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,64.894
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.8065
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.295
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,73.0178
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.0576
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.0629
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.3263
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,69.4892
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.3933
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-18,w8a8,FPGA,65.0812
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.9122
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.4147
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,97.2131
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.6414
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,102.892
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.5986
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.5264
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.4338
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,104.119
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-34,w8a8,FPGA,96.5597
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,188.193
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,191.434
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,185.929
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,191.943
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,186.987
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,186.219
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,193.936
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,186.96
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,193.036
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,ResNet-50,w8a8,FPGA,186.154
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,29.2703
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,28.9353
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,28.8774
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,29.0981
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,28.8588
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,29.5145
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,32.2221
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,28.9723
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,28.904
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,DCGAN,w8a8,FPGA,28.7851
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,52.8667
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,58.1732
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.7136
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.307
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.4691
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.4466
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.4499
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.4118
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.1245
+0_0_4/ultra96_1x16x16_a8w8o8s32_7_15_15_18_17_333MHz_2ns_gii1_aii2.bit,MobileNet,w8a8,FPGA,53.4946
+ultra96,ResNet-18,fp32,CPU,307.09263500000003
+ultra96,ResNet-18,fp32,CPU,308.23745400000001
+ultra96,ResNet-18,fp32,CPU,307.01353499999999
+ultra96,ResNet-18,fp32,CPU,307.72369100000003
+ultra96,ResNet-18,fp32,CPU,306.15379799999999
+ultra96,ResNet-18,fp32,CPU,306.01788800000003
+ultra96,ResNet-18,fp32,CPU,305.758126
+ultra96,ResNet-18,fp32,CPU,305.91294699999997
+ultra96,ResNet-18,fp32,CPU,306.63197399999996
+ultra96,ResNet-18,fp32,CPU,305.58295499999997
+ultra96,ResNet-34,fp32,CPU,568.61071600000002
+ultra96,ResNet-34,fp32,CPU,572.07768800000008
+ultra96,ResNet-34,fp32,CPU,569.151839
+ultra96,ResNet-34,fp32,CPU,568.95184899999992
+ultra96,ResNet-34,fp32,CPU,573.13465500000007
+ultra96,ResNet-34,fp32,CPU,570.56268
+ultra96,ResNet-34,fp32,CPU,568.689347
+ultra96,ResNet-34,fp32,CPU,568.91912000000002
+ultra96,ResNet-34,fp32,CPU,568.75412800000004
+ultra96,ResNet-34,fp32,CPU,573.27884799999993
+ultra96,ResNet-50,fp32,CPU,715.66797699999995
+ultra96,ResNet-50,fp32,CPU,712.69468500000005
+ultra96,ResNet-50,fp32,CPU,711.56017599999996
+ultra96,ResNet-50,fp32,CPU,712.90056700000002
+ultra96,ResNet-50,fp32,CPU,711.21937400000002
+ultra96,ResNet-50,fp32,CPU,711.70445800000005
+ultra96,ResNet-50,fp32,CPU,711.72642900000005
+ultra96,ResNet-50,fp32,CPU,711.97931000000005
+ultra96,ResNet-50,fp32,CPU,713.874775
+ultra96,ResNet-50,fp32,CPU,711.50443699999994
+ultra96,DCGAN,fp32,CPU,329.3701428
+ultra96,DCGAN,fp32,CPU,328.840359
+ultra96,DCGAN,fp32,CPU,329.9469256
+ultra96,DCGAN,fp32,CPU,327.5162638
+ultra96,DCGAN,fp32,CPU,331.4161308
+ultra96,DCGAN,fp32,CPU,328.7465934
+ultra96,DCGAN,fp32,CPU,327.710626
+ultra96,DCGAN,fp32,CPU,327.4367324
+ultra96,DCGAN,fp32,CPU,327.095554
+ultra96,DCGAN,fp32,CPU,328.6401716
+ultra96,MobileNet,fp32,CPU,131.14218199999999
+ultra96,MobileNet,fp32,CPU,130.165584
+ultra96,MobileNet,fp32,CPU,130.07867400000001
+ultra96,MobileNet,fp32,CPU,133.00491500000001
+ultra96,MobileNet,fp32,CPU,129.94968300000002
+ultra96,MobileNet,fp32,CPU,130.566607
+ultra96,MobileNet,fp32,CPU,130.40797600000002
+ultra96,MobileNet,fp32,CPU,130.30274599999998
+ultra96,MobileNet,fp32,CPU,129.912722
+ultra96,MobileNet,fp32,CPU,130.239295
