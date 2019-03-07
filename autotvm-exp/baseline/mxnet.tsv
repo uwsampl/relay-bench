@@ -1,0 +1,176 @@
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B32	mx	default	{"costs" : [0.000449, 0.000449, 0.000448]}	1535783531.544229
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B32	mx	default	{"costs" : [0.001330, 0.001331, 0.001330]}	1535783553.1152902
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B32	mx	default	{"costs" : [0.000490, 0.000491, 0.000488]}	1535783582.0282147
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B32	mx	default	{"costs" : [0.000599, 0.000601, 0.000599]}	1535783615.8832948
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B32	mx	default	{"costs" : [0.002199, 0.002198, 0.002197]}	1535783650.0270333
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B32	mx	default	{"costs" : [0.002572, 0.002569, 0.002571]}	1535783685.1969724
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B32	mx	default	{"costs" : [0.001957, 0.001959, 0.001958]}	1535783715.9351938
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B32	mx	default	{"costs" : [0.001605, 0.001605, 0.001604]}	1535783743.0565212
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B32	mx	default	{"costs" : [0.000559, 0.000558, 0.000557]}	1535783755.8958116
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B32	mx	default	{"costs" : [0.000558, 0.000559, 0.000557]}	1535783768.0051453
+
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B8	mx	default	{"costs" : [0.000629, 0.000636, 0.000626]}	1535783779.3001037
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B8	mx	default	{"costs" : [0.001680, 0.001674, 0.001673]}	1535783799.044281
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B8	mx	default	{"costs" : [0.000612, 0.000603, 0.000609]}	1535783824.6743863
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B8	mx	default	{"costs" : [0.000775, 0.000780, 0.000780]}	1535783855.58129
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B8	mx	default	{"costs" : [0.002702, 0.002706, 0.002698]}	1535783885.3202488
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B8	mx	default	{"costs" : [0.003237, 0.003244, 0.003237]}	1535783917.3871512
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B8	mx	default	{"costs" : [0.002809, 0.002813, 0.002812]}	1535783947.439619
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B8	mx	default	{"costs" : [0.002261, 0.002260, 0.002255]}	1535783973.6364236
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B8	mx	default	{"costs" : [0.000644, 0.000645, 0.000640]}	1535783985.078244
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B8	mx	default	{"costs" : [0.000642, 0.000645, 0.000635]}	1535783996.0401607
+
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B4	mx	default	{"costs" : [0.000833, 0.000832, 0.000830]}	1535784006.7311678
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B4	mx	default	{"costs" : [0.002085, 0.002095, 0.002097]}	1535784024.3750076
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B4	mx	default	{"costs" : [0.000752, 0.000751, 0.000750]}	1535784046.766283
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B4	mx	default	{"costs" : [0.001001, 0.000988, 0.000969]}	1535784074.0472646
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B4	mx	default	{"costs" : [0.003258, 0.003263, 0.003261]}	1535784099.72773
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B4	mx	default	{"costs" : [0.003808, 0.003801, 0.003809]}	1535784126.4003966
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B4	mx	default	{"costs" : [0.004191, 0.004194, 0.004181]}	1535784156.1595764
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B4	mx	default	{"costs" : [0.003049, 0.003084, 0.003101]}	1535784180.6135368
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B4	mx	default	{"costs" : [0.000737, 0.000739, 0.000712]}	1535784190.825004
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B4	mx	default	{"costs" : [0.000728, 0.000728, 0.000714]}	1535784200.5950058
+
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B1	mx	default	{"costs" : [0.002048, 0.002070, 0.002043]}	1535784210.9012814
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B1	mx	default	{"costs" : [0.004833, 0.004795, 0.004794]}	1535784227.0291736
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B1	mx	default	{"costs" : [0.001501, 0.001503, 0.001503]}	1535784245.7068627
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B1	mx	default	{"costs" : [0.002293, 0.002312, 0.002312]}	1535784270.577187
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B1	mx	default	{"costs" : [0.005254, 0.005305, 0.005283]}	1535784289.7840188
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B1	mx	default	{"costs" : [0.006012, 0.006007, 0.006002]}	1535784308.8502202
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B1	mx	default	{"costs" : [0.012275, 0.012280, 0.012193]}	1535784340.2398407
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B1	mx	default	{"costs" : [0.007675, 0.007793, 0.007799]}	1535784363.5389318
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B1	mx	default	{"costs" : [0.001545, 0.001503, 0.001558]}	1535784372.9214427
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B1	mx	default	{"costs" : [0.001501, 0.001463, 0.001498]}	1535784381.8591332
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B32	mx	default	{"costs" : [0.000757, 0.000759, 0.000759]}	1535783532.6875367
+GeForce GTX TITAN X	cuda	network	resnet-50.B32	mx	default	{"costs" : [0.002231, 0.002232, 0.002243]}	1535783564.9505603
+GeForce GTX TITAN X	cuda	network	mobilenet.B32	mx	default	{"costs" : [0.000809, 0.000812, 0.000812]}	1535783604.5406518
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B32	mx	default	{"costs" : [0.000945, 0.000945, 0.000945]}	1535783650.385723
+GeForce GTX TITAN X	cuda	network	vgg-16.B32	mx	default	{"costs" : [0.003708, 0.003815, 0.003721]}	1535783704.9179213
+GeForce GTX TITAN X	cuda	network	vgg-19.B32	mx	default	{"costs" : [0.004435, 0.004425, 0.004440]}	1535783760.7846797
+GeForce GTX TITAN X	cuda	network	inception-v3.B32	mx	default	{"costs" : [0.003305, 0.003352, 0.003435]}	1535783810.009394
+GeForce GTX TITAN X	cuda	network	densenet-121.B32	mx	default	{"costs" : [0.002740, 0.002740, 0.002738]}	1535783851.6626039
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B32	mx	default	{"costs" : [0.000902, 0.000901, 0.000901]}	1535783868.7525878
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B32	mx	default	{"costs" : [0.000901, 0.000902, 0.000900]}	1535783884.3882816
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B8	mx	default	{"costs" : [0.001085, 0.001085, 0.001076]}	1535783899.2505836
+GeForce GTX TITAN X	cuda	network	resnet-50.B8	mx	default	{"costs" : [0.002911, 0.002914, 0.002914]}	1535783929.1548507
+GeForce GTX TITAN X	cuda	network	mobilenet.B8	mx	default	{"costs" : [0.001004, 0.000998, 0.000992]}	1535783965.7065022
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B8	mx	default	{"costs" : [0.001195, 0.001195, 0.001195]}	1535784008.3125832
+GeForce GTX TITAN X	cuda	network	vgg-16.B8	mx	default	{"costs" : [0.005125, 0.005391, 0.005290]}	1535784060.4838765
+GeForce GTX TITAN X	cuda	network	vgg-19.B8	mx	default	{"costs" : [0.006473, 0.006474, 0.006472]}	1535784117.7340891
+GeForce GTX TITAN X	cuda	network	inception-v3.B8	mx	default	{"costs" : [0.004483, 0.004483, 0.004479]}	1535784163.3830636
+GeForce GTX TITAN X	cuda	network	densenet-121.B8	mx	default	{"costs" : [0.003731, 0.003738, 0.003736]}	1535784202.7209775
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B8	mx	default	{"costs" : [0.001000, 0.001002, 0.001001]}	1535784217.1159828
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B8	mx	default	{"costs" : [0.001001, 0.001001, 0.001001]}	1535784230.6926389
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B4	mx	default	{"costs" : [0.001416, 0.001405, 0.001416]}	1535784244.4123862
+GeForce GTX TITAN X	cuda	network	resnet-50.B4	mx	default	{"costs" : [0.003561, 0.003559, 0.003564]}	1535784270.2416995
+GeForce GTX TITAN X	cuda	network	mobilenet.B4	mx	default	{"costs" : [0.001211, 0.001208, 0.001211]}	1535784301.17826
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B4	mx	default	{"costs" : [0.001507, 0.001504, 0.001509]}	1535784338.2422233
+GeForce GTX TITAN X	cuda	network	vgg-16.B4	mx	default	{"costs" : [0.005488, 0.005812, 0.005720]}	1535784378.9498198
+GeForce GTX TITAN X	cuda	network	vgg-19.B4	mx	default	{"costs" : [0.006942, 0.006938, 0.006937]}	1535784422.2098792
+GeForce GTX TITAN X	cuda	network	inception-v3.B4	mx	default	{"costs" : [0.006369, 0.006381, 0.006366]}	1535784465.7419598
+GeForce GTX TITAN X	cuda	network	densenet-121.B4	mx	default	{"costs" : [0.005085, 0.005077, 0.005083]}	1535784502.170153
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B4	mx	default	{"costs" : [0.001119, 0.001116, 0.001116]}	1535784514.5405574
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B4	mx	default	{"costs" : [0.001110, 0.001110, 0.001115]}	1535784526.1504886
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B1	mx	default	{"costs" : [0.003228, 0.003172, 0.003216]}	1535784538.7743945
+GeForce GTX TITAN X	cuda	network	resnet-50.B1	mx	default	{"costs" : [0.007799, 0.007790, 0.007787]}	1535784561.202967
+GeForce GTX TITAN X	cuda	network	mobilenet.B1	mx	default	{"costs" : [0.002426, 0.002452, 0.002450]}	1535784586.3728788
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B1	mx	default	{"costs" : [0.003570, 0.003486, 0.003448]}	1535784619.560002
+GeForce GTX TITAN X	cuda	network	vgg-16.B1	mx	default	{"costs" : [0.008494, 0.008408, 0.008445]}	1535784647.6626658
+GeForce GTX TITAN X	cuda	network	vgg-19.B1	mx	default	{"costs" : [0.009987, 0.010002, 0.009998]}	1535784675.165465
+GeForce GTX TITAN X	cuda	network	inception-v3.B1	mx	default	{"costs" : [0.018283, 0.018249, 0.018274]}	1535784720.650427
+GeForce GTX TITAN X	cuda	network	densenet-121.B1	mx	default	{"costs" : [0.013051, 0.012993, 0.013069]}	1535784755.8456252
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B1	mx	default	{"costs" : [0.002218, 0.002282, 0.002312]}	1535784766.8216045
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B1	mx	default	{"costs" : [0.002340, 0.002328, 0.002301]}	1535784777.2104063
+
+######################################## TensorRT ########################################
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B1	mx-trt	default	{"costs" : [0.001322, 0.001386, 0.001333]}	1535809100.0684958
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B1	mx-trt	default	{"costs" : [0.002680, 0.002718, 0.002723]}	1535809195.6039295
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B1	mx-trt	default	{"costs" : [0.000906, 0.000854, 0.000879]}	1535809274.035763
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B1	mx-trt	default	{"costs" : [0.001976, 0.002004, 0.001995]}	1535809389.932799
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B1	mx-trt	default	{"costs" : [0.003795, 0.003809, 0.003791]}	1535809469.2494817
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B1	mx-trt	default	{"costs" : [0.004369, 0.004411, 0.004340]}	1535809557.1103396
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B1	mx-trt	default	{"costs" : [0.006172, 0.006229, 0.006164]}	1535809705.9553812
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B1	mx-trt	default	{"costs" : [0.004062, 0.004070, 0.004082]}	1535809916.9193563
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B1	mx-trt	default	{"costs" : [0.001003, 0.001023, 0.000966]}	1535809978.8117206
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B1	mx-trt	default	{"costs" : [0.001049, 0.001007, 0.001003]}	1535810042.1761897
+
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B4	mx-trt	default	{"costs" : [0.000597, 0.000600, 0.000590]}	1535810078.72203
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B4	mx-trt	default	{"costs" : [0.001363, 0.001377, 0.001372]}	1535810137.5626717
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B4	mx-trt	default	{"costs" : [0.000500, 0.000500, 0.000502]}	1535810198.7989848
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B4	mx-trt	default	{"costs" : [0.000835, 0.000851, 0.000854]}	1535810284.8517442
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B4	mx-trt	default	{"costs" : [0.002477, 0.002469, 0.002453]}	1535810353.7131143
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B4	mx-trt	default	{"costs" : [0.002968, 0.002988, 0.002933]}	1535810428.6826024
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B4	mx-trt	default	{"costs" : [0.002568, 0.002602, 0.002567]}	1535810509.1022189
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B4	mx-trt	default	{"costs" : [0.002064, 0.002065, 0.002078]}	1535810606.3240125
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B4	mx-trt	default	{"costs" : [0.000508, 0.000502, 0.000509]}	1535810642.8874989
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B4	mx-trt	default	{"costs" : [0.000501, 0.000514, 0.000528]}	1535810682.2426903
+
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B8	mx-trt	default	{"costs" : [0.000459, 0.000461, 0.000459]}	1535810720.6564429
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B8	mx-trt	default	{"costs" : [0.001118, 0.001123, 0.001124]}	1535810786.1284587
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B8	mx-trt	default	{"costs" : [0.000411, 0.000407, 0.000412]}	1535810849.551435
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B8	mx-trt	default	{"costs" : [0.000637, 0.000640, 0.000632]}	1535810938.1959112
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B8	mx-trt	default	{"costs" : [0.002202, 0.002189, 0.002195]}	1535811013.147438
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B8	mx-trt	default	{"costs" : [0.002692, 0.002696, 0.002699]}	1535811096.265999
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B8	mx-trt	default	{"costs" : [0.001767, 0.001783, 0.001774]}	1535811179.3803535
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B8	mx-trt	default	{"costs" : [0.001461, 0.001463, 0.001462]}	1535811277.2220025
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B8	mx-trt	default	{"costs" : [0.000390, 0.000397, 0.000406]}	1535811315.0250201
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B8	mx-trt	default	{"costs" : [0.000407, 0.000411, 0.000407]}	1535811354.399798
+
+GeForce GTX 1080 Ti	cuda	network	resnet-18.B32	mx-trt	default	{"costs" : [0.000360, 0.000359, 0.000360]}	1535838293.713516
+GeForce GTX 1080 Ti	cuda	network	resnet-50.B32	mx-trt	default	{"costs" : [0.000928, 0.000932, 0.000931]}	1535838361.5923297
+GeForce GTX 1080 Ti	cuda	network	mobilenet.B32	mx-trt	default	{"costs" : [0.000344, 0.000344, 0.000343]}	1535838484.899053
+GeForce GTX 1080 Ti	cuda	network	mobilenetv2.B32	mx-trt	default	{"costs" : [0.000486, 0.000487, 0.000489]}	1535838655.6502874
+GeForce GTX 1080 Ti	cuda	network	vgg-16.B32	mx-trt	default	{"costs" : [0.002028, 0.002027, 0.002034]}	1535838748.4725063
+GeForce GTX 1080 Ti	cuda	network	vgg-19.B32	mx-trt	default	{"costs" : [0.002537, 0.002538, 0.002541]}	1535838854.3188844
+GeForce GTX 1080 Ti	cuda	network	inception-v3.B32	mx-trt	default	{"costs" : [0.001384, 0.001385, 0.001379]}	1535838954.888009
+GeForce GTX 1080 Ti	cuda	network	densenet-121.B32	mx-trt	default	{"costs" : [0.001082, 0.001067, 0.001077]}	1535839064.6509902
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.0.B32	mx-trt	default	{"costs" : [0.000323, 0.000324, 0.000325]}	1535839108.9076948
+GeForce GTX 1080 Ti	cuda	network	squeezenet_v1.1.B32	mx-trt	default	{"costs" : [0.000324, 0.000325, 0.000325]}	1535839155.4242435
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B1	mx-trt	default	{"costs" : [0.001906, 0.002105, 0.002064]}	1535809096.2563486
+GeForce GTX TITAN X	cuda	network	resnet-50.B1	mx-trt	default	{"costs" : [0.004313, 0.004331, 0.004374]}	1535809188.4314094
+GeForce GTX TITAN X	cuda	network	mobilenet.B1	mx-trt	default	{"costs" : [0.001520, 0.001396, 0.001496]}	1535809262.9451845
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B1	mx-trt	default	{"costs" : [0.002668, 0.002686, 0.002611]}	1535809493.7283275
+GeForce GTX TITAN X	cuda	network	vgg-16.B1	mx-trt	default	{"costs" : [0.006219, 0.006213, 0.006162]}	1535809570.2427962
+GeForce GTX TITAN X	cuda	network	vgg-19.B1	mx-trt	default	{"costs" : [0.007202, 0.007271, 0.007298]}	1535809657.492872
+GeForce GTX TITAN X	cuda	network	inception-v3.B1	mx-trt	default	{"costs" : [0.009744, 0.009689, 0.009636]}	1535809816.7098014
+GeForce GTX TITAN X	cuda	network	densenet-121.B1	mx-trt	default	{"costs" : [0.006454, 0.006269, 0.006447]}	1535810033.2124581
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B1	mx-trt	default	{"costs" : [0.001581, 0.001588, 0.001573]}	1535810088.6319213
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B1	mx-trt	default	{"costs" : [0.001564, 0.001609, 0.001619]}	1535810144.0568106
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B4	mx-trt	default	{"costs" : [0.000993, 0.000962, 0.000983]}	1535810178.0346353
+GeForce GTX TITAN X	cuda	network	resnet-50.B4	mx-trt	default	{"costs" : [0.002341, 0.002337, 0.002333]}	1535810237.7041836
+GeForce GTX TITAN X	cuda	network	mobilenet.B4	mx-trt	default	{"costs" : [0.000822, 0.000820, 0.000828]}	1535810300.3564408
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B4	mx-trt	default	{"costs" : [0.001251, 0.001255, 0.001271]}	1535810391.7715218
+GeForce GTX TITAN X	cuda	network	vgg-16.B4	mx-trt	default	{"costs" : [0.004591, 0.004594, 0.004617]}	1535810465.8644984
+GeForce GTX TITAN X	cuda	network	vgg-19.B4	mx-trt	default	{"costs" : [0.005724, 0.005756, 0.005712]}	1535810549.445935
+GeForce GTX TITAN X	cuda	network	inception-v3.B4	mx-trt	default	{"costs" : [0.004225, 0.004201, 0.004212]}	1535810648.0826864
+GeForce GTX TITAN X	cuda	network	densenet-121.B4	mx-trt	default	{"costs" : [0.003376, 0.003376, 0.003388]}	1535810765.7416792
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B4	mx-trt	default	{"costs" : [0.000759, 0.000792, 0.000786]}	1535810797.2990642
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B4	mx-trt	default	{"costs" : [0.000786, 0.000786, 0.000787]}	1535810828.74821
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B8	mx-trt	default	{"costs" : [0.000787, 0.000789, 0.000783]}	1535810864.4983993
+GeForce GTX TITAN X	cuda	network	resnet-50.B8	mx-trt	default	{"costs" : [0.001965, 0.001956, 0.001963]}	1535810928.2598197
+GeForce GTX TITAN X	cuda	network	mobilenet.B8	mx-trt	default	{"costs" : [0.000689, 0.000688, 0.000688]}	1535810995.2907715
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B8	mx-trt	default	{"costs" : [0.000988, 0.000986, 0.000987]}	1535811092.493411
+GeForce GTX TITAN X	cuda	network	vgg-16.B8	mx-trt	default	{"costs" : [0.004201, 0.004229, 0.004227]}	1535811174.721952
+GeForce GTX TITAN X	cuda	network	vgg-19.B8	mx-trt	default	{"costs" : [0.005299, 0.005310, 0.005305]}	1535811269.625465
+GeForce GTX TITAN X	cuda	network	inception-v3.B8	mx-trt	default	{"costs" : [0.003090, 0.003083, 0.003086]}	1535811371.526424
+GeForce GTX TITAN X	cuda	network	densenet-121.B8	mx-trt	default	{"costs" : [0.002478, 0.002476, 0.002479]}	1535811486.0508022
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B8	mx-trt	default	{"costs" : [0.000635, 0.000639, 0.000641]}	1535811519.020964
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B8	mx-trt	default	{"costs" : [0.000639, 0.000643, 0.000640]}	1535811552.201395
+
+GeForce GTX TITAN X	cuda	network	resnet-18.B32	mx-trt	default	{"costs" : [0.000687, 0.000693, 0.000695]}	1535811591.7099848
+GeForce GTX TITAN X	cuda	network	resnet-50.B32	mx-trt	default	{"costs" : [0.001712, 0.001713, 0.001722]}	1535811665.3986826
+GeForce GTX TITAN X	cuda	network	mobilenet.B32	mx-trt	default	{"costs" : [0.000583, 0.000583, 0.000584]}	1535811742.158631
+GeForce GTX TITAN X	cuda	network	mobilenetv2.B32	mx-trt	default	{"costs" : [0.000771, 0.000771, 0.000772]}	1535811848.9384181
+GeForce GTX TITAN X	cuda	network	vgg-16.B32	mx-trt	default	{"costs" : [0.003919, 0.003910, 0.003884]}	1535811964.7451177
+GeForce GTX TITAN X	cuda	network	vgg-19.B32	mx-trt	default	{"costs" : [0.004945, 0.004910, 0.004924]}	1535812094.8821492
+GeForce GTX TITAN X	cuda	network	inception-v3.B32	mx-trt	default	{"costs" : [0.002565, 0.002572, 0.002562]}	1535812210.456275
+GeForce GTX TITAN X	cuda	network	densenet-121.B32	mx-trt	default	{"costs" : [0.001880, 0.001876, 0.001876]}	1535812333.2237735
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.0.B32	mx-trt	default	{"costs" : [0.000543, 0.000543, 0.000542]}	1535812369.8440132
+GeForce GTX TITAN X	cuda	network	squeezenet_v1.1.B32	mx-trt	default	{"costs" : [0.000544, 0.000542, 0.000541]}	1535812406.1253395
