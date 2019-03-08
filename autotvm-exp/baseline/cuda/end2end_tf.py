@@ -59,8 +59,8 @@ if __name__ == '__main__':
     parser.add_argument("--n-ave-curve", type=int, default=3)
     args = parser.parse_args()
 
-    # networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
-    networks = ['dcgan']
+    networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16', 'dcgan']
+    # networks = ['dcgan']
     dev = '/gpu:0'
 
     batch_sizes = [1]
@@ -87,7 +87,7 @@ if __name__ == '__main__':
                 device_name = tvm.gpu(0).device_name
 
                 task_name = "%s.B%d" % (net, b)
-                log_value('cuda', device_name, task_name, method,
+                log_value(device_name, 'cuda', task_name, net, method, '',
                           array2str_round(costs))
                 print(task_name, method, ["%.6f" % x for x in costs])
             exit()
