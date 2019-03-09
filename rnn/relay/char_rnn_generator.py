@@ -77,4 +77,3 @@ class RNNLoop(Network):
         input = letter_to_topi(start_letter)
         hidden = self.hidden
         output = self(20, category_tensor, input, hidden)
-

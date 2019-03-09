@@ -5020,3 +5020,15 @@ PyTorch,pipsqueak,8192,1368
 PyTorch,pipsqueak,8192,2121
 PyTorch,pipsqueak,8192,1926
 PyTorch,pipsqueak,8192,1661
+relay_cell_compile_cpu,pipsqueak,16,136
+relay_cell_compile_cpu,pipsqueak,16,134
+relay_cell_compile_cpu,pipsqueak,16,99
+relay_cell_compile_cpu,pipsqueak,16,138
+relay_cell_compile_cpu,pipsqueak,16,132
+relay_cell_compile_cpu,pipsqueak,16,137
+relay_loop_compile_cpu,pipsqueak,16,20
+relay_loop_compile_cpu,pipsqueak,16,13
+relay_loop_compile_cpu,pipsqueak,16,16
+relay_loop_compile_cpu,pipsqueak,16,14
+relay_loop_interpret_cpu,pipsqueak,16,270
+pytorch,pipsqueak,16,29

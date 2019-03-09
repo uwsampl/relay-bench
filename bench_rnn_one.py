@@ -11,8 +11,9 @@ def bench_forward(hidden_size):
         gpu = False
         aot_str = 'compile' if aot else 'interpret'
         gpu_str = 'gpu' if gpu else 'cpu'
-        relay_rnn = relay.char_rnn_generator.RNNCellOnly(aot, gpu, data.N_LETTERS, hidden_size, data.N_LETTERS)
+        #relay_rnn = relay.char_rnn_generator.RNNCellOnly(aot, gpu, data.N_LETTERS, hidden_size, data.N_LETTERS)
         for i in range(iterations):
+            break
             relay.samples(relay_rnn, 'Russian', 'RUS')
             t = time.time()
             relay.samples(relay_rnn, 'Russian', 'RUS')

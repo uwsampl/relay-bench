@@ -44,7 +44,7 @@ class Network:
         if do_aot:
             self.forward = aot.compile(self.mod, self.forward_var, ctx=self.context, tgt=self.target, use_gpu=self.use_gpu)
         else:
-            self.forward = self.executor.static_evaluate(self.forward_var)
+            self.forward = self.executor.evaluate(self.forward_var)
         self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
 
     def __call__(self, *inputs):
