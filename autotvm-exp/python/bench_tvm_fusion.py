@@ -16,10 +16,10 @@ from nnvm import testing
 ConvWorkload = namedtuple('ConvWorkload', ['feature', 'in_filter', 'out_filter', 'kernel', 'pad', 'stride'])
 DepthConvWorkload = namedtuple('DepthConvWorkload', ['feature', 'in_filter', 'channel_multiplier', 'kernel', 'pad', 'stride'])
 
-@tvm.register_func
-def tvm_callback_cuda_compile(code):
-    ptx = nvcc.compile_cuda(code, target="ptx")
-    return ptx
+#@tvm.register_func
+#def tvm_callback_cuda_compile(code):
+#    ptx = nvcc.compile_cuda(code, target="ptx")
+#    return ptx
 
 def conv_block(data, name, channels,
                kernel_size=(3, 3), strides=(1, 1), padding=(1, 1),

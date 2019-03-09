@@ -15,8 +15,8 @@ import tvm
 from util import log_value, array2str_round
 
 wkls = [
-#    ('RNN.B4.L2.S1.H650.V0',      'rnn',  4, 2, 1, 650, 0),
-#    ('RNN.B4.L2.S1.H650.V10000',  'rnn',  4, 2, 1, 650, 10000),
+    ('RNN.B4.L2.S1.H650.V0',      'rnn',  4, 2, 1, 650, 0),
+    ('RNN.B4.L2.S1.H650.V10000',  'rnn',  4, 2, 1, 650, 10000),
 
     ('LSTM.B4.L2.S1.H650.V0',     'lstm', 4, 2, 1, 650, 0),
     ('LSTM.B4.L2.S1.H650.V10000', 'lstm', 4, 2, 1, 650, 10000),
@@ -100,6 +100,6 @@ if __name__ == '__main__':
             print(wkl, array2str_round(costs))
             device_name = tvm.gpu(0).device_name
             method = 'tf-xla' if xla else 'tf'
-            log_value('cuda', device_name, task_name, method,
+            log_value(device_name, 'cuda', task_name, wkl, method, '',
                       array2str_round(costs))
 
