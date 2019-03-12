@@ -35,7 +35,7 @@ if __name__ == '__main__':
                 print (costs, 'retry due to high variance in measure results')
 
             method = 'pytorch'
-            device_name = tvm.cpu(0).device_name
+            device_name = tvm.gpu(0).device_name
 
             task_name = "%s.%d" % (net, b)
             log_value(device_name, 'gpu', task_name, net, method, '', array2str_round(costs))
