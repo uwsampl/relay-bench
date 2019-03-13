@@ -4,7 +4,8 @@ import argparse
 import time
 import tvm
 
-from util import score_cnn, log_value, array2str_round, no_visible_gpus
+from oopsla_benchmarks.util import run_experiments
+from util import score_cnn, no_visible_gpus
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -14,38 +15,22 @@ if __name__ == '__main__':
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16', 'dcgan']
     dev = '/cpu:0'
 
+    batch_sizes = [1]
+    num_batches = 1
+
+    # data_format must be channels_last because TF has no channels_first implementations
+    # for CPU (errors out if it cannot fall back to GPU)
+    data_format = 'channels_last'
+    device_name = tvm.cpu(0).device_name
+
     with no_visible_gpus():
-
-        batch_sizes = [1]
-
-        # data_format must be channels_last because TF has no channels_first implementations
-        # for CPU (errors out if it cannot fall back to GPU)
-        data_format = 'channels_last'
-
-        for net in networks:
-            for b in batch_sizes:
-                for xla in [False, True]:
-                    num_batches = 1000 if b == 1 else 100
-
-                    while True:
-                        costs = []
-                        for t in range(args.n_ave_curve):
-                            speed = score_cnn(network=net, data_format=data_format,
-                                              dev=dev, batch_size=b,
-                                              num_batches=num_batches, enable_xla=xla)
-
-                            if t != args.n_ave_curve - 1:
-                                time.sleep(4)
-                            costs.append(1 / speed)
-
-                        if np.std(costs) / np.mean(costs) < 0.04:
-                            break
-                        print(costs, 'retry due to high variance in measure results')
-
-                    method = 'tf-xla' if xla else 'tf'
-                    device_name = tvm.cpu(0).device_name
-
-                    task_name = "%s.B%d" % (net, b)
-                    log_value(device_name, 'cpu', task_name, net, method, '',
-                              array2str_round(costs))
-                    print(task_name, method, ["%.6f" % x for x in costs])
+        run_experiments(score_cnn, args.n_ave_curve,
+                        'tf', 'cnn', device_name,
+                        ['network', 'data_format', 'device',
+                         'batch_size', 'num_batches', 'enable_xla'],
+                        [networks,
+                         [data_format],
+                         [dev],
+                         batch_sizes,
+                         [num_batches],
+                         [False, True]])

@@ -2,10 +2,10 @@ import tensorflow as tf
 import numpy as np
 import argparse
 import time
-
 import tvm
 
-from util import score_cnn, log_value, array2str_round
+from oopsla_benchmarks.util import run_experiments
+from util import score_cnn, no_visible_gpus
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -16,31 +16,18 @@ if __name__ == '__main__':
     dev = '/gpu:0'
 
     batch_sizes = [1]
+    num_batches = 1
+
     data_format = 'channels_first'
+    device_name = tvm.gpu(0).device_name
 
-    for net in networks:
-        for b in batch_sizes:
-            for xla in [False, True]:
-                num_batches = 1000 if b == 1 else 100
-
-                while True:
-                    costs = []
-                    for t in range(args.n_ave_curve):
-                        speed = score_cnn(network=net, data_format=data_format, dev=dev,
-                                          batch_size=b, num_batches=num_batches, enable_xla=xla)
-
-                        if t != args.n_ave_curve - 1:
-                            time.sleep(4)
-                        costs.append(1 / speed)
-
-                    if np.std(costs) / np.mean(costs) < 0.04:
-                        break
-                    print(costs, 'retry due to high variance in measure results')
-
-                method = 'tf-xla' if xla else 'tf'
-                device_name = tvm.gpu(0).device_name
-
-                task_name = "%s.B%d" % (net, b)
-                log_value(device_name, 'cuda', task_name, net, method, '',
-                          array2str_round(costs))
-                print(task_name, method, ["%.6f" % x for x in costs])
+    run_experiments(score_cnn, args.n_ave_curve,
+                    'tf', 'cnn', device_name,
+                    ['network', 'data_format', 'device',
+                     'batch_size', 'num_batches', 'enable_xla'],
+                    [networks,
+                     [data_format],
+                     [dev],
+                     batch_sizes,
+                     [num_batches],
+                     [False, True]])
