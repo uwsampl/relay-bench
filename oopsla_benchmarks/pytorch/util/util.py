@@ -9,12 +9,14 @@ from util.mobilenetv2 import MOBILENET_PARAMS
 from util.mobilenetv2.MobileNetV2 import MobileNetV2 as mobilenet
 from util.dcgan.dcgan import Generator as dcgan
 from util.dcgan import DCGAN_PARAMS
+from util.dqn.dqn import DQN as dqn
+from util.dqn import DQN_PARAMS
 
 def load_params(location, dev):
     if dev != 'cpu':
         return torch.load(location)
     else:
-        return torch.location(location, map_location='cpu')
+        return torch.load(location, map_location='cpu')
 
 def instantiate_network(network, batch_size, dev):
     image_shape = (224, 3, 224, batch_size)
@@ -25,9 +27,19 @@ def instantiate_network(network, batch_size, dev):
         net = models.vgg16(pretrained=True)
     elif network == 'mobilenet':
         net = mobilenet(n_class=1000)
-        loc = MOBILENET_PARAMS
         state_dict = load_params(MOBILENET_PARAMS, dev)
         net.load_state_dict(state_dict)
+    elif network == 'nature-dqn':
+        args = lambda: None
+        # params picked from default settings in Rainbow project
+        args.atoms = 51
+        args.history_length = 4
+        args.hidden_size = 512
+        args.noisy_std = 0.1
+        net = dqn(args, 14)
+        state_dict = load_params(DQN_PARAMS, dev)
+        net.load_state_dict(state_dict)
+        image_shape = (batch_size, 4, 84, 84)
     elif network == 'dcgan':
         net = dcgan(ngpu = 0 if dev == 'cpu' else 1)
         state_dict = load_params(DCGAN_PARAMS, dev)
