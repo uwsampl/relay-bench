@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser.add_argument("--n-ave-curve", type=int, default=3)
     args = parser.parse_args()
 
-    networks = ['resnet-18', 'vgg-16', 'mobilenet-v2']
+    networks = ['resnet-18', 'mobilenet', 'vgg-16', 'dcgan']
     batch_sizes = [1]
     num_batches = 1
 

@@ -1,5 +1,5 @@
 import os
 from . import MobileNetV2
 
-dirname = os.path.dirname(__file__)
-PRETRAIN_PARAMS = os.path.join(dirname, 'mobilenet_v2.pth.tar')
+mobilenet_dir = os.path.dirname(__file__)
+MOBILENET_PARAMS = os.path.join(mobilenet_dir, 'mobilenet_v2.pth.tar')
