@@ -5,12 +5,12 @@ import time
 import tvm
 
 import torchvision.models as models
-from util.mobilenetv2 import MOBILENET_PARAMS
-from util.mobilenetv2.MobileNetV2 import MobileNetV2 as mobilenet
-from util.dcgan.dcgan import Generator as dcgan
-from util.dcgan import DCGAN_PARAMS
-from util.dqn.dqn import DQN as dqn
-from util.dqn import DQN_PARAMS
+from oopsla_benchmarks.pytorch.util.mobilenetv2 import MOBILENET_PARAMS
+from oopsla_benchmarks.pytorch.util.mobilenetv2.MobileNetV2 import MobileNetV2 as mobilenet
+from oopsla_benchmarks.pytorch.util.dcgan.dcgan import Generator as dcgan
+from oopsla_benchmarks.pytorch.util.dcgan import DCGAN_PARAMS
+from oopsla_benchmarks.pytorch.util.dqn.dqn import DQN as dqn
+from oopsla_benchmarks.pytorch.util.dqn import DQN_PARAMS
 
 def load_params(location, dev):
     if dev != 'cpu':
@@ -56,6 +56,25 @@ def evaluate_model(net, image_shape, device):
     input = input.to(device)
     output = target(input)
     return output
+
+
+def cnn_setup(network, dev, batch_size):
+    net, image_shape = instantiate_network(network, batch_size, dev)
+    device = torch.device('cuda' if dev == 'gpu' and torch.cuda.is_available() else 'cpu')
+
+    target = net.to(device)
+    input_tensor = np.random.randn(*image_shape).astype(np.float32)
+    input = torch.autograd.Variable(torch.from_numpy(input_tensor))
+    input = input.to(device)
+    return [target, input]
+
+
+def cnn_trial(target, input):
+    return target(input)
+
+
+def cnn_teardown(target, input):
+    pass
 
 
 def score(network, dev, batch_size, num_batches):

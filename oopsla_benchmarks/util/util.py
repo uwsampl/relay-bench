@@ -1,6 +1,59 @@
 import time
 import numpy as np
 from itertools import product
+import csv
+
+
+def write_row(writer, fieldnames, fields):
+    record = {}
+    for i in range(len(fieldnames)):
+        record[fieldnames[i]] = fields[i]
+    writer.writerow(record)
+
+
+def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fieldnames):
+    for i in range(dry_run + n_times):
+        if i == dry_run:
+            tic = time.time()
+        start = time.time()
+        out = trial(*trial_args)
+        end = time.time()
+        length = end - start
+        if i >= dry_run:
+            write_row(writer, fieldnames, setup_args + [num, i - dry_run, length])
+    final = time.time()
+
+    return (final - tic) / n_times
+
+
+def run_trials(method, task_name,
+               dry_run, times_per_input, n_input,
+               trial, trial_setup, trial_teardown,
+               parameter_names, parameter_ranges):
+    filename = '{}-{}.csv'.format(method, task_name)
+    with open(filename, 'w', newline='') as csvfile:
+        fieldnames = parameter_names + ['run', 'rep', 'time']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for args in product(*parameter_ranges):
+            costs = []
+            for t in range(n_input):
+                trial_args = trial_setup(*args)
+                score = score_loop(t, trial, trial_args, list(args), times_per_input, dry_run, writer, fieldnames)
+                trial_teardown(*trial_args)
+
+                if t != n_input - 1:
+                    time.sleep(4)
+                    costs.append(score)
+
+                if np.std(costs) / np.mean(costs) < 0.04:
+                    break
+                print(costs, 'retry due to high variance in measure results')
+
+                log_value(method, task_name, '',  parameter_names, args, array2str_round(costs))
+                print(method, task_name, args, ["%.6f" % x for x in costs])
+
 
 def run_experiments(experiment, n_ave_curve,
                     method, task_name, device_name,

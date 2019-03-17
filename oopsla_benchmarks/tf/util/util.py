@@ -3,11 +3,11 @@ import os
 import numpy as np
 import tensorflow as tf
 
-from models import mobilenet
-from models import resnet
-from models import vgg
-from models import dqn
-from models import dcgan
+from oopsla_benchmarks.tf.models import mobilenet
+from oopsla_benchmarks.tf.models import resnet
+from oopsla_benchmarks.tf.models import vgg
+from oopsla_benchmarks.tf.models import dqn
+from oopsla_benchmarks.tf.models import dcgan
 
 TVM_NAME = 'AutoTVM'
 
@@ -48,6 +48,42 @@ def instantiate_network(network, batch_size, data_format):
         image_shape = (batch_size, 100)
 
     return (net, image_shape)
+
+
+def cnn_setup(network, dev, batch_size, enable_xla):
+    # for CPU, the data format must be channels_last because certain
+    # channels_first implementations exist only for GPU
+    data_format = 'channels_first' if dev == '/gpu:0' else 'channels_last'
+    net, image_shape = instantiate_network(network, batch_size, data_format)
+
+    # if we want to run on CPU we have to trick TF into believing
+    # there is no GPU available at all to prevent "fallback" GPU
+    # implementations from running (this is a TF bug)
+    if dev == '/cpu:0':
+        os.putenv('CUDA_VISIBLE_DEVICES', '')
+
+    config = tf.ConfigProto(log_device_placement=False)
+    if enable_xla:
+        config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
+
+    with tf.device(dev):
+        inputs = tf.constant(np.random.randn(*image_shape).astype(np.float32))
+        output = net(inputs, is_training=False)
+
+    sess = tf.Session(config=config)
+    sess.__enter__()
+    sess.run(tf.global_variables_initializer())
+    return [dev, sess, output]
+
+
+def cnn_trial(dev, sess, output):
+    sess.run(output)
+
+
+def cnn_teardown(dev, sess, output):
+    sess.__exit__(None, None, None)
+    if dev == '/cpu:0':
+        os.unsetenv('CUDA_VISIBLE_DEVICES')
 
 
 # runs the given cnn in tensorflow on random input and returns the

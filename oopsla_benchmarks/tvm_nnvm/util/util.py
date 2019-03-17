@@ -95,6 +95,30 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
 
     return net, params, input_shape
 
+
+def cnn_setup(network, dev, batch_size, opt):
+    device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
+    net, params, image_shape = get_network(network, batch_size, ir='nnvm')
+    with nnvm.compiler.build_config(opt_level=opt):
+        graph, lib, params = nnvm.compiler.build(net, target='llvm' if dev == 'cpu' else 'cuda',
+                                                 shape={'data' : image_shape},
+                                                 params=params, dtype='float32')
+
+    mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
+    mod.set_input(**params)
+    mod.set_input('data',
+                      tvm.nd.array((np.random.uniform(size=image_shape)).astype('float32')))
+    return [mod]
+
+
+def cnn_trial(mod):
+    return mod.run()
+
+
+def cnn_teardown(mod):
+    pass
+
+
 def score(network, dev, batch_size, num_batches, opt):
     device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
     net, params, image_shape = get_network(network, batch_size, ir='nnvm')
