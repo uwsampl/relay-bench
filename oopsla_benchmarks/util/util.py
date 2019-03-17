@@ -37,22 +37,23 @@ def run_trials(method, task_name,
         writer.writeheader()
 
         for args in product(*parameter_ranges):
-            costs = []
-            for t in range(n_input):
-                trial_args = trial_setup(*args)
-                score = score_loop(t, trial, trial_args, list(args), times_per_input, dry_run, writer, fieldnames)
-                trial_teardown(*trial_args)
+            while True:
+                costs = []
+                for t in range(n_input):
+                    trial_args = trial_setup(*args)
+                    score = score_loop(t, trial, trial_args, list(args), times_per_input, dry_run, writer, fieldnames)
+                    trial_teardown(*trial_args)
 
-                if t != n_input - 1:
-                    time.sleep(4)
+                    if t != n_input - 1:
+                        time.sleep(4)
                     costs.append(score)
 
                 if np.std(costs) / np.mean(costs) < 0.04:
                     break
                 print(costs, 'retry due to high variance in measure results')
 
-                log_value(method, task_name, '',  parameter_names, args, array2str_round(costs))
-                print(method, task_name, args, ["%.6f" % x for x in costs])
+            log_value(method, task_name, '',  parameter_names, args, array2str_round(costs))
+            print(method, task_name, args, ["%.6f" % x for x in costs])
 
 
 def run_experiments(experiment, n_ave_curve,

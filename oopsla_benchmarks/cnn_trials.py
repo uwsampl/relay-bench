@@ -44,18 +44,18 @@ if __name__ == '__main__':
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    pt.cnn_trial, pt.cnn_setup, pt.cnn_teardown,
                    ['network', 'device', 'batch_size'],
-                    [networks, devices, batch_sizes])
+                   [networks, devices, batch_sizes])
 
     if not args.skip_relay:
         run_trials('relay', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    relay.cnn_trial, relay.cnn_setup, relay.cnn_teardown,
                    ['network', 'device', 'batch_size', 'opt_level'],
-                    [networks, devices, batch_sizes, opt_levels])
+                   [networks, devices, batch_sizes, opt_levels])
 
     if not args.skip_nnvm:
         run_trials('nnvm', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    nnvm.cnn_trial, nnvm.cnn_setup, nnvm.cnn_teardown,
                    ['network', 'device', 'batch_size', 'opt_level'],
-                    [networks, devices, batch_sizes, opt_levels])
+                   [networks, devices, batch_sizes, opt_levels])
