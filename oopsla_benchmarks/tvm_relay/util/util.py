@@ -2,6 +2,11 @@ import time
 import tvm
 from tvm import relay
 import numpy as np
+import onnx
+import keras
+import tensorflow
+
+from oopsla_benchmarks.tvm_relay.util import mxnet_zoo, onnx_zoo
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
     """Get the symbol definition and random weight of a network
@@ -95,9 +100,53 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
     return net, params, input_shape
 
 
-def cnn_setup(network, dev, batch_size, opt):
+def get_mxnet_network(name):
+    image_shape = (1, 3, 224, 224)
+    if 'vgg' in name:
+        mx_sym = mxnet_zoo.mx_vgg(16)
+    elif 'resnet' in name:
+        mx_sym = mxnet_zoo.mx_resnet(18)
+    elif 'dcgan' in name:
+        mx_sym = mxnet_zoo.mx_dcgan()
+    elif 'nature-dqn' in name:
+        mx_sym = mxnet_zoo.mx_dqn()
+    else:
+        raise ValueError("Unsupported network: " + name)
+
+    return mx_sym, image_shape
+
+
+def get_onnx_network(name):
+    image_shape = (1, 3, 224, 224)
+    if 'resnet' in name:
+        net = onnx_zoo.resnet18_1_0
+    elif 'vgg' in name:
+        net = onnx_zoo.vgg16
+    elif 'mobilenet' in name:
+        net = onnx_zoo.mobilenet2
+    else:
+        raise ValueError("Unsupported network: " + name)
+
+
+    return net, image_shape
+
+
+def get_keras_network(name):
+    image_shape=(224,224,3)
+    if 'vgg' in name:
+        model = keras.applications.VGG16(include_top=True, weights='imagenet',
+                                         input_shape=image_shape, classes=1000)
+    elif 'mobilenet' in name:
+        model = keras.applications.MobileNet(include_top=True, weights='imagenet',
+                                             input_shape=image_shape, classes=1000)
+    else:
+        raise ValueError("Unsupported network: " + name)
+
+    return model, image_shape
+
+
+def setup_relay_mod(net, image_shape, params, dev, opt):
     device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
-    net, params, image_shape = get_network(network, batch_size)
     with relay.build_module.build_config(opt_level=opt):
         graph, lib, params = relay.build(net, 'llvm' if dev == 'cpu' else 'cuda', params=params)
 
@@ -105,6 +154,34 @@ def cnn_setup(network, dev, batch_size, opt):
     mod.set_input(**params)
     mod.set_input('data',
                   tvm.nd.array((np.random.uniform(size=image_shape)).astype('float32')))
+    return mod
+
+
+def mxnet_setup(network, dev, batch_size, opt):
+    mx_sym, image_shape = get_mxnet_network(network)
+    new_sym, params = relay.frontend.from_mxnet(mx_sym, {'data': image_shape}, None, None)
+    mod = setup_relay_mod(new_sym, image_shape, params, dev, opt)
+    return [mod]
+
+
+def onnx_setup(network, dev, batch_size, opt):
+    net, image_shape = get_onnx_network(network)
+    model = onnx.load_model(net)
+    sym, params = relay.frontend.from_onnx(model, {'data': image_shape})
+    mod = setup_relay_mod(sym, image_shape, params, dev, opt)
+    return [mod]
+
+
+def keras_setup(network, dev, batch_size, opt):
+    model, image_shape = get_keras_network(network)
+    func, params = relay.frontend.from_keras(model, {'data': image_shape})
+    mod = setup_relay_mod(func, image_shape, params, dev, opt)
+    return [mod]
+
+
+def cnn_setup(network, dev, batch_size, opt):
+    net, params, image_shape = get_network(network, batch_size)
+    mod = setup_relay_mod(net, image_shape, params, dev, opt)
     return [mod]
 
 
