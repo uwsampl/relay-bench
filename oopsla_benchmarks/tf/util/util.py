@@ -50,7 +50,9 @@ def instantiate_network(network, batch_size, data_format):
     return (net, image_shape)
 
 
-def cnn_setup(network, dev, batch_size, enable_xla):
+def cnn_setup(network, device, batch_size, enable_xla):
+    dev = '/gpu:0' if device == 'gpu' else '/cpu:0'
+
     # for CPU, the data format must be channels_last because certain
     # channels_first implementations exist only for GPU
     data_format = 'channels_first' if dev == '/gpu:0' else 'channels_last'
