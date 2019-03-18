@@ -145,14 +145,14 @@ def get_keras_network(name):
     return model, image_shape
 
 
-def setup_relay_mod(net, image_shape, params, dev, opt):
+def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
     device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
     with relay.build_module.build_config(opt_level=opt):
         graph, lib, params = relay.build(net, 'llvm' if dev == 'cpu' else 'cuda', params=params)
 
     mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
     mod.set_input(**params)
-    mod.set_input('data',
+    mod.set_input(input_name,
                   tvm.nd.array((np.random.uniform(size=image_shape)).astype('float32')))
     return mod
 
@@ -160,28 +160,28 @@ def setup_relay_mod(net, image_shape, params, dev, opt):
 def mxnet_setup(network, dev, batch_size, opt):
     mx_sym, image_shape = get_mxnet_network(network)
     new_sym, params = relay.frontend.from_mxnet(mx_sym, {'data': image_shape}, None, None)
-    mod = setup_relay_mod(new_sym, image_shape, params, dev, opt)
+    mod = setup_relay_mod(new_sym, image_shape, 'data', params, dev, opt)
     return [mod]
 
 
 def onnx_setup(network, dev, batch_size, opt):
     net, image_shape = get_onnx_network(network)
     model = onnx.load_model(net)
-    sym, params = relay.frontend.from_onnx(model, {'data': image_shape})
-    mod = setup_relay_mod(sym, image_shape, params, dev, opt)
+    sym, params = relay.frontend.from_onnx(model, {model.graph.input[0].name: image_shape})
+    mod = setup_relay_mod(sym, image_shape, model.graph.input[0].name, params, dev, opt)
     return [mod]
 
 
 def keras_setup(network, dev, batch_size, opt):
     model, image_shape = get_keras_network(network)
-    func, params = relay.frontend.from_keras(model, {'data': image_shape})
-    mod = setup_relay_mod(func, image_shape, params, dev, opt)
+    func, params = relay.frontend.from_keras(model, {model.input_names[0]: image_shape})
+    mod = setup_relay_mod(func, image_shape, model.input_names[0], params, dev, opt)
     return [mod]
 
 
 def cnn_setup(network, dev, batch_size, opt):
     net, params, image_shape = get_network(network, batch_size)
-    mod = setup_relay_mod(net, image_shape, params, dev, opt)
+    mod = setup_relay_mod(net, image_shape, 'data', params, dev, opt)
     return [mod]
 
 
