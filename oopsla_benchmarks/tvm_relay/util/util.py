@@ -5,6 +5,7 @@ import numpy as np
 import onnx
 import keras
 import tensorflow
+import mxnet as mx
 
 from oopsla_benchmarks.tvm_relay.util import mxnet_zoo, onnx_zoo
 
@@ -132,7 +133,7 @@ def get_onnx_network(name):
 
 
 def get_keras_network(name):
-    image_shape=(224,224,3)
+    image_shape = (224, 224, 3)
     if 'vgg' in name:
         model = keras.applications.VGG16(include_top=True, weights='imagenet',
                                          input_shape=image_shape, classes=1000)
@@ -159,7 +160,12 @@ def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
 
 def mxnet_setup(network, dev, batch_size, opt):
     mx_sym, image_shape = get_mxnet_network(network)
-    new_sym, params = relay.frontend.from_mxnet(mx_sym, {'data': image_shape}, None, None)
+    mx_mod = mx.mod.Module(mx_sym, label_names=None)
+    mx_mod.bind(data_shapes=[('data', image_shape)], for_training=False)
+    mx_mod.init_params()
+    args, auxs = mx_mod.get_params()
+
+    new_sym, params = relay.frontend.from_mxnet(mx_sym, {'data': image_shape}, arg_params=args, aux_params=auxs)
     mod = setup_relay_mod(new_sym, image_shape, 'data', params, dev, opt)
     return [mod]
 

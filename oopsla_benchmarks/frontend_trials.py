@@ -24,7 +24,7 @@ if __name__ == '__main__':
     if len(devices) == 0:
         exit()
 
-    opt_levels = [3]
+    opt_levels = [1]
 
     batch_sizes = [1]
 
