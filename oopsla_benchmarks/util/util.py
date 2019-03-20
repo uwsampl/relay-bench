@@ -15,14 +15,10 @@ def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fie
     for i in range(dry_run + n_times):
         if i == dry_run:
             tic = time.time()
-        start = time.time()
         out = trial(*trial_args)
-        end = time.time()
-        length = end - start
-        if i >= dry_run:
-            write_row(writer, fieldnames, setup_args + [num, i - dry_run, length])
     final = time.time()
 
+    write_row(writer, fieldnames, setup_args + [num, final - tic])
     return (final - tic) / n_times
 
 
@@ -32,7 +28,7 @@ def run_trials(method, task_name,
                parameter_names, parameter_ranges):
     filename = '{}-{}.csv'.format(method, task_name)
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = parameter_names + ['run', 'rep', 'time']
+        fieldnames = parameter_names + ['rep', 'time']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
