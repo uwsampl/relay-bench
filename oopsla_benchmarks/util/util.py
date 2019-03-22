@@ -56,28 +56,6 @@ def run_trials(method, task_name,
             print(method, task_name, args, ["%.6f" % x for x in costs])
 
 
-def run_experiments(experiment, n_ave_curve,
-                    method, task_name, device_name,
-                    parameter_names,
-                    parameter_ranges):
-    for args in product(*parameter_ranges):
-        while True:
-            costs = []
-            for t in range(n_ave_curve):
-                score = experiment(*args)
-
-                if t != n_ave_curve - 1:
-                    time.sleep(4)
-                costs.append(1 / score)
-
-            if np.std(costs) / np.mean(costs) < 0.04:
-                break
-            print(costs, 'retry due to high variance in measure results')
-
-        log_value(method, task_name, device_name, parameter_names, args, array2str_round(costs))
-        print(method, task_name, args, ["%.6f" % x for x in costs])
-
-
 def array2str_round(x, decimal=6):
     """ print an array of float number to pretty string with round
 
