@@ -7,7 +7,7 @@ import keras
 import tensorflow
 import mxnet as mx
 
-from oopsla_benchmarks.tvm_relay.util import mxnet_zoo, onnx_zoo
+from oopsla_benchmarks.tvm_relay.models import mxnet_zoo, onnx_zoo
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
     """Get the symbol definition and random weight of a network

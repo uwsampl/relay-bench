@@ -5,12 +5,13 @@ import time
 import tvm
 
 import torchvision.models as models
-from oopsla_benchmarks.pytorch.util.mobilenetv2 import MOBILENET_PARAMS
-from oopsla_benchmarks.pytorch.util.mobilenetv2.MobileNetV2 import MobileNetV2 as mobilenet
-from oopsla_benchmarks.pytorch.util.dcgan.dcgan import Generator as dcgan
-from oopsla_benchmarks.pytorch.util.dcgan import DCGAN_PARAMS
-from oopsla_benchmarks.pytorch.util.dqn.dqn import DQN as dqn
-from oopsla_benchmarks.pytorch.util.dqn import DQN_PARAMS
+
+from oopsla_benchmarks.pytorch.models.mobilenetv2 import MOBILENET_PARAMS
+from oopsla_benchmarks.pytorch.models.mobilenetv2.MobileNetV2 import MobileNetV2 as mobilenet
+from oopsla_benchmarks.pytorch.models.dcgan.dcgan import Generator as dcgan
+from oopsla_benchmarks.pytorch.models.dcgan import DCGAN_PARAMS
+from oopsla_benchmarks.pytorch.models.dqn.dqn import DQN as dqn
+from oopsla_benchmarks.pytorch.models.dqn import DQN_PARAMS
 
 def load_params(location, dev):
     if dev != 'cpu':

@@ -1,8 +1,8 @@
 import argparse
-import tf.util.util as tf
-import pytorch.util.util as pt
-import tvm_relay.util.util as relay
-import tvm_nnvm.util.util as nnvm
+import tf.util as tf
+import pytorch.util as pt
+import tvm_relay.util as relay
+import tvm_nnvm.util as nnvm
 from util import run_trials
 
 if __name__ == '__main__':
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     task_name = 'cnn'
-    networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16', 'dcgan']
+    networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'] #'dcgan']
 
     devices = []
     if not args.no_gpu:
@@ -30,7 +30,8 @@ if __name__ == '__main__':
         exit()
 
     batch_sizes = [1]
-    opt_levels = [3]
+    nnvm_opt_levels = [3]
+    relay_opt_levels = [0,1,2,3]
 
     if not args.skip_tf:
         run_trials('tf', task_name,
@@ -51,11 +52,11 @@ if __name__ == '__main__':
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    relay.cnn_trial, relay.cnn_setup, relay.cnn_teardown,
                    ['network', 'device', 'batch_size', 'opt_level'],
-                   [networks, devices, batch_sizes, opt_levels])
+                   [networks, devices, batch_sizes, relay_opt_levels])
 
     if not args.skip_nnvm:
         run_trials('nnvm', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    nnvm.cnn_trial, nnvm.cnn_setup, nnvm.cnn_teardown,
                    ['network', 'device', 'batch_size', 'opt_level'],
-                   [networks, devices, batch_sizes, opt_levels])
+                   [networks, devices, batch_sizes, nnvm_opt_levels])
