@@ -96,18 +96,3 @@ def rnn_trial(thunk):
 
 def rnn_teardown(thunk):
     pass
-
-
-def score(network, dev, batch_size, num_batches):
-    net, image_shape = instantiate_network(network, batch_size, dev)
-
-    device = torch.device('cuda' if dev == 'gpu' and torch.cuda.is_available() else 'cpu')
-
-    dry_run = 8
-    for i in range(dry_run + num_batches):
-        if i == dry_run:
-            tic = time.time()
-        out = evaluate_model(net, image_shape, device)
-        end = time.time()
-
-    return num_batches * batch_size / (end - tic)

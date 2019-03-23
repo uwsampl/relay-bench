@@ -225,24 +225,3 @@ def rnn_trial(thunk):
 
 def rnn_teardown(thunk):
     pass
-
-
-def score(network, dev, batch_size, num_batches, opt):
-    device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
-    net, params, image_shape = get_network(network, batch_size)
-    with relay.build_module.build_config(opt_level=opt):
-        graph, lib, params = relay.build(net, 'llvm' if dev == 'cpu' else 'cuda', params=params)
-
-    mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
-    mod.set_input(**params)
-
-    dry_run = 8
-    for i in range(dry_run + num_batches):
-        if i == dry_run:
-            tic = time.time()
-        mod.set_input('data',
-                      tvm.nd.array((np.random.uniform(size=image_shape)).astype('float32')))
-        out = mod.run()
-    end = time.time()
-
-    return num_batches * batch_size / (end-tic)

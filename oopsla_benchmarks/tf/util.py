@@ -88,31 +88,6 @@ def cnn_teardown(dev, sess, output):
         os.unsetenv('CUDA_VISIBLE_DEVICES')
 
 
-# runs the given cnn in tensorflow on random input and returns the
-# score (images/time)
-def score_cnn(network, data_format, dev, batch_size, num_batches, enable_xla):
-    net, image_shape = instantiate_network(network, batch_size, data_format)
-
-    config = tf.ConfigProto(log_device_placement=False)
-    if enable_xla:
-        config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
-
-    with tf.device(dev):
-        inputs = tf.constant(np.random.randn(*image_shape).astype(np.float32))
-        output = net(inputs, is_training=False)
-
-    with tf.Session(config=config) as sess:
-        sess.run(tf.global_variables_initializer())
-        dry_run = 8
-        for i in range(dry_run + num_batches):
-            if i == dry_run:
-                tic = time.time()
-            out = sess.run(output)
-        end = time.time()
-
-    return num_batches * batch_size / (end - tic)
-
-
 # reports the average inference time for a single RNN cell
 # cell_wkl is a tuple of task name, cell type (LSTM or RNN), sequence length, hidden size, and voc size
 def measure_rnn_cell(cell_wkl, dev, xla, n_times):
