@@ -29,12 +29,15 @@ def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fie
 def run_trials(method, task_name,
                dry_run, times_per_input, n_input,
                trial, trial_setup, trial_teardown,
-               parameter_names, parameter_ranges):
+               parameter_names, parameter_ranges,
+               append_to_csv = False):
     filename = '{}-{}.csv'.format(method, task_name)
-    with open(filename, 'w', newline='') as csvfile:
+    mode = 'a' if append_to_csv else 'w'
+    with open(filename, mode, newline='') as csvfile:
         fieldnames = parameter_names + ['rep', 'run', 'time']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+        if not append_to_csv:
+            writer.writeheader()
 
         for args in product(*parameter_ranges):
             # while True:

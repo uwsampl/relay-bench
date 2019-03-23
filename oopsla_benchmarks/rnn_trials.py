@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-cell', action='store_true')
     parser.add_argument('--no-aot', action='store_true')
     parser.add_argument('--no-intp', action='store_true')
+    parser.add_argument('--append-relay-data', action='store_true')
     args = parser.parse_args()
 
     devices = []
@@ -74,4 +75,5 @@ if __name__ == '__main__':
                    ['network', 'device', 'configuration',
                     'method', 'hidden_size', 'language', 'input'],
                    [networks, devices, configurations,
-                    methods, hidden_sizes, languages, inputs])
+                    methods, hidden_sizes, languages, inputs],
+                   append_to_csv = args.append_relay_data)
