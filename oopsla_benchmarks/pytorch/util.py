@@ -13,6 +13,10 @@ from oopsla_benchmarks.pytorch.models.dcgan import DCGAN_PARAMS
 from oopsla_benchmarks.pytorch.models.dqn.dqn import DQN as dqn
 from oopsla_benchmarks.pytorch.models.dqn import DQN_PARAMS
 
+from oopsla_benchmarks.pytorch.rnn import char_rnn_generator
+from oopsla_benchmarks.pytorch.rnn import samples
+from oopsla_benchmarks.util.language_data import N_LETTERS
+
 def load_params(location, dev):
     if dev != 'cpu':
         return torch.load(location)
@@ -75,6 +79,22 @@ def cnn_trial(target, input):
 
 
 def cnn_teardown(target, input):
+    pass
+
+
+def rnn_setup(network, device, hidden_size, lang, letters):
+    if network != 'char-rnn':
+        raise Exception("Only supported network is char-rnn")
+    gpu = (device == 'gpu')
+    rnn = char_rnn_generator.RNN(N_LETTERS, hidden_size, N_LETTERS)
+    return [lambda: samples(rnn, lang, letters)]
+
+
+def rnn_trial(thunk):
+    return thunk()
+
+
+def rnn_teardown(thunk):
     pass
 
 

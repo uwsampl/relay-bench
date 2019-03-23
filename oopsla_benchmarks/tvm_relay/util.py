@@ -7,6 +7,10 @@ import keras
 import tensorflow
 import mxnet as mx
 
+from oopsla_benchmarks.tvm_relay.rnn import char_rnn_generator as rnn
+from oopsla_benchmarks.tvm_relay.rnn import samples
+from oopsla_benchmarks.util.language_data import N_LETTERS
+
 from oopsla_benchmarks.tvm_relay.models import mxnet_zoo, onnx_zoo
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
@@ -196,6 +200,30 @@ def cnn_trial(mod):
 
 
 def cnn_teardown(mod):
+    pass
+
+
+def rnn_setup(network, device, configuration, method, hidden_size, lang, letters):
+    if network != 'char-rnn':
+        raise Exception('Only supported network is char-rnn')
+    gpu = (device == 'gpu')
+    cell_only = (configuration == 'cell')
+    aot = (method == 'aot')
+
+    net = rnn.RNNCellOnly if cell_only else rnn.RNNLoop
+    init_net = net(aot, gpu, N_LETTERS, hidden_size, N_LETTERS)
+    if cell_only:
+        thunk = lambda: samples(init_net, lang, letters)
+    else:
+        thunk = lambda: init_net.samples(lang, letters)
+    return [thunk]
+
+
+def rnn_trial(thunk):
+    return thunk()
+
+
+def rnn_teardown(thunk):
     pass
 
 

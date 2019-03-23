@@ -20,34 +20,36 @@ def write_row(writer, fieldnames, fields):
     writer.writerow(record)
 
 
-def benchmark(num, trial, fieldnames, args, dry_run, iterations, writer):
+def benchmark(trial, fieldnames, args, dry_run, iterations, writer):
     for i in range(dry_run + iterations):
         if i == dry_run:
             tic = time.time()
+        start = time.time()
         trial(*args)
-    final = time.time()
+        end = time.time()
+        if i >= dry_run:
+            write_row(writer, fieldnames, list(args) + [i - dry_run, end - start])
 
-    write_row(writer, fieldnames, list(args) + [num, final - tic])
+    final = time.time()
     return (final - tic) / iterations
 
 
 def run_trials(method, task_name,
-               dry_run, times_per_input, repetitions,
+               dry_run, times_per_input,
                trial, parameter_names, parameter_values):
     filename = '{}-{}.csv'.format(method, task_name)
     with open(filename, 'w', newline='') as csvfile:
-        fieldnames = parameter_names + ['rep', 'time']
+        fieldnames = parameter_names + ['run', 'time']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
 
         costs = []
         for t in range(len(parameter_values)):
-            for i in range(repetitions):
-                score = benchmark(i, trial, parameter_names, parameter_values[t], dry_run, times_per_input, writer)
+            score = benchmark(trial, fieldnames, parameter_values[t], dry_run, times_per_input, writer)
 
-                if t != repetitions - 1:
-                    time.sleep(4)
-                costs.append(score)
+            if t != len(parameter_values) - 1:
+                time.sleep(4)
+            costs.append(score)
 
         print(method, task_name, parameter_values, ["%.6f" % x for x in costs])
 
@@ -99,7 +101,6 @@ if __name__ == '__main__':
     parser.add_argument('--n-hidden', type=int, default=16,
                         help='Number of hidden layers')
     parser.add_argument('--dry-run', type=int, default=8)
-    parser.add_argument('--n-repetitions', type=int, default=100)
     parser.add_argument('--n-times-per-input', type=int, default=1000)
     parser.add_argument('--cell-only', action='store_true')
     parser.add_argument('--skip-pytorch', action='store_true')
@@ -137,7 +138,7 @@ if __name__ == '__main__':
         pytorch_rnn = pytorch.char_rnn_generator.RNN(data.N_LETTERS, args.n_hidden, data.N_LETTERS)
         pytorch_trial = lambda lang, letters: pytorch.samples(pytorch_rnn, lang, letters)
         run_trials('pytorch', task_name,
-                   args.dry_run, args.n_times_per_input, args.n_repetitions,
+                   args.dry_run, args.n_times_per_input,
                    pytorch_trial, parameter_names, parameter_values)
 
     # have to structure it this way because AOT is bugged if it runs
@@ -147,21 +148,22 @@ if __name__ == '__main__':
                                                               args.n_hidden, data.N_LETTERS)
         relay_rnn_aot = relay.char_rnn_generator.RNNCellOnly(True, gpu, data.N_LETTERS,
                                                              args.n_hidden, data.N_LETTERS)
+        relay_trial_intp = lambda lang, letters: relay.samples(relay_rnn_intp, lang, letters)
+        relay_trial_aot = lambda lang, letters: relay.samples(relay_rnn_aot, lang, letters)
     else:
         relay_rnn_intp = relay.char_rnn_generator.RNNLoop(False, gpu, data.N_LETTERS,
                                                           args.n_hidden, data.N_LETTERS)
         relay_rnn_aot = relay.char_rnn_generator.RNNLoop(True, gpu, data.N_LETTERS,
                                                          args.n_hidden, data.N_LETTERS)
+        relay_trial_intp = lambda lang, letters: relay_rnn_intp.samples(lang, letters)
+        relay_trial_aot = lambda lang, letters: relay_rnn_aot.samples(lang, letters)
 
-    relay_trial_intp = lambda lang, letters: relay_rnn_intp.samples(lang, letters)
-    relay_trial_aot = lambda lang, letters: relay_rnn_aot.samples(lang, letters)
-
-    relay_method = 'relay' + ('-cell' if args.cell_only else '') + ('-gpu' if gpu else '')
+    relay_method = 'relay' + ('-cell' if args.cell_only else '-loop') + ('-gpu' if gpu else '-cpu')
 
     run_trials(relay_method + '-intp', task_name,
-               args.dry_run, args.n_times_per_input, args.n_repetitions,
+               args.dry_run, args.n_times_per_input,
                relay_trial_intp, parameter_names, parameter_values)
 
     run_trials(relay_method + '-aot', task_name,
-               args.dry_run, args.n_times_per_input, args.n_repetitions,
+               args.dry_run, args.n_times_per_input,
                relay_trial_aot, parameter_names, parameter_values)
