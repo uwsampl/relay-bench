@@ -307,5 +307,5 @@ if __name__ == '__main__':
     input = nd.array(np.random.rand(24, 384))
     token_types = nd.array(np.random.rand(24, 384))
     valid_length = nd.array(np.random.rand(24))
-    net(input, token_types, valid_length)
-    net.export(os.path.join(args.output_dir, 'static_net'), epoch=args.epochs)
+    r = net(input, token_types, valid_length)
+    net.export(os.path.join(args.output_dir, 'bert_static'), epoch=args.epochs)
