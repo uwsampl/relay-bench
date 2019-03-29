@@ -15,6 +15,7 @@ data2 = mx.sym.Variable('data2')
 expr, params = relay.frontend.from_mxnet(
     net,
     shape={'data0': (24, 384), 'data1': (24, 384), 'data2': (24,) },
-    input_symbols=[data0, data1, data2])
+    input_symbols=[data2, data1, data0])
 
+expr = relay.ir_pass.infer_type(expr)
 import pdb; pdb.set_trace()
