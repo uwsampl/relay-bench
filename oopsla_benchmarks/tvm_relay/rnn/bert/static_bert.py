@@ -2,6 +2,8 @@ from tvm import relay
 import mxnet as mx
 from mxnet import gluon
 
+# In order to run, execute export_bert.py, and then
+# place the model and params at the below location.
 net = gluon.nn.SymbolBlock.imports(
     "gluon_export/bert_static.json",
     ["data0", "data1", "data2"],
