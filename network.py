@@ -6,6 +6,66 @@ from tvm.relay import create_executor, Module
 from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
 import aot
+import collections
+
+class OrderedSet(collections.MutableSet):
+
+    def __init__(self, iterable=None):
+        self.end = end = []
+        end += [None, end, end]         # sentinel node for doubly linked list
+        self.map = {}                   # key --> [key, prev, next]
+        if iterable is not None:
+            self |= iterable
+
+    def __len__(self):
+        return len(self.map)
+
+    def __contains__(self, key):
+        return key in self.map
+
+    def add(self, key):
+        if key not in self.map:
+            end = self.end
+            curr = end[1]
+            curr[2] = end[1] = self.map[key] = [key, curr, end]
+
+    def discard(self, key):
+        if key in self.map:
+            key, prev, next = self.map.pop(key)
+            prev[2] = next
+            next[1] = prev
+
+    def __iter__(self):
+        end = self.end
+        curr = end[2]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[2]
+
+    def __reversed__(self):
+        end = self.end
+        curr = end[1]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[1]
+
+    def pop(self):
+        key = self.last()
+        self.discard(key)
+        return key
+
+    def last(self):
+        return self.end[1][0]
+
+    def __repr__(self):
+        if not self:
+            return '%s()' % (self.__class__.__name__,)
+        return '%s(%r)' % (self.__class__.__name__, list(self))
+
+    def __eq__(self, other):
+        if isinstance(other, OrderedSet):
+            return len(self) == len(other) and list(self) == list(other)
+        return set(self) == set(other)
 
 def initialize(param):
     ty = param.type_annotation
@@ -13,49 +73,57 @@ def initialize(param):
     return np.random.normal(0, 1, shape).astype('float32')
 
 class Network:
-    def add_param(self, name="", shape=()):
-        x = relay.var(name, shape=shape)
-        self.parameters.append((x, initialize(x)))
-        return x
+    NetworkStack = OrderedSet()
 
-    def linear(self, input_size, output_size, x, name=""):
-        weight = self.add_param(f'{name}linear_weight', shape=(output_size, input_size))
-        bias = self.add_param(f'{name}linear_bias', shape=(output_size,))
-        return op.add(op.nn.dense(x, weight), bias)
+    def __init__(self, *args, name="f", mod = None):
+        if mod is None:
+            mod = Module()
 
-    def __init__(self, do_aot, use_gpu, *args):
-        assert isinstance(do_aot, bool)
-        assert isinstance(use_gpu, bool)
-        self.mod = Module()
+        self.mod = mod
         self.prelude = Prelude(self.mod)
-        self.use_gpu = use_gpu
-        self.context = tvm.gpu(0) if use_gpu else tvm.cpu(0)
-        self.target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
-        self.executor = create_executor(mod=self.mod, ctx=self.context, target=self.target)
-        self.parameters = []
-        self.forward_var = relay.GlobalVar('forward_var')
+        self.inputs = []
+        self.weights = OrderedSet()
+        self.sub_network = OrderedSet()
+        self.f = relay.GlobalVar(name)
+        self.recurse = relay.Var("recurse")
+        self.use_recurse = False
+        body = self.build(*args)
+        if self.use_recurse:
+            body = relay.Let(recurse, self(*inputs), body)
+        self.mod = relay.Function(self.inputs + self.all_weights(), body)
 
-        # Set up forward pass.
-        inputs, body, ret_type = self.compute(*args)
-        self.inputs = inputs
+    def build(*args):
+        try:
+            NetworkStack.add()
+            ret = build_impl(*args)
+            NetworkStack.pop()
+            NetworkStack.last().sub_network.add(self)
+            return ret
+        except:
+            NetworkStack.pop()
+            raise
 
-        forward_compute = relay.Function(inputs + list([p[0] for p in self.parameters]), body, ret_type)
-        self.mod[self.forward_var] = forward_compute
-        if do_aot:
-            self.forward = aot.compile(self.mod, self.forward_var, ctx=self.context, tgt=self.target, use_gpu=self.use_gpu)
-        else:
-            self.forward = self.executor.evaluate(self.forward_var)
-        self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
+    def build_impl(*args):
+        raise NotImplemented
+
+    def add_weight(self, w):
+        assert isinstance(w, relay.Var)
+        self.weights.add(w)
+
+    def add_input(self, i):
+        assert isinstance(i, relay.Var)
+        self.inputs.add(i)
+
+    def all_weights(self):
+        return list(weights) + [w for n in self.sub_network for w in n.all_weights()]
 
     def __call__(self, *inputs):
-        assert len(self.inputs) == len(inputs)
-        for i, inp in enumerate(inputs):
-            self.args[i] = inp
+        if self in NetworkStack:
+            return recurse(*inputs)
+        else:
+            return self.f(*(inputs + all_weights()))
 
-        return self.forward(*[aot.convert(a, self.context) for a in self.args])
-
-    def recurse(self, *inputs):
-        return self.forward_var(*inputs, *[p[0] for p in self.parameters])
-
-def copy_var(v):
-    return relay.Var(name_hint=v.name_hint, type_annotation=v.type_annotation)
+def linear(self, input_size, output_size, x, name=""):
+    weight = self.add_param(f'{name}linear_weight', shape=(output_size, input_size))
+    bias = self.add_param(f'{name}linear_bias', shape=(output_size,))
+    return op.add(op.nn.dense(x, weight), bias)
