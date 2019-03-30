@@ -13,6 +13,8 @@ attrs = "*"
 cairosvg = "*"
 paramiko = "*"
 nltk = "*"
+mxnet = "*"
+gluonnlp = "*"
 
 [dev-packages]
 "autopep8" = "*"
