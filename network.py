@@ -72,58 +72,72 @@ def initialize(param):
     shape = [int(i) for i in ty.shape]
     return np.random.normal(0, 1, shape).astype('float32')
 
-class Network:
-    NetworkStack = OrderedSet()
+def copy_var(v):
+    return relay.Var(v.name_hint, v.type_annotation)
 
-    def __init__(self, *args, name="f", mod = None):
-        if mod is None:
+class Network:
+    stack = []
+    cnt = 0
+
+    def __init__(self, *, name="f", **kwargs):
+        name = f"{name}_{Network.cnt}"
+        Network.cnt += 1
+        if len(Network.stack) is not 0:
+            mod = Network.stack[-1].mod
+            p = Network.stack[-1].p
+        else:
             mod = Module()
+            p = Prelude(mod)
 
         self.mod = mod
-        self.prelude = Prelude(self.mod)
+        self.p = p
         self.inputs = []
         self.weights = OrderedSet()
         self.sub_network = OrderedSet()
         self.f = relay.GlobalVar(name)
         self.recurse = relay.Var("recurse")
         self.use_recurse = False
-        body = self.build(*args)
+        self.ret_type = None
+        body = self.build(**kwargs)
+        assert isinstance(body, relay.Expr)
         if self.use_recurse:
-            body = relay.Let(recurse, self(*inputs), body)
-        self.mod = relay.Function(self.inputs + self.all_weights(), body)
+            inputs = [copy_var(v) for v in self.inputs]
+            body = relay.Let(self.recurse, relay.Function(inputs, self.call_from_outside(*inputs)), body)
+        self.mod[self.f] = relay.Function(self.inputs + self.all_weights(), body, self.ret_type)
 
-    def build(*args):
+    def build(self, **kwargs):
+        Network.stack.append(self)
         try:
-            NetworkStack.add()
-            ret = build_impl(*args)
-            NetworkStack.pop()
-            NetworkStack.last().sub_network.add(self)
-            return ret
-        except:
-            NetworkStack.pop()
-            raise
+            return self.build_impl(**kwargs)
+        finally:
+            Network.stack.pop()
 
-    def build_impl(*args):
-        raise NotImplemented
+    def build_impl(self, *args):
+        raise NotImplementedError
 
-    def add_weight(self, w):
+    def weight(self, w):
         assert isinstance(w, relay.Var)
         self.weights.add(w)
+        return w
 
-    def add_input(self, i):
+    def input(self, i):
         assert isinstance(i, relay.Var)
-        self.inputs.add(i)
+        self.inputs.append(i)
+        return i
 
     def all_weights(self):
-        return list(weights) + [w for n in self.sub_network for w in n.all_weights()]
+        return list(set(list(self.weights) + [w for n in self.sub_network for w in n.all_weights()]))
+
+    def call_from_outside(self, *inputs):
+        return self.f(*(list(inputs) + self.all_weights()))
 
     def __call__(self, *inputs):
-        if self in NetworkStack:
-            return recurse(*inputs)
+        if self in Network.stack:
+            self.use_recurse = True
+            return self.recurse(*inputs)
         else:
-            return self.f(*(inputs + all_weights()))
-
-def linear(self, input_size, output_size, x, name=""):
-    weight = self.add_param(f'{name}linear_weight', shape=(output_size, input_size))
-    bias = self.add_param(f'{name}linear_bias', shape=(output_size,))
-    return op.add(op.nn.dense(x, weight), bias)
+            assert len(Network.stack) > 0
+            assert Network.stack[-1].mod == self.mod
+            assert Network.stack[-1].p == self.p
+            Network.stack[-1].sub_network.add(self)
+            return self.call_from_outside(*inputs)
