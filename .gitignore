@@ -114,3 +114,4 @@ source.cc
 
 # onnx data
 *.onnx
+*.DS_Store
