@@ -64,7 +64,7 @@ def cnn_setup(network, device, batch_size, enable_xla):
     if dev == '/cpu:0':
         os.putenv('CUDA_VISIBLE_DEVICES', '')
 
-    config = tf.ConfigProto(log_device_placement=False)
+    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True), log_device_placement=False)
     if enable_xla:
         config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
 

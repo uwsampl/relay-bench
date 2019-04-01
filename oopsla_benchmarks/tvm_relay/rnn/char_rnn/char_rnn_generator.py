@@ -14,9 +14,9 @@ from tvm.relay import create_executor, Module
 from tvm.relay.prelude import Prelude
 import aot
 
-from oopsla_benchmarks.tvm_relay.rnn.network import *
+from oopsla_benchmarks.tvm_relay.rnn.char_rnn.network import *
 from oopsla_benchmarks.util import language_data as data
-from oopsla_benchmarks.tvm_relay.rnn.util import categoryTensor, inputTensor
+from oopsla_benchmarks.tvm_relay.rnn.char_rnn.util import categoryTensor, inputTensor
 
 from oopsla_benchmarks.util.language_data import topi_to_letter, letter_to_topi
 
