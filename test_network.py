@@ -89,5 +89,6 @@ class BLSTM(Network):
                          self.p.zip(TupleGetItem(fwd, 1), TupleGetItem(rev, 1)))
         return Tuple([lhs, rhs])
 
-t = BLSTM(input_size=10, memory_size=12)
-print(t.mod[t.f])
+t = BLSTM(input_size=128, memory_size=256)
+print("type of BidirectionalLSTM, with input_size=128, memory_size=256, is:")
+print(t.interface_type())

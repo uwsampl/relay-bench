@@ -141,3 +141,7 @@ class Network:
             assert Network.stack[-1].p == self.p
             Network.stack[-1].sub_network.add(self)
             return self.call_from_outside(*inputs)
+
+    def interface_type(self):
+        t = relay.ir_pass.infer_type(self.mod[self.f], mod=self.mod).checked_type
+        return relay.FuncType(t.arg_types[:len(self.inputs)], t.ret_type, t.type_params, t.type_constraints)
