@@ -26,6 +26,8 @@ if __name__ == '__main__':
     parser.add_argument('--no-aot', action='store_true')
     parser.add_argument('--no-intp', action='store_true')
     parser.add_argument('--append-relay-data', action='store_true')
+    parser.add_argument('--skip-char-rnn', action='store_true')
+    parser.add_argument('--skip-bert', action='store_true')
     args = parser.parse_args()
 
     devices = []
@@ -59,17 +61,16 @@ if __name__ == '__main__':
                  'Japanese', 'Korean', 'Polish', 'Portuguese', 'Russian',
                  'Scottish', 'Spanish', 'Vietnamese']
     hidden_sizes = [16]
-    task_name = 'rnn'
 
-    if not args.skip_pytorch:
-        run_trials('pytorch', task_name,
+    if not args.skip_pytorch and not args.skip_char_rnn:
+        run_trials('pytorch', 'rnn',
                    args.dry_run, args.n_times_per_input, 1,
                    pt.rnn_trial, pt.rnn_setup, pt.rnn_teardown,
                    ['network', 'device', 'hidden_size', 'language', 'input'],
                    [networks, devices, hidden_sizes, languages, inputs])
 
-    if not args.skip_relay:
-        run_trials('relay', task_name,
+    if not args.skip_relay and not args.skip_char_rnn:
+        run_trials('relay', 'rnn',
                    args.dry_run, args.n_times_per_input, 1,
                    relay.rnn_trial, relay.rnn_setup, relay.rnn_teardown,
                    ['network', 'device', 'configuration',
@@ -77,3 +78,10 @@ if __name__ == '__main__':
                    [networks, devices, configurations,
                     methods, hidden_sizes, languages, inputs],
                    append_to_csv = args.append_relay_data)
+
+    if not args.skip_bert:
+        run_trials('relay', 'bert',
+                   args.dry_run, args.n_times_per_input, 1,
+                   relay.bert_trial, relay.bert_setup, relay.bert_teardown,
+                   ['network', 'device', 'method'],
+                   [['bert'], devices, methods])

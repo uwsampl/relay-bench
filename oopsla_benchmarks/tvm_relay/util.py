@@ -6,10 +6,13 @@ import onnx
 import keras
 import tensorflow
 import mxnet as mx
+import aot
 
 from oopsla_benchmarks.tvm_relay.rnn import char_rnn_generator as rnn
 from oopsla_benchmarks.tvm_relay.rnn import samples
 from oopsla_benchmarks.util.language_data import N_LETTERS
+
+from oopsla_benchmarks.tvm_relay.rnn.bert.static_bert import model as bert
 
 from oopsla_benchmarks.tvm_relay.models import mxnet_zoo, onnx_zoo
 
@@ -224,4 +227,44 @@ def rnn_trial(thunk):
 
 
 def rnn_teardown(thunk):
+    pass
+
+
+def bert_setup(network, dev, method):
+    net, params = bert
+    gpu = (dev == 'gpu')
+    use_aot = (method == 'aot')
+    device = tvm.gpu(0) if gpu else tvm.cpu(0)
+
+    if not use_aot:
+        with relay.build_module.build_config(opt_level=1):
+            graph, lib, params = relay.build(net, 'cuda' if gpu else 'llvm', params=params)
+
+            mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
+            mod.set_input(**params)
+            mod.set_input('data0',
+                          tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32')))
+            mod.set_input('data1',
+                          tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32')))
+            mod.set_input('data2',
+                          tvm.nd.array((np.random.uniform(size=(24,))).astype('float32')))
+            thunk = lambda: mod.run()
+            return [thunk]
+    else:
+        mod = relay.Module()
+        forward_var = relay.GlobalVar('forward_var')
+        target = tvm.target.cuda() if gpu else tvm.target.create('llvm')
+        forward = aot.compile(mod, forward_var, ctx=device, tgt=target, use_gpu=gpu)
+        args = [relay.Constant(tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32'))),
+                relay.Constant(tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32'))),
+                relay.Constant(tvm.nd.array((np.random.uniform(size=(24,))).astype('float32')))]
+        aot_args = [aot.convert(a, device) for a in args]
+        thunk = lambda: forward(*aot_args)
+
+
+def bert_trial(thunk):
+    return thunk()
+
+
+def bert_teardown(mod):
     pass
