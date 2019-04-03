@@ -126,7 +126,7 @@ class Network:
         return i
 
     def all_weights(self):
-        return list(set(list(self.weights) + [w for n in self.sub_network for w in n.all_weights()]))
+        return list(set(OrderedSet(self.weights) + [w for n in self.sub_network for w in n.all_weights()]))
 
     def call_from_outside(self, *inputs):
         return self.f(*(list(inputs) + self.all_weights()))
@@ -145,3 +145,15 @@ class Network:
     def interface_type(self):
         t = relay.ir_pass.infer_type(self.mod[self.f], mod=self.mod).checked_type
         return relay.FuncType(t.arg_types[:len(self.inputs)], t.ret_type, t.type_params, t.type_constraints)
+
+    def get(self):
+        weights = []
+        for x in self.all_weights():
+            ty = x.checked_type
+            assert isinstance(ty, relay.TensorType)
+            assert ty.dtype == 'float32'
+            shape = [int(i) for i in ty.shape]
+            weight = relay.const(np.random.normal(0, 1, shape).astype('float32'))
+            weights.append(weight)
+        inputs = [copy_var(v) for v in self.inputs]
+        return Function(inputs, self.f(*inputs, *weights))
