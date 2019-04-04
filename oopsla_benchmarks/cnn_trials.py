@@ -3,6 +3,7 @@ import tf.util as tf
 import pytorch.util as pt
 import tvm_relay.util as relay
 import tvm_nnvm.util as nnvm
+import mx.util as mx
 from util import run_trials
 
 if __name__ == '__main__':
@@ -12,6 +13,7 @@ if __name__ == '__main__':
     parser.add_argument('--dry-run', type=int, default=8)
     parser.add_argument('--skip-tf', action='store_true')
     parser.add_argument('--skip-pytorch', action='store_true')
+    parser.add_argument('--skip-mxnet', action='store_true')
     parser.add_argument('--skip-relay', action='store_true')
     parser.add_argument('--skip-nnvm', action='store_true')
     parser.add_argument('--no-cpu', action='store_true')
@@ -46,6 +48,15 @@ if __name__ == '__main__':
                    pt.cnn_trial, pt.cnn_setup, pt.cnn_teardown,
                    ['network', 'device', 'batch_size'],
                    [networks, devices, batch_sizes])
+
+    # cannot get mobilenet to work in mxnet
+    mxnet_networks = [network for network in networks if 'mobilenet' not in network]
+    if not args.skip_mxnet:
+        run_trials('mxnet', task_name,
+                   args.dry_run, args.n_times_per_input, args.n_inputs,
+                   mx.cnn_trial, mx.cnn_setup, mx.cnn_teardown,
+                   ['network', 'device', 'batch_size'],
+                   [mxnet_networks, devices, batch_sizes])
 
     if not args.skip_relay:
         run_trials('relay', task_name,

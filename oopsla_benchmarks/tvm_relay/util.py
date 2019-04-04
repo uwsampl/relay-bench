@@ -14,7 +14,9 @@ from oopsla_benchmarks.util.language_data import N_LETTERS
 
 # from oopsla_benchmarks.tvm_relay.rnn.bert.static_bert import model as bert
 
-from oopsla_benchmarks.tvm_relay.models import mxnet_zoo, onnx_zoo
+from oopsla_benchmarks.tvm_relay.models import onnx_zoo
+from oopsla_benchmarks.mx.models import mxnet_zoo
+from oopsla_benchmarks.mx.util import get_network as get_mxnet_network
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
     """Get the symbol definition and random weight of a network
@@ -32,7 +34,7 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
     -------
     net: nnvm.symbol
         The NNVM symbol of network definition
-    params: dict
+    params: dict 
         The random parameters for benchmark
     input_shape: tuple
         The shape of input tensor
@@ -108,20 +110,20 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
     return net, params, input_shape
 
 
-def get_mxnet_network(name):
-    image_shape = (1, 3, 224, 224)
-    if 'vgg' in name:
-        mx_sym = mxnet_zoo.mx_vgg(16)
-    elif 'resnet' in name:
-        mx_sym = mxnet_zoo.mx_resnet(18)
-    elif 'dcgan' in name:
-        mx_sym = mxnet_zoo.mx_dcgan()
-    elif 'nature-dqn' in name:
-        mx_sym = mxnet_zoo.mx_dqn()
-    else:
-        raise ValueError("Unsupported network: " + name)
+# def get_mxnet_network(name):
+#     image_shape = (1, 3, 224, 224)
+#     if 'vgg' in name:
+#         mx_sym = mxnet_zoo.mx_vgg(16)
+#     elif 'resnet' in name:
+#         mx_sym = mxnet_zoo.mx_resnet(18)
+#     elif 'dcgan' in name:
+#         mx_sym = mxnet_zoo.mx_dcgan()
+#     elif 'nature-dqn' in name:
+#         mx_sym = mxnet_zoo.mx_dqn()
+#     else:
+#         raise ValueError("Unsupported network: " + name)
 
-    return mx_sym, image_shape
+#     return mx_sym, image_shape
 
 
 def get_onnx_network(name):

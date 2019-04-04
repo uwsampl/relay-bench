@@ -34,7 +34,6 @@ def relay_resnet(num_layers):
     return tvm.relay.testing.resnet.get_workload(
         1, num_class, num_layers=num_layers)[0]
 
-
 # dqn
 mx_dqn = dqn.get_symbol
 
