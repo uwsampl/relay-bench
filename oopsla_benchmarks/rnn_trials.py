@@ -27,7 +27,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-intp', action='store_true')
     parser.add_argument('--append-relay-data', action='store_true')
     parser.add_argument('--skip-char-rnn', action='store_true')
-    # parser.add_argument('--skip-bert', action='store_true')
+    parser.add_argument('--skip-bert', action='store_true')
     args = parser.parse_args()
 
     devices = []
@@ -62,6 +62,13 @@ if __name__ == '__main__':
                  'Scottish', 'Spanish', 'Vietnamese']
     hidden_sizes = [16, 32, 64, 128]
 
+    if not args.skip_bert:
+        run_trials('relay', 'bert',
+                   args.dry_run, args.n_times_per_input, 1,
+                   relay.bert_trial, relay.bert_setup, relay.bert_teardown,
+                   ['network', 'device', 'method'],
+                   [['bert'], devices, methods])
+
     if not args.skip_pytorch and not args.skip_char_rnn:
         run_trials('pytorch', 'rnn',
                    args.dry_run, args.n_times_per_input, 1,
@@ -78,10 +85,3 @@ if __name__ == '__main__':
                    [networks, devices, configurations,
                     methods, hidden_sizes, languages, inputs],
                    append_to_csv = args.append_relay_data)
-
-    # if not args.skip_bert:
-    #     run_trials('relay', 'bert',
-    #                args.dry_run, args.n_times_per_input, 1,
-    #                relay.bert_trial, relay.bert_setup, relay.bert_teardown,
-    #                ['network', 'device', 'method'],
-    #                [['bert'], devices, methods])

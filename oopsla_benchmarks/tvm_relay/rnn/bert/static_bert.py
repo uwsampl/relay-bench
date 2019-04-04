@@ -3,6 +3,7 @@ import mxnet as mx
 from mxnet import gluon
 import os
 import subprocess
+from tvm.relay.ir_pass import infer_type
 
 own_dir = os.path.dirname(__file__)
 
@@ -33,4 +34,3 @@ expr, params = relay.frontend.from_mxnet(
 expr = relay.ir_pass.infer_type(expr)
 
 model = (expr, params)
-
