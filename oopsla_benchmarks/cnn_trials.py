@@ -49,14 +49,12 @@ if __name__ == '__main__':
                    ['network', 'device', 'batch_size'],
                    [networks, devices, batch_sizes])
 
-    # cannot get mobilenet to work in mxnet
-    mxnet_networks = [network for network in networks if 'mobilenet' not in network]
     if not args.skip_mxnet:
         run_trials('mxnet', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    mx.cnn_trial, mx.cnn_setup, mx.cnn_teardown,
                    ['network', 'device', 'batch_size'],
-                   [mxnet_networks, devices, batch_sizes])
+                   [networks, devices, batch_sizes])
 
     if not args.skip_relay:
         run_trials('relay', task_name,
