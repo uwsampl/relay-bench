@@ -82,34 +82,55 @@ def test_rnn(mx_net, num_states=1):
     mx_inputs = [mx.nd.array(x) for x in [data_v, *states_v]]
     mx_outputs = mx_net(*mx_inputs)
 
-def collect_timing(f, num_iters):
-    times = []
-    for _ in range(num_iters):
-        start = time.time()
-        f(())
-        end = time.time()
-        curr_time = end - start
-        times.append(curr_time)
-        print(f' {curr_time} seconds')
-    return times
 
 if __name__ == "__main__":
-    NUM_ITERS = 100
+    NUM_ITERS = 3
+    EXPER_TIMEOUT = 10800
 
     rnn_model = import_net('rnn')
     gru_model = import_net('gru')
     lstm_model = import_net('lstm')
 
+    rnn_times = []
+    gru_times = []
+    lstm_times = []
     print(f'running with {NUM_ITERS} iterations')
+    global_start = time.time()
+    for i in range(NUM_ITERS):
+        start = time.time()
+        test_rnn(rnn_model)
+        end = time.time()
+        curr_time = end - start
+        rnn_times.append(curr_time)
+        # print(f' {curr_time} seconds')
 
-    print('[RNN]')
-    rnn_times = collect_timing(lambda _: test_rnn(rnn_model), num_iters=NUM_ITERS)
+        start = time.time()
+        test_rnn(gru_model)
+        end = time.time()
+        curr_time = end - start
+        gru_times.append(curr_time)
+        # print(f' {curr_time} seconds')
 
-    print('[GRU]')
-    gru_times = collect_timing(lambda _: test_rnn(gru_model), num_iters=NUM_ITERS)
+        start = time.time()
+        test_rnn(lstm_model, 2)
+        end = time.time()
+        curr_time = end - start
+        lstm_times.append(curr_time)
+        # print(f' {curr_time} seconds')
 
-    print('[LSTM]')
-    lstm_times = collect_timing(lambda _: test_rnn(lstm_model, 2), num_iters=NUM_ITERS)
+        running_time = time.time() - global_start
+        if running_time > EXPER_TIMEOUT:
+            print(f'Experiment timed out after {i}/{NUM_ITERS} trials and {running_time} seconds')
+            break
+
+    # print('[RNN]')
+    # rnn_times = collect_timing(lambda _: , num_iters=NUM_ITERS)
+
+    # print('[GRU]')
+    # gru_times = collect_timing(lambda _: test_rnn(gru_model), num_iters=NUM_ITERS)
+
+    # print('[LSTM]')
+    # lstm_times = collect_timing(lambda _: test_rnn(lstm_model, 2), num_iters=NUM_ITERS)
 
     with open('mxnet_rnn_results.csv', 'w') as csvfile:
         writer = csv.writer(csvfile, delimiter=',')
