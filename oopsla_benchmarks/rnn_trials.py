@@ -30,11 +30,13 @@ if __name__ == '__main__':
     parser.add_argument('--append-relay-data', action='store_true')
     parser.add_argument('--skip-char-rnn', action='store_true')
     parser.add_argument('--skip-gluon-rnns', action='store_true')
+    parser.add_argument('--skip-treelstm', action='store_true')
     args = parser.parse_args()
 
     devices = []
-    if not args.no_gpu:
-        devices.append('gpu')
+    # RNNs all assume CPU for now
+    # if not args.no_gpu:
+    #     devices.append('gpu')
     if not args.no_cpu:
         devices.append('cpu')
     if len(devices) == 0:
@@ -95,3 +97,22 @@ if __name__ == '__main__':
                    [networks, devices, configurations,
                     methods, hidden_sizes, languages, inputs],
                    append_to_csv = args.append_relay_data)
+
+    datasets = ['dev', 'test', 'train']
+    treelstm_idxs = [i for i in range(500)]
+    if not args.skip_pytorch and not args.skip_treelstm:
+        run_trials('pytorch', 'treelstm',
+                   args.dry_run, args.n_times_per_input, 1,
+                   pt.rnn_trial, pt.treelstm_setup, pt.rnn_teardown,
+                   ['device', 'dataset', 'idx'],
+                   [devices, datasets, treelstm_idxs])
+
+    if not args.skip_relay and not args.skip_treelstm:
+        # interpreter breaks because of a bug (can't take constructor value inputs)
+        treelstm_methods = ['aot']
+        if not args.skip_aot:
+            run_trials('relay', 'treelstm',
+                       args.dry_run, args.n_times_per_input, 1,
+                       relay.rnn_trial, relay.treelstm_setup, relay.rnn_teardown,
+                       ['device', 'method', 'dataset', 'idx'],
+                       [devices, treelstm_methods, datasets, treelstm_idxs])

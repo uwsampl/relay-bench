@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import torch
 import argparse
@@ -16,6 +17,9 @@ from oopsla_benchmarks.pytorch.models.dqn import DQN_PARAMS
 from oopsla_benchmarks.pytorch.rnn import char_rnn_generator
 from oopsla_benchmarks.pytorch.rnn import samples
 from oopsla_benchmarks.util.language_data import N_LETTERS
+
+from oopsla_benchmarks.pytorch.rnn.tlstm.preprocess import preprocess
+from oopsla_benchmarks.pytorch.rnn.tlstm.model import SimilarityTreeLSTM
 
 def load_params(location, dev):
     if dev != 'cpu':
@@ -96,3 +100,36 @@ def rnn_trial(thunk):
 
 def rnn_teardown(thunk):
     pass
+
+
+def initialize_treelstm(dataset):
+    tlstm_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'rnn/tlstm')
+
+    emb, vocab_size, dev_data, test_data, train_data = preprocess(os.path.join(tlstm_dir, 'data/sick/'),
+                                                                  os.path.join(tlstm_dir, 'data/glove/'),
+                                                                  5)
+    model = SimilarityTreeLSTM(vocab_size, 300, 150, 50, 5, False, False)
+    model.emb.weight.data.copy_(emb)
+
+    if dataset == 'dev':
+        data = dev_data
+    elif dataset == 'test':
+        data = test_data
+    elif dataset == 'train':
+        data = train_data
+    return model, data
+
+
+def treelstm_setup(device, dataset, idx):
+    device = torch.device('cpu')
+
+    model, data = initialize_treelstm(dataset)
+    model.to(device)
+    model.eval()
+
+    ltree, linput, rtree, rinput, label = data[idx]
+    linput, rinput = linput.to(device), rinput.to(device)
+    linput = model.emb(linput)
+
+    thunk = lambda: model(ltree, linput, rtree, rinput)
+    return [thunk]

@@ -5,15 +5,19 @@ import numpy as np
 import onnx
 import keras
 import tensorflow
+import torch
 import mxnet as mx
 import aot
 
 from oopsla_benchmarks.tvm_relay.rnn import char_rnn_generator as rnn
 from oopsla_benchmarks.tvm_relay.rnn import samples
+from oopsla_benchmarks.tvm_relay.rnn.tlstm import converter
+
 from oopsla_benchmarks.util.language_data import N_LETTERS
 
 #from oopsla_benchmarks.tvm_relay.rnn.bert.static_bert import model as bert
 
+from oopsla_benchmarks.pytorch.util import initialize_treelstm
 from oopsla_benchmarks.tvm_relay.models import onnx_zoo
 from oopsla_benchmarks.mx.models import mxnet_zoo
 from oopsla_benchmarks.mx.util import get_network as get_mxnet_network
@@ -275,10 +279,44 @@ def gluon_rnn_setup(network, device, method):
     return [thunk]
 
 
+def treelstm_setup(device, method, dataset, idx):
+    use_aot = (method == 'aot')
+    use_gpu = (device == 'gpu')
+    torch_cpu = torch.device('cpu')
+    model, data = initialize_treelstm(dataset)
+    model.to(torch_cpu)
+    model.eval()
+
+    ltree, linput, rtree, rinput, label = data[idx]
+    linput, rinput = linput.to(torch.device('cpu')), rinput.to(torch.device('cpu'))
+    linput = model.emb(linput)
+
+    tlstm, mod, prelude = converter.initialize_tlstm(300, 150)
+
+    rosetree = converter.forward(ltree, linput)
+    relay_tree = converter.from_tree(prelude,
+                                     rosetree.fmap(converter.pytorch_to_relay),
+                                     relay.TensorType([], dtype='float32'))
+
+    context = tvm.gpu(0) if use_gpu else tvm.cpu(0)
+    target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
+
+    if use_aot:
+        func = aot.compile(mod,
+                           tlstm.get(),
+                           ctx = context, tgt=target, use_gpu=use_gpu)
+    else:
+        executor = relay.create_executor(mod=mod, ctx=context, target=target)
+        func = executor.evaluate(tlstm.get())
+
+    thunk = lambda: func(relay_tree)
+    return [thunk]
+
+
 def init(ty):
     assert isinstance(ty, relay.TensorType)
     return np.random.uniform(size=[x.value for x in ty.shape]).astype(ty.dtype)
-from tvm.relay.backend import _backend
+#from tvm.relay.backend import _backend
 
 # def bert_setup(network, dev, method):
 #     net, params = bert

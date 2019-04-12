@@ -115,3 +115,6 @@ source.cc
 # onnx data
 *.onnx
 *.DS_Store
+
+# treelstm data
+oopsla_benchmarks/pytorch/rnn/tlstm/data/*
