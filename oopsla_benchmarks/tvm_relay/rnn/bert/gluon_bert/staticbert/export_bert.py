@@ -235,7 +235,7 @@ epochs = args.epochs
 batch_size = args.batch_size
 test_batch_size = args.test_batch_size
 lr = args.lr
-ctx = mx.cpu() if not args.gpu else mx.gpu(int(args.gpu))
+ctx = mx.gpu(int(args.gpu)) #mx.cpu() if not args.gpu else mx.gpu(int(args.gpu))
 
 accumulate = args.accumulate
 log_interval = args.log_interval * accumulate if accumulate else args.log_interval

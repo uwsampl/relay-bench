@@ -8,6 +8,7 @@ import numpy as np
 
 import tvm_relay.util as relay
 import pytorch.util as pt
+import mx.util as mx
 from util import run_trials
 
 
@@ -19,6 +20,7 @@ if __name__ == '__main__':
     parser.add_argument('--n-times-per-input', type=int, default=1000)
     parser.add_argument('--skip-relay', action='store_true')
     parser.add_argument('--skip-pytorch', action='store_true')
+    parser.add_argument('--skip-mxnet', action='store_true')
     parser.add_argument('--no-cpu', action='store_true')
     parser.add_argument('--no-gpu', action='store_true')
     parser.add_argument('--no-loop', action='store_true')
@@ -27,7 +29,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-intp', action='store_true')
     parser.add_argument('--append-relay-data', action='store_true')
     parser.add_argument('--skip-char-rnn', action='store_true')
-    parser.add_argument('--skip-bert', action='store_true')
+    parser.add_argument('--skip-gluon-rnns', action='store_true')
     args = parser.parse_args()
 
     devices = []
@@ -62,12 +64,20 @@ if __name__ == '__main__':
                  'Scottish', 'Spanish', 'Vietnamese']
     hidden_sizes = [16, 32, 64, 128]
 
-    if not args.skip_bert:
-        run_trials('relay', 'bert',
+    gluon_networks = ['rnn', 'gru', 'lstm']
+    if not args.skip_relay and not args.skip_gluon_rnns:
+        run_trials('relay', 'gluon',
                    args.dry_run, args.n_times_per_input, 1,
-                   relay.bert_trial, relay.bert_setup, relay.bert_teardown,
+                   relay.rnn_trial, relay.gluon_rnn_setup, relay.rnn_teardown,
                    ['network', 'device', 'method'],
-                   [['bert'], devices, methods])
+                   [gluon_networks, devices, methods])
+
+    if not args.skip_mxnet and not args.skip_gluon_rnns:
+        run_trials('mx', 'gluon',
+                   args.dry_run, args.n_times_per_input, 1,
+                   mx.rnn_trial, mx.rnn_setup, mx.rnn_teardown,
+                   ['network', 'device'],
+                   [gluon_networks, devices])
 
     if not args.skip_pytorch and not args.skip_char_rnn:
         run_trials('pytorch', 'rnn',

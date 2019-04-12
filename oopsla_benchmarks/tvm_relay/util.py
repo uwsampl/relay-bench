@@ -12,11 +12,12 @@ from oopsla_benchmarks.tvm_relay.rnn import char_rnn_generator as rnn
 from oopsla_benchmarks.tvm_relay.rnn import samples
 from oopsla_benchmarks.util.language_data import N_LETTERS
 
-from oopsla_benchmarks.tvm_relay.rnn.bert.static_bert import model as bert
+#from oopsla_benchmarks.tvm_relay.rnn.bert.static_bert import model as bert
 
 from oopsla_benchmarks.tvm_relay.models import onnx_zoo
 from oopsla_benchmarks.mx.models import mxnet_zoo
 from oopsla_benchmarks.mx.util import get_network as get_mxnet_network
+from oopsla_benchmarks.mx.util import import_gluon_rnn
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
     """Get the symbol definition and random weight of a network
@@ -232,39 +233,103 @@ def rnn_teardown(thunk):
     pass
 
 
-def bert_setup(network, dev, method):
-    net, params = bert
-    gpu = (dev == 'gpu')
+def gluon_rnn_setup(network, device, method):
+    mx_net, num_states, shapes = import_gluon_rnn(network)
+    use_gpu = (device == 'gpu')
     use_aot = (method == 'aot')
-    device = tvm.gpu(0) if gpu else tvm.cpu(0)
 
-    if True or not use_aot:
-        with relay.build_module.build_config(opt_level=1):
-            graph, lib, params = relay.build(net, 'cuda' if gpu else 'llvm', params=params)
-            mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
-            mod.set_input(**params)
-            mod.set_input('data0',
-                          tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32')))
-            mod.set_input('data1',
-                          tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32')))
-            mod.set_input('data2',
-                          tvm.nd.array((np.random.uniform(size=(24,))).astype('float32')))
-            thunk = lambda: mod.run()
-            return [thunk]
+    input_symbols = [mx.sym.Variable('data')] + [mx.sym.Variable('state%s' % i)
+                                                 for i in range(num_states)]
+
+    mod = relay.Module()
+    relay_net, params = relay.frontend.from_mxnet(mx_net, shape=shapes,
+                                                  input_symbols=input_symbols, module=mod)
+    params = params.items()
+
+    # loop = None
+    # for v, func in mod.functions.items():
+    #     if v.name_hint == 'loop':
+    #         loop = v
+
+    inputs = [
+        relay.var('data')] + [
+            relay.var('state%s' % i) for i in range(num_states)] + [
+            relay.var(pair[0]) for pair in params]
+    mod[mod.entry_func] = relay.Function(inputs, relay.Call(relay_net, inputs))
+
+    context = tvm.gpu(0) if use_gpu else tvm.cpu(0)
+    target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
+
+    data_v = np.random.rand(*shapes['data']).astype('float32')
+    states_v = [np.random.rand(*shapes['state%s' % i]).astype('float32')
+                for i in range(num_states)]
+    params_v = [pair[1].asnumpy() for pair in params]
+
+    if use_aot:
+        func = aot.compile(mod, mod.entry_func, ctx=context,
+                           tgt=target, use_gpu=use_gpu)
     else:
-        mod = relay.Module()
-        forward_var = relay.GlobalVar('forward_var')
-        target = tvm.target.cuda() if gpu else tvm.target.create('llvm')
-        forward = aot.compile(mod, forward_var, ctx=device, tgt=target, use_gpu=gpu)
-        args = [relay.Constant(tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32'))),
-                relay.Constant(tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32'))),
-                relay.Constant(tvm.nd.array((np.random.uniform(size=(24,))).astype('float32')))]
-        aot_args = [aot.convert(a, device) for a in args]
-        thunk = lambda: forward(*aot_args)
-
-def bert_trial(thunk):
-    return thunk()
+        executor = relay.create_executor(mod=mod, ctx=context, target=target)
+        func = executor.evaluate(mod.entry_func)
+    thunk = lambda: func(data_v, *states_v, *params_v)
+    return [thunk]
 
 
-def bert_teardown(mod):
-    pass
+def init(ty):
+    assert isinstance(ty, relay.TensorType)
+    return np.random.uniform(size=[x.value for x in ty.shape]).astype(ty.dtype)
+from tvm.relay.backend import _backend
+
+# def bert_setup(network, dev, method):
+#     net, params = bert
+#     #for x in net.params:
+#     #    print(x)
+#     #for x in relay.ir_pass.free_vars(net):
+#     #    print(x)
+#     #raise
+#     cpu = False
+#     use_aot = False # or (method == 'aot')
+#     device = tvm.gpu(0)
+#     ctx = tvm.gpu(0)
+#     target = tvm.target.cuda()
+#     if not use_aot:
+#         with relay.build_module.build_config(opt_level=1, fallback_device=tvm.gpu(0)):
+#             #intrp = _backend.CreateInterpreter(mod, ctx, target)
+#             #expr = net
+#             #wrapped_expr = expr if isinstance(expr, relay.Function) else relay.Function([], expr)
+#             #ck_expr = relay.ir_pass.infer_type(wrapped_expr)
+#             #simp_expr = relay.ir_pass.simplify_inference(ck_expr)
+#             #ck_simp = relay.ir_pass.infer_type(simp_expr)
+#             #fused_expr = relay.ir_pass.fuse_ops(ck_simp)
+#             #ck_fused = relay.ir_pass.infer_type(fused_expr)
+#             #x = intrp(ck_fused)
+#             graph, lib, params = relay.build(net, target = 'cuda')
+#             mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
+#             #params = {k: v.copyto(tvm.gpu(0)) for k, v in params.items()}
+#             mod.set_input(**params)
+#             mod.set_input('data0',
+#                           tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32')))
+#             mod.set_input('data1',
+#                           tvm.nd.array((np.random.uniform(size=(24, 384))).astype('float32')))
+#             mod.set_input('data2',
+#                           tvm.nd.array((np.random.uniform(size=(24,))).astype('float32')))
+#             args = [(aot.convert(init(arg.checked_type), device)) for arg in net.params] 
+#             def thunk():
+#                 mod.run()
+#                 x = mod.get_output(0)
+#                 x.asnumpy()
+#             return [thunk]
+#     else:
+#         mod = relay.Module()
+#         target = tvm.target.cuda()
+#         args = [aot.convert(init(arg.checked_type), device) for arg in net.params] 
+#         forward = aot.compile(mod, net, ctx=device, tgt=target, use_gpu=True)
+#         thunk = lambda: forward(*args)
+#         return [thunk]
+
+# def bert_trial(thunk):
+#     return thunk()
+
+
+# def bert_teardown(mod):
+#     pass
