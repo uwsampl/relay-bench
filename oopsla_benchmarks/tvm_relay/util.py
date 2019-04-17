@@ -270,8 +270,7 @@ def gluon_rnn_setup(network, device, method):
     params_v = [pair[1].asnumpy() for pair in params]
 
     if use_aot:
-        func = aot.compile(mod, mod.entry_func, ctx=context,
-                           tgt=target, use_gpu=use_gpu)
+        func = aot.compile(mod.entry_func, mod, ctx=context, tgt=target)
     else:
         executor = relay.create_executor(mod=mod, ctx=context, target=target)
         func = executor.evaluate(mod.entry_func)
@@ -302,9 +301,7 @@ def treelstm_setup(device, method, dataset, idx):
     target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
 
     if use_aot:
-        func = aot.compile(mod,
-                           tlstm.get(),
-                           ctx = context, tgt=target, use_gpu=use_gpu)
+        func = aot.compile(tlstm.get(), mod, ctx=context, tgt=target)
     else:
         executor = relay.create_executor(mod=mod, ctx=context, target=target)
         func = executor.evaluate(tlstm.get())

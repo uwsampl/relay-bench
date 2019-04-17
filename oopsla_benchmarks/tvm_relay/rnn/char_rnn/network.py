@@ -42,7 +42,7 @@ class Network:
         forward_compute = relay.Function(inputs + list([p[0] for p in self.parameters]), body, ret_type)
         self.mod[self.forward_var] = forward_compute
         if do_aot:
-            self.forward = aot.compile(self.mod, self.forward_var, ctx=self.context, tgt=self.target, use_gpu=self.use_gpu)
+            self.forward = aot.compile(self.forward_var, self.mod, ctx=self.context, tgt=self.target)
         else:
             self.forward = self.executor.evaluate(self.forward_var)
         self.args = [None] * len(inputs) + list([p[1] for p in self.parameters])
@@ -52,7 +52,7 @@ class Network:
         for i, inp in enumerate(inputs):
             self.args[i] = inp
 
-        return self.forward(*[aot.convert(a, self.context) for a in self.args])
+        return self.forward(*self.args)
 
     def recurse(self, *inputs):
         return self.forward_var(*inputs, *[p[0] for p in self.parameters])
