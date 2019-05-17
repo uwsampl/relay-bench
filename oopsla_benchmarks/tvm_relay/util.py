@@ -304,7 +304,11 @@ def treelstm_setup(device, method, dataset, idx):
         func = aot.compile(tlstm.get(), mod, ctx=context, tgt=target)
     else:
         executor = relay.create_executor(mod=mod, ctx=context, target=target)
-        func = executor.evaluate(tlstm.get())
+        expr = relay.ir_pass.infer_type(tlstm.get(), mod)
+        expr = relay.ir_pass.simplify_inference(expr)
+        expr = relay.ir_pass.infer_type(expr, mod)
+        expr = relay.ir_pass.fuse_ops(expr)
+        func = executor.evaluate(expr)
 
     thunk = lambda: func(relay_tree)
     return [thunk]
