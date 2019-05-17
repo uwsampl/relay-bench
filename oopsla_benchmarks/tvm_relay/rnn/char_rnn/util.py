@@ -1,6 +1,6 @@
 import numpy as np
-import rnn.language_data as data
 import random
+from oopsla_benchmarks.util import language_data as data
 
 # Random item from a list
 def randomChoice(l):

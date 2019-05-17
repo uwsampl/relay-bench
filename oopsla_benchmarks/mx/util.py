@@ -12,7 +12,7 @@ from oopsla_benchmarks.mx.models import mxnet_zoo
 
 #from oopsla_benchmarks.tvm_relay.rnn.bert.static_bert import net as bert
 
-def get_network(name):
+def get_network(name, ctx):
     image_shape = (1, 3, 224, 224)
     is_gluon = False
     if 'vgg' in name:
@@ -24,12 +24,12 @@ def get_network(name):
     elif 'nature-dqn' in name:
         net = mxnet_zoo.mx_dqn()
     elif 'mobilenet' in name:
-        net = vision.get_mobilenet_v2(1.0, pretrained=True)
+        net = vision.get_mobilenet_v2(1.0, pretrained=True, ctx=ctx)
         is_gluon = True
     else:
         raise ValueError("Unsupported network: " + name)
 
-    return mx_sym, image_shape, is_gluon
+    return net, image_shape, is_gluon
 
 
 def import_gluon_rnn(name):
@@ -56,7 +56,7 @@ def import_gluon_rnn(name):
 def cnn_setup(network, dev, batch_size):
     ctx = mx.gpu(0) if dev == 'gpu' else mx.cpu()
 
-    net, image_shape, is_gluon = get_network(network)
+    net, image_shape, is_gluon = get_network(network, ctx)
     data = mx.nd.array(np.random.uniform(size=image_shape).astype('float32'), ctx=ctx)
 
     # gluon and non-gluon networks are executed slightly differently
@@ -68,7 +68,7 @@ def cnn_setup(network, dev, batch_size):
         thunk = lambda: net_sym(data).asnumpy()
         return [thunk]
 
-    mx_mod = mx.mod.Module(mx_sym, label_names=None, context=ctx)
+    mx_mod = mx.mod.Module(net, label_names=None, context=ctx)
     mx_mod.bind(data_shapes=[('data', image_shape)], for_training=False)
     mx_mod.init_params()
     args, auxs = mx_mod.get_params()
