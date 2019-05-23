@@ -64,7 +64,7 @@ if __name__ == '__main__':
                  'French', 'German', 'Greek', 'Irish', 'Italian',
                  'Japanese', 'Korean', 'Polish', 'Portuguese', 'Russian',
                  'Scottish', 'Spanish', 'Vietnamese']
-    hidden_sizes = [16, 32, 64, 128]
+    hidden_sizes = [args.n_hidden]
 
     gluon_networks = ['rnn', 'gru', 'lstm']
     if not args.skip_relay and not args.skip_gluon_rnns:
@@ -108,11 +108,8 @@ if __name__ == '__main__':
                    [devices, datasets, treelstm_idxs])
 
     if not args.skip_relay and not args.skip_treelstm:
-        # interpreter breaks because of a bug (can't take constructor value inputs)
-        treelstm_methods = ['aot']
-        if not args.skip_aot:
-            run_trials('relay', 'treelstm',
-                       args.dry_run, args.n_times_per_input, 1,
-                       relay.rnn_trial, relay.treelstm_setup, relay.rnn_teardown,
-                       ['device', 'method', 'dataset', 'idx'],
-                       [devices, treelstm_methods, datasets, treelstm_idxs])
+        run_trials('relay', 'treelstm',
+                   args.dry_run, args.n_times_per_input, 1,
+                   relay.rnn_trial, relay.treelstm_setup, relay.rnn_teardown,
+                   ['device', 'method', 'dataset', 'idx'],
+                   [devices, methods, datasets, treelstm_idxs])
