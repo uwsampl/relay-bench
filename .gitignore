@@ -118,3 +118,8 @@ source.cc
 
 # treelstm data
 oopsla_benchmarks/pytorch/rnn/tlstm/data/*
+
+# data and graphs
+*.csv
+*.png
+
