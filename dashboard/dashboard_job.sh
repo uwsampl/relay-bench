@@ -2,9 +2,7 @@
 
 # Builds TVM from scratch, runs the oopsla benchmarks, makes graphs,
 # stores the data and graphs in /var/tmp, and creates a dashboard webpage
-
 rm -rf ~/dashboard-tvm
-cd ..
 git clone --recursive https://github.com/dmlc/tvm ~/dashboard-tvm
 mkdir ~/dashboard-tvm/build
 cp dashboard/config.cmake ~/dashboard-tvm/build
@@ -14,6 +12,8 @@ cd ~/dashboard-tvm; make -j 32; cd ../relay-bench
 export TVM_HOME=~/dashboard-tvm
 export PYTHONPATH=$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}
 
+# move to parent directory of this script
+cd "$(dirname "$0")"/..
 ./run_oopsla_benchmarks.sh
 python3 visualize.py
 
