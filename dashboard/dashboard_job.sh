@@ -12,7 +12,7 @@ rm -rf ~/dashboard-tvm
 git clone --recursive https://github.com/dmlc/tvm ~/dashboard-tvm
 mkdir ~/dashboard-tvm/build
 cp dashboard/config.cmake ~/dashboard-tvm/build
-cd ~/dashboard-tvm; make -j 32; cd ../relay-bench
+cd ~/dashboard-tvm; make -j 32
 
 # have to set the newly-pulled tvm to be the one called from python
 export TVM_HOME=~/dashboard-tvm
@@ -25,7 +25,7 @@ mkdir "$bundle_dir_path"
 echo "storing bundle in \"$bundle_dir_path\""
 
 # move to parent directory of this script
-cd ..
+cd "$script_dir"/..
 ./run_oopsla_benchmarks.sh
 python3 visualize.py
 
