@@ -34,9 +34,9 @@ python3 visualize.py
 
 # build bundle directory structure and fill it with data
 cd "$script_dir"
-mkdir "${bundle_dir_path}/raw_data"
+mkdir -p "${bundle_dir_path}/raw_data"
 cp ../*.csv "${bundle_dir_path}/raw_data"
-mkdir "${bundle_dir_path}/graph"
+mkdir -p "${bundle_dir_path}/graph"
 cp ../*.png "${bundle_dir_path}/graph"
 cp jerry.jpg "${bundle_dir_path}"
 
