@@ -1,3 +1,8 @@
+"""Generates a webpage for visualizing benchmark output data.
+
+The "graph" and "raw_data" folders in the output directory must already exist
+and be populated before running this script.
+"""
 import argparse
 import os
 
@@ -8,9 +13,9 @@ PAGE_PREFIX = '''
 <head>
 <title>TVM Relay Dashboard</title>
 </head>
-<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666">
+<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url(%s); background-position: center;">
 <div align="center">
-<div align="center"><h1>TVM Relay Dashboard</h1></div>
+<div align="center"><h1 style="background-color: white;">TVM Relay Dashboard</h1></div>
 '''
 
 PAGE_SUFFIX = '''
@@ -19,19 +24,8 @@ PAGE_SUFFIX = '''
 </html>
 '''
 
-class DualPath:
-    '''A representation of paths for both the working directory and the web.'''
-
-    def __init__(self, cwd_prefix, web_prefix, file_name):
-        self.cwd_prefix = cwd_prefix
-        self.web_prefix = web_prefix
-        self.file_name = file_name
-
-    def get_cwd_path(self):
-        return os.path.join(self.cwd_prefix, self.file_name)
-
-    def get_web_path(self):
-        return os.path.join(self.web_prefix, self.file_name)
+GRAPH_DIR_PATH='graph'
+LORD_JERRY_PATH='jerry.jpg'
 
 
 def get_img_dims(img_path, scale=1.0):
@@ -40,28 +34,33 @@ def get_img_dims(img_path, scale=1.0):
     return w * scale, h * scale
 
 
-def create_website(output_dir, img_paths):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+def create_website(out_dir, img_paths, bg_image):
+    if not os.path.exists(out_dir):
+        os.makedirs(out_dir)
     page_body = ''
     for img_path in img_paths:
-        w, h = get_img_dims(img_path.get_cwd_path(), scale=0.5)
-        page_body += f'<img src="{img_path.get_web_path()}" style="width:{w}px;height:{h}px;padding:10px;">\n'
+        w, h = get_img_dims(img_path, scale=0.75)
+        page_body += f'<img src="{img_path}" style="width:{w}px;height:{h}px;padding:10px;">\n'
 
-    with open(os.path.join(output_dir, 'index.html'), 'w') as f:
-        f.write(PAGE_PREFIX)
+    with open(os.path.join(out_dir, 'index.html'), 'w') as f:
+        f.write(PAGE_PREFIX % bg_image)
         f.write(page_body)
         f.write(PAGE_SUFFIX)
 
 
 if __name__ == '__main__':
-    description = 'Generate a webpage for visualizing benchmark output data.'
-    parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('--output-dir', default='web')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out-dir', required=True)
 
     args = parser.parse_args()
-    output_dir = os.path.join(os.getcwd(), args.output_dir)
+    out_dir = os.path.join(os.getcwd(), args.out_dir)
+    # Switch to the output directory, so we don't need to keep track of
+    # separate paths for loading images while the script is running and loading
+    # images when viewing the generated webpage.
+    os.chdir(out_dir)
     img_paths = []
-    for i in range(4):
-        img_paths.append(DualPath('graphs', '../graphs', 'graph.png'))
-    create_website(output_dir, img_paths)
+    for filename in os.listdir(GRAPH_DIR_PATH):
+        if filename.endswith('.png'):
+            img_paths.append(os.path.join(GRAPH_DIR_PATH, filename))
+    bg_image = LORD_JERRY_PATH
+    create_website(out_dir, img_paths, bg_image)

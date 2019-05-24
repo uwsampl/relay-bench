@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 import argparse
 import csv
+import os
 import numpy as np
 
 SCORE_FIELDS = ['rep', 'run', 'time']
@@ -40,7 +41,7 @@ def mean_of_means(data, trait_name, trait_values, is_numeric=False):
                 return int(r[trait_name]) == value
             return r[trait_name] == value
         mean = np.mean(list(map(lambda r: float(r['time']),
-                         filter(filter_func, data))))
+                                filter(filter_func, data))))
         means.append(mean)
     return np.mean(means)
 
@@ -57,7 +58,11 @@ def format_ms(ax):
 
 
 def framework_cnn_average(framework, network, dev, num_reps, opt_params):
-    with open('{}-cnn.csv'.format(framework), newline='') as csvfile:
+    filename = '{}-cnn.csv'.format(framework)
+    if not os.path.exists(filename):
+        print('warning: could not find "{}"'.format(filename))
+        return None
+    with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile, FRAMEWORK_CNN_FIELDS[framework])
 
         def filter_func(row):
@@ -79,13 +84,17 @@ def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev):
     offset = 0
     bars = []
     for network in networks:
-        means = [
+        means = list(filter(lambda x: x is not None, [
             framework_cnn_average('relay', network, dev, num_reps, {'opt_level': str(opt)})
             for opt in range(opt_levels)
-        ]
+        ]))
+        if not means:
+            continue
         bar = ax.bar(positions + offset, means, width)
         offset += width
         bars.append(bar)
+    if not bars:
+        return
 
     ax.legend(tuple(bars), tuple(networks))
     ax.set_xticks(positions + width*(len(networks) / 2))
@@ -115,11 +124,16 @@ def generate_cnn_comparisons(networks, num_reps, dev):
     }
 
     for (_, (framework, options)) in bar_settings.items():
-        means = [framework_cnn_average(framework, network, dev, num_reps, options)
-                 for network in networks]
+        means = list(filter(lambda x: x is not None,
+                            [framework_cnn_average(framework, network, dev, num_reps, options)
+                             for network in networks]))
+        if not means:
+            continue
         bar = ax.bar(positions + offset, means, width)
         offset += width
         bars.append(bar)
+    if not bars:
+        return
 
     ax.legend(tuple(bars), tuple([label for (label, _) in bar_settings.items()]))
     ax.set_xticks(positions + width*(len(bar_settings) / 2))
@@ -135,7 +149,11 @@ def average_across_languages(data, languages):
 
 
 def framework_char_rnn_average(framework, network, hidden_size, languages, opt_params):
-    with open('{}-rnn.csv'.format(framework), newline='') as csvfile:
+    filename = '{}-rnn.csv'.format(framework)
+    if not os.path.exists(filename):
+        print('warning: could not find "{}"'.format(filename))
+        return None
+    with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile, FRAMEWORK_CHAR_RNN_FIELDS[framework])
 
         def filter_func(row):
@@ -160,10 +178,12 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev):
         'Pytorch': ('pytorch', {})
     }
 
-    means = [
+    means = list(filter(lambda x: x is not None, [
         framework_char_rnn_average(framework, network, hidden_size, languages, options)
         for (_, (framework, options)) in bar_settings.items()
-    ]
+    ]))
+    if not means:
+        return
 
     settings = np.arange(len(bar_settings.items()))
     plt.bar(settings, means)
@@ -182,7 +202,11 @@ def average_across_datasets(data, num_idxs, datasets):
 
 
 def framework_tree_lstm_average(framework, num_idxs, datasets, opt_params, dev):
-    with open('{}-treelstm.csv'.format(framework), newline='') as csvfile:
+    filename = '{}-treelstm.csv'.format(framework)
+    if not os.path.exists(filename):
+        print('warning: could not find "{}"'.format(filename))
+        return None
+    with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile, FRAMEWORK_TREE_LSTM_FIELDS[framework])
 
         def filter_func(row):
@@ -205,10 +229,12 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev):
         'Pytorch': ('pytorch', {})
     }
 
-    means = [
+    means = list(filter(lambda x: x is not None, [
         framework_tree_lstm_average(framework, num_idxs, datasets, options, dev)
         for (_, (framework, options)) in bar_settings.items()
-    ]
+    ]))
+    if not means:
+        return
 
     settings = np.arange(len(bar_settings.items()))
     plt.bar(settings, means)

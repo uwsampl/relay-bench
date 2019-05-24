@@ -12,6 +12,9 @@ import mx.util as mx
 from util import run_trials
 
 
+# TODO(weberlo): Refactor this into a `main` method that takes a config dict,
+# and in the cmd-line case, argparse generates that dict.
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='get hidden')
     parser.add_argument('--n-hidden', type=int, default=16,
