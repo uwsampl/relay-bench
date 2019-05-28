@@ -162,7 +162,7 @@ def get_keras_network(name):
 
 def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
     device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
-    with relay.build_module.build_config(opt_level=opt):
+    with relay.build_config(opt_level=opt):
         graph, lib, params = relay.build(net, 'llvm' if dev == 'cpu' else 'cuda', params=params)
 
     mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)

@@ -55,4 +55,4 @@ cp jerry.jpg "${bundle_dir_path}"
 
 # generate static website in bundle to view its data
 python3 gen_webpage.py "--out-dir=${bundle_dir_path}"
-cp -r $bundle_dir_path $share_store_path
+cp -r $bundle_dir_path/* $share_store_path
