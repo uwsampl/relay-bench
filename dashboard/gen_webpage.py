@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--out-dir', type=str, required=True)
 
     args = parser.parse_args()
-    out_dir = os.path.join(os.getcwd(), args.out_dir)
+    out_dir = args.out_dir
     # Switch to the output directory, so we don't need to keep track of
     # separate paths for loading images while the script is running and loading
     # images when viewing the generated webpage.
