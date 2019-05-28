@@ -40,7 +40,7 @@ echo "storing bundle in \"$bundle_dir_path\""
 # move to parent directory of this script
 cd "$script_dir"/..
 ./run_oopsla_benchmarks.sh "${bundle_dir_path}/raw_data"
-python3 visualize.py --data-dir "${bundle_dir_path}/raw_data" --output_dir "${bundle_dir_path}/graph"
+python3 visualize.py --data-dir "${bundle_dir_path}/raw_data" --output-dir "${bundle_dir_path}/graph"
 
 # build bundle directory structure and fill it with data
 cd "$script_dir"

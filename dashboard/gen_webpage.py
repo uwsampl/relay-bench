@@ -49,8 +49,10 @@ def create_website(out_dir, img_paths, bg_image):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--graph-dir', type=str, required=True)
-    parser.add_argument('--out-dir', type=str, required=True)
+    parser.add_argument('--graph-dir', type=str, required=True,
+                        help='Directory where graphs are found, should be absolute')
+    parser.add_argument('--out-dir', type=str, required=True,
+                        help='Directory where output should be created, should be absolute')
 
     args = parser.parse_args()
     out_dir = args.out_dir
@@ -60,7 +62,8 @@ if __name__ == '__main__':
     os.chdir(out_dir)
     img_paths = []
     for filename in os.listdir(args.graph_dir):
+        # graphs should be indexed relatively: (site root)/graph/*.png
         if filename.endswith('.png'):
-            img_paths.append(os.path.join(args.graph_dir, filename))
+            img_paths.append(os.path.join('graph', filename))
     bg_image = LORD_JERRY_PATH
     create_website(out_dir, img_paths, bg_image)
