@@ -41,7 +41,7 @@ def lookup_data_file(data_prefix, filename):
 
 
 def prepare_out_file(output_prefix, filename):
-    full_name = os.path.join(data_prefix, filename)
+    full_name = os.path.join(output_prefix, filename)
     if not os.path.exists(os.path.dirname(full_name)):
         os.makedirs(os.path.dirname(full_name))
     return full_name
@@ -268,7 +268,7 @@ if __name__ == '__main__':
     opt_levels = 4
     for dev in ['cpu', 'gpu']:
         generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev,
-                                           data_prefix=args.graph_dir,
+                                           data_prefix=args.data_dir,
                                            output_prefix=args.output_dir)
         generate_cnn_comparisons(networks, num_reps, dev,
                                  data_prefix=args.data_dir,
