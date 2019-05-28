@@ -8,6 +8,7 @@ These benchmarks only run on Python 3.X.
 
 ## Table of Contents
 - `oopsla_benchmarks` contains a variety of TVM benchmarks with comparisons to other frameworks.
+- `dashboard` contains scripts for running these benchmarks in an overnight benchmark.
 
 # TVM Benchmark
 We can reproduce a set of standard TVM benchmarks used in previous
