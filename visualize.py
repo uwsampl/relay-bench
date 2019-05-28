@@ -110,9 +110,10 @@ def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev, data
     ax.legend(tuple(bars), tuple(networks))
     ax.set_xticks(positions + width*(len(networks) / 2))
     ax.set_xticklabels(['O{}'.format(opt) for opt in range(opt_levels)])
-    plt.title('Relay CNN Opt Level on {}'.format(dev))
+    plt.title('Relay CNN Opt Level on {}'.format(dev.upper()))
     plt.xlabel('Opt Level')
-    plt.ylabel('Time (ms)')
+    plt.ylabel('log(Time (ms))')
+    plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'relay-cnn-{}.png'.format(dev.upper()))
     plt.savefig(filename)
 
@@ -152,7 +153,8 @@ def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_pre
     ax.set_xticklabels(tuple(networks))
     plt.title('CNN Comparison on {}'.format(dev.upper()))
     plt.xlabel('Network')
-    plt.ylabel('Time (ms)')
+    plt.ylabel('log(Time (ms))')
+    plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'cnns-{}.png'.format(dev.upper()))
     plt.savefig(filename)
 
@@ -200,7 +202,8 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev, data_pref
     plt.xticks(settings, [config for (config, _) in bar_settings.items()])
     plt.title('Char RNN Comparison on {}'.format(dev.upper()))
     plt.xlabel('Framework')
-    plt.ylabel('Time (ms)')
+    plt.ylabel('log(Time (ms))')
+    plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'char-rnns-{}.png'.format(dev.upper()))
     plt.savefig(filename)
 
@@ -249,7 +252,8 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev, data_prefix='', outpu
     plt.xticks(settings, [config for (config, _) in bar_settings.items()])
     plt.title('TreeLSTM Comparison on {}'.format(dev.upper()))
     plt.xlabel('Framework')
-    plt.ylabel('Time (ms)')
+    plt.ylabel('log(Time (ms))')
+    plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'tree-lstm-{}.png'.format(dev.upper()))
     plt.savefig(filename)
 
