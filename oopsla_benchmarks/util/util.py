@@ -1,3 +1,4 @@
+import os
 import time
 import numpy as np
 from itertools import product
@@ -30,8 +31,11 @@ def run_trials(method, task_name,
                dry_run, times_per_input, n_input,
                trial, trial_setup, trial_teardown,
                parameter_names, parameter_ranges,
+               path_prefix = '',
                append_to_csv = False):
-    filename = '{}-{}.csv'.format(method, task_name)
+    filename = os.path.join(path_prefix, '{}-{}.csv'.format(method, task_name))
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
     mode = 'a' if append_to_csv else 'w'
     with open(filename, mode, newline='') as csvfile:
         fieldnames = parameter_names + ['rep', 'run', 'time']

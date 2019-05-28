@@ -33,6 +33,20 @@ FRAMEWORK_TREE_LSTM_FIELDS = {
 }
 
 
+def lookup_data_file(data_prefix, filename):
+    full_name = os.path.join(data_prefix, filename)
+    if not os.path.exists(full_name):
+        raise Exception('Could not find "{}"'.format(filename))
+    return full_name
+
+
+def prepare_out_file(output_prefix, filename):
+    full_name = os.path.join(data_prefix, filename)
+    if not os.path.exists(os.path.dirname(full_name)):
+        os.makedirs(os.path.dirname(full_name))
+    return full_name
+
+
 def mean_of_means(data, trait_name, trait_values, is_numeric=False):
     means = []
     for value in trait_values:
@@ -57,11 +71,8 @@ def format_ms(ax):
     ax.yaxis.set_major_formatter(formatter)
 
 
-def framework_cnn_average(framework, network, dev, num_reps, opt_params):
-    filename = '{}-cnn.csv'.format(framework)
-    if not os.path.exists(filename):
-        print('warning: could not find "{}"'.format(filename))
-        return None
+def framework_cnn_average(data_prefix, framework, network, dev, num_reps, opt_params):
+    filename = lookup_data_file(data_prefix, '{}-cnn.csv'.format(framework))
     with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile, FRAMEWORK_CNN_FIELDS[framework])
 
@@ -75,7 +86,7 @@ def framework_cnn_average(framework, network, dev, num_reps, opt_params):
         return average_across_reps(list(filter(filter_func, reader)), num_reps)
 
 
-def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev):
+def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev, data_prefix='', output_prefix=''):
     fig, ax = plt.subplots()
     format_ms(ax)
 
@@ -85,7 +96,7 @@ def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev):
     bars = []
     for network in networks:
         means = list(filter(lambda x: x is not None, [
-            framework_cnn_average('relay', network, dev, num_reps, {'opt_level': str(opt)})
+            framework_cnn_average(data_prefix, 'relay', network, dev, num_reps, {'opt_level': str(opt)})
             for opt in range(opt_levels)
         ]))
         if not means:
@@ -102,10 +113,11 @@ def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev):
     plt.title('Relay CNN Opt Level on {}'.format(dev))
     plt.xlabel('Opt Level')
     plt.ylabel('Time (ms)')
-    plt.savefig('relay-cnn-{}.png'.format(dev.upper()))
+    filename = prepare_out_file(output_prefix, 'relay-cnn-{}.png'.format(dev.upper()))
+    plt.savefig(filename)
 
 
-def generate_cnn_comparisons(networks, num_reps, dev):
+def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_prefix=''):
     fig, ax = plt.subplots()
     format_ms(ax)
 
@@ -125,7 +137,7 @@ def generate_cnn_comparisons(networks, num_reps, dev):
 
     for (_, (framework, options)) in bar_settings.items():
         means = list(filter(lambda x: x is not None,
-                            [framework_cnn_average(framework, network, dev, num_reps, options)
+                            [framework_cnn_average(data_prefix, framework, network, dev, num_reps, options)
                              for network in networks]))
         if not means:
             continue
@@ -141,18 +153,16 @@ def generate_cnn_comparisons(networks, num_reps, dev):
     plt.title('CNN Comparison on {}'.format(dev.upper()))
     plt.xlabel('Network')
     plt.ylabel('Time (ms)')
-    plt.savefig('cnns-{}.png'.format(dev.upper()))
+    filename = prepare_out_file(output_prefix, 'cnns-{}.png'.format(dev.upper()))
+    plt.savefig(filename)
 
 
 def average_across_languages(data, languages):
     return mean_of_means(data, 'language', languages)
 
 
-def framework_char_rnn_average(framework, network, hidden_size, languages, opt_params):
-    filename = '{}-rnn.csv'.format(framework)
-    if not os.path.exists(filename):
-        print('warning: could not find "{}"'.format(filename))
-        return None
+def framework_char_rnn_average(data_prefix, framework, network, hidden_size, languages, opt_params):
+    filename = lookup_data_file(data_prefix, '{}-rnn.csv'.format(framework))
     with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile, FRAMEWORK_CHAR_RNN_FIELDS[framework])
 
@@ -167,7 +177,7 @@ def framework_char_rnn_average(framework, network, hidden_size, languages, opt_p
         return average_across_languages(list(filter(filter_func, reader)), languages)
 
 
-def generate_char_rnn_comparison(network, languages, hidden_size, dev):
+def generate_char_rnn_comparison(network, languages, hidden_size, dev, data_prefix='', output_prefix=''):
     fig, ax = plt.subplots()
     format_ms(ax)
 
@@ -179,7 +189,7 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev):
     }
 
     means = list(filter(lambda x: x is not None, [
-        framework_char_rnn_average(framework, network, hidden_size, languages, options)
+        framework_char_rnn_average(data_prefix, framework, network, hidden_size, languages, options)
         for (_, (framework, options)) in bar_settings.items()
     ]))
     if not means:
@@ -191,7 +201,8 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev):
     plt.title('Char RNN Comparison on {}'.format(dev.upper()))
     plt.xlabel('Framework')
     plt.ylabel('Time (ms)')
-    plt.savefig('char-rnns-{}.png'.format(dev.upper()))
+    filename = prepare_out_file(output_prefix, 'char-rnns-{}.png'.format(dev.upper()))
+    plt.savefig(filename)
 
 
 def average_across_datasets(data, num_idxs, datasets):
@@ -201,11 +212,8 @@ def average_across_datasets(data, num_idxs, datasets):
     return np.mean(means)
 
 
-def framework_tree_lstm_average(framework, num_idxs, datasets, opt_params, dev):
-    filename = '{}-treelstm.csv'.format(framework)
-    if not os.path.exists(filename):
-        print('warning: could not find "{}"'.format(filename))
-        return None
+def framework_tree_lstm_average(data_prefix, framework, num_idxs, datasets, opt_params, dev):
+    filename = lookup_data_file(data_prefix, '{}-treelstm.csv'.format(framework))
     with open(filename, newline='') as csvfile:
         reader = csv.DictReader(csvfile, FRAMEWORK_TREE_LSTM_FIELDS[framework])
 
@@ -219,7 +227,7 @@ def framework_tree_lstm_average(framework, num_idxs, datasets, opt_params, dev):
         return average_across_datasets(list(filter(filter_func, reader)), num_idxs, datasets)
 
 
-def generate_tree_lstm_comparison(num_idxs, datasets, dev):
+def generate_tree_lstm_comparison(num_idxs, datasets, dev, data_prefix='', output_prefix=''):
     fig, ax = plt.subplots()
     format_ms(ax)
 
@@ -230,7 +238,7 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev):
     }
 
     means = list(filter(lambda x: x is not None, [
-        framework_tree_lstm_average(framework, num_idxs, datasets, options, dev)
+        framework_tree_lstm_average(data_prefix, framework, num_idxs, datasets, options, dev)
         for (_, (framework, options)) in bar_settings.items()
     ]))
     if not means:
@@ -242,7 +250,8 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev):
     plt.title('TreeLSTM Comparison on {}'.format(dev.upper()))
     plt.xlabel('Framework')
     plt.ylabel('Time (ms)')
-    plt.savefig('tree-lstm-{}.png'.format(dev.upper()))
+    filename = prepare_out_file(output_prefix, 'tree-lstm-{}.png'.format(dev.upper()))
+    plt.savefig(filename)
 
 
 
@@ -250,14 +259,20 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='get hidden')
     parser.add_argument('--n-hidden', type=int, default=16,
                         help='Number of hidden layers for char RNN')
+    parser.add_argument("--data-dir", type=str, default='')
+    parser.add_argument("--output-dir", type=str, default='')
     args = parser.parse_args()
 
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
     num_reps = 3
     opt_levels = 4
     for dev in ['cpu', 'gpu']:
-        generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev)
-        generate_cnn_comparisons(networks, num_reps, dev)
+        generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev,
+                                           data_prefix=args.graph_dir,
+                                           output_prefix=args.output_dir)
+        generate_cnn_comparisons(networks, num_reps, dev,
+                                 data_prefix=args.data_dir,
+                                 output_prefix=args.output_dir)
 
     # we only have RNNs working on CPU for now
     network = 'char-rnn'
@@ -267,8 +282,12 @@ if __name__ == '__main__':
                  'Japanese', 'Korean', 'Polish', 'Portuguese', 'Russian',
                  'Scottish', 'Spanish', 'Vietnamese']
     hidden_size = args.n_hidden
-    generate_char_rnn_comparison(network, languages, hidden_size, dev)
+    generate_char_rnn_comparison(network, languages, hidden_size, dev,
+                                 data_prefix=args.data_dir,
+                                 output_prefix=args.output_dir)
 
     num_idxs = 500
     datasets = ['dev', 'test', 'train']
-    generate_tree_lstm_comparison(num_idxs, datasets, dev)
+    generate_tree_lstm_comparison(num_idxs, datasets, dev,
+                                  data_prefix=args.data_dir,
+                                  output_prefix=args.output_dir)

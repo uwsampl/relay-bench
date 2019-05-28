@@ -39,20 +39,13 @@ echo "storing bundle in \"$bundle_dir_path\""
 
 # move to parent directory of this script
 cd "$script_dir"/..
-./run_oopsla_benchmarks.sh
-python3 visualize.py
-
-# TODO: parameterize the eval scripts so we can direct output to a custom dir,
-# rather than moving the files in this script.
+./run_oopsla_benchmarks.sh "${bundle_dir_path}/raw_data"
+python3 visualize.py --data-dir "${bundle_dir_path}/raw_data" --output_dir "${bundle_dir_path}/graph"
 
 # build bundle directory structure and fill it with data
 cd "$script_dir"
-mkdir -p "${bundle_dir_path}/raw_data"
-cp ../*.csv "${bundle_dir_path}/raw_data"
-mkdir -p "${bundle_dir_path}/graph"
-cp ../*.png "${bundle_dir_path}/graph"
 cp jerry.jpg "${bundle_dir_path}"
 
 # generate static website in bundle to view its data
-python3 gen_webpage.py "--out-dir=${bundle_dir_path}"
+python3 gen_webpage.py --graph-dir "${bundle_dir_path}/graph" --out-dir "${bundle_dir_path}"
 cp -r $bundle_dir_path/* $share_store_path

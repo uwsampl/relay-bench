@@ -8,6 +8,7 @@ from util import run_trials
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("--output-dir", type=str, default='')
     parser.add_argument("--n-inputs", type=int, default=3)
     parser.add_argument('--n-times-per-input', type=int, default=1000)
     parser.add_argument('--dry-run', type=int, default=8)
@@ -40,32 +41,37 @@ if __name__ == '__main__':
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    tf.cnn_trial, tf.cnn_setup, tf.cnn_teardown,
                    ['network', 'device', 'batch_size', 'enable_xla'],
-                   [networks, devices, batch_sizes, [False, True]])
+                   [networks, devices, batch_sizes, [False, True]],
+                   path_prefix=args.output_dir)
 
     if not args.skip_pytorch:
         run_trials('pytorch', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    pt.cnn_trial, pt.cnn_setup, pt.cnn_teardown,
                    ['network', 'device', 'batch_size'],
-                   [networks, devices, batch_sizes])
+                   [networks, devices, batch_sizes],
+                   path_prefix=args.output_dir)
 
     if not args.skip_mxnet:
         run_trials('mxnet', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    mx.cnn_trial, mx.cnn_setup, mx.cnn_teardown,
                    ['network', 'device', 'batch_size'],
-                   [networks, devices, batch_sizes])
+                   [networks, devices, batch_sizes],
+                   path_prefix=args.output_dir)
 
     if not args.skip_relay:
         run_trials('relay', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    relay.cnn_trial, relay.cnn_setup, relay.cnn_teardown,
                    ['network', 'device', 'batch_size', 'opt_level'],
-                   [networks, devices, batch_sizes, relay_opt_levels])
+                   [networks, devices, batch_sizes, relay_opt_levels],
+                   path_prefix=args.output_dir)
 
     if not args.skip_nnvm:
         run_trials('nnvm', task_name,
                    args.dry_run, args.n_times_per_input, args.n_inputs,
                    nnvm.cnn_trial, nnvm.cnn_setup, nnvm.cnn_teardown,
                    ['network', 'device', 'batch_size', 'opt_level'],
-                   [networks, devices, batch_sizes, nnvm_opt_levels])
+                   [networks, devices, batch_sizes, nnvm_opt_levels],
+                   path_prefix=args.output_dir)

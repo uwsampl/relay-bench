@@ -19,6 +19,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='get hidden')
     parser.add_argument('--n-hidden', type=int, default=16,
                         help='Number of hidden layers')
+    parser.add_argument("--output-dir", type=str, default='')
     parser.add_argument('--dry-run', type=int, default=8)
     parser.add_argument('--n-times-per-input', type=int, default=1000)
     parser.add_argument('--skip-relay', action='store_true')
@@ -75,21 +76,24 @@ if __name__ == '__main__':
                    args.dry_run, args.n_times_per_input, 1,
                    relay.rnn_trial, relay.gluon_rnn_setup, relay.rnn_teardown,
                    ['network', 'device', 'method'],
-                   [gluon_networks, devices, methods])
+                   [gluon_networks, devices, methods],
+                   path_prefix=args.output_dir)
 
     if not args.skip_mxnet and not args.skip_gluon_rnns:
         run_trials('mx', 'gluon',
                    args.dry_run, args.n_times_per_input, 1,
                    mx.rnn_trial, mx.rnn_setup, mx.rnn_teardown,
                    ['network', 'device'],
-                   [gluon_networks, devices])
+                   [gluon_networks, devices],
+                   path_prefix=args.output_dir)
 
     if not args.skip_pytorch and not args.skip_char_rnn:
         run_trials('pytorch', 'rnn',
                    args.dry_run, args.n_times_per_input, 1,
                    pt.rnn_trial, pt.rnn_setup, pt.rnn_teardown,
                    ['network', 'device', 'hidden_size', 'language', 'input'],
-                   [networks, devices, hidden_sizes, languages, inputs])
+                   [networks, devices, hidden_sizes, languages, inputs],
+                   path_prefix=args.output_dir)
 
     if not args.skip_relay and not args.skip_char_rnn:
         run_trials('relay', 'rnn',
@@ -99,7 +103,9 @@ if __name__ == '__main__':
                     'method', 'hidden_size', 'language', 'input'],
                    [networks, devices, configurations,
                     methods, hidden_sizes, languages, inputs],
-                   append_to_csv = args.append_relay_data)
+                   append_to_csv = args.append_relay_data,
+                   path_prefix=args.output_dir)
+
 
     datasets = ['dev', 'test', 'train']
     treelstm_idxs = [i for i in range(500)]
@@ -108,11 +114,14 @@ if __name__ == '__main__':
                    args.dry_run, args.n_times_per_input, 1,
                    pt.rnn_trial, pt.treelstm_setup, pt.rnn_teardown,
                    ['device', 'dataset', 'idx'],
-                   [devices, datasets, treelstm_idxs])
+                   [devices, datasets, treelstm_idxs],
+                   path_prefix=args.output_dir)
+
 
     if not args.skip_relay and not args.skip_treelstm:
         run_trials('relay', 'treelstm',
                    args.dry_run, args.n_times_per_input, 1,
                    relay.rnn_trial, relay.treelstm_setup, relay.rnn_teardown,
                    ['device', 'method', 'dataset', 'idx'],
-                   [devices, methods, datasets, treelstm_idxs])
+                   [devices, methods, datasets, treelstm_idxs],
+                   path_prefix=args.output_dir)

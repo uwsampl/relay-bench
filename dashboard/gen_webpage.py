@@ -24,7 +24,6 @@ PAGE_SUFFIX = '''
 </html>
 '''
 
-GRAPH_DIR_PATH='graph'
 LORD_JERRY_PATH='jerry.jpg'
 
 
@@ -50,7 +49,8 @@ def create_website(out_dir, img_paths, bg_image):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out-dir', required=True)
+    parser.add_argument('--graph-dir', type=str, required=True)
+    parser.add_argument('--out-dir', type=str, required=True)
 
     args = parser.parse_args()
     out_dir = os.path.join(os.getcwd(), args.out_dir)
@@ -59,8 +59,8 @@ if __name__ == '__main__':
     # images when viewing the generated webpage.
     os.chdir(out_dir)
     img_paths = []
-    for filename in os.listdir(GRAPH_DIR_PATH):
+    for filename in os.listdir(args.graph_dir):
         if filename.endswith('.png'):
-            img_paths.append(os.path.join(GRAPH_DIR_PATH, filename))
+            img_paths.append(os.path.join(args.graph_dir, filename))
     bg_image = LORD_JERRY_PATH
     create_website(out_dir, img_paths, bg_image)
