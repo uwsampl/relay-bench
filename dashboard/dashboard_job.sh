@@ -14,12 +14,17 @@ mkdir ~/dashboard-tvm/build
 cp config.cmake ~/dashboard-tvm/build
 cd ~/dashboard-tvm; make -j 32
 
+# pull in a new relay AOT compiler
+rm -rf ~/dashboard-aot
+git clone https://github.com/uwsampl/relay-aot.git ~/dashboard-aot
+
 # have to set the newly-pulled tvm to be the one called from python
 export TVM_HOME=~/dashboard-tvm
 export PYTHONPATH=$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}
 
 # ensure relay AOT will be on the Python path
-export PYTHONPATH=/share/relay-aot:${PYTHONPATH}
+aot_path=~/dashboard-aot
+export PYTHONPATH=$aot_path:${PYTHONPATH}
 
 # ensure CUDA will be present in the path
 export PATH=/usr/local/cuda-10.0/bin:/usr/local/cuda-10.0/NsightCompute-1.0${PATH:+:${PATH}}
