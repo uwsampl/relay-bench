@@ -4,9 +4,11 @@ from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 
 import argparse
+import datetime
 import csv
-import os
+import json
 import numpy as np
+import os
 
 SCORE_FIELDS = ['rep', 'run', 'time']
 BASE_FIELDS = ['network', 'device']
@@ -94,18 +96,24 @@ def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev, data
     positions = np.arange(opt_levels)
     offset = 0
     bars = []
+    data = {}
     for network in networks:
-        means = list(filter(lambda x: x is not None, [
-            framework_cnn_average(data_prefix, 'relay', network, dev, num_reps, {'opt_level': str(opt)})
-            for opt in range(opt_levels)
-        ]))
+        means = []
+        data[network] = {}
+        for opt in range(opt_levels):
+            mean = framework_cnn_average(data_prefix, 'relay', network, dev, num_reps, {'opt_level': str(opt)})
+            if mean is None:
+                continue
+            means.append(mean)
+            data[network]['O{}'.format(opt)] = mean
         if not means:
             continue
+
         bar = ax.bar(positions + offset, means, width)
         offset += width
         bars.append(bar)
     if not bars:
-        return
+        return {}
 
     ax.legend(tuple(bars), tuple(networks))
     ax.set_xticks(positions + width*(len(networks) / 2))
@@ -116,6 +124,7 @@ def generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev, data
     plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'relay-cnn-{}.png'.format(dev.upper()))
     plt.savefig(filename)
+    return data
 
 
 def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_prefix=''):
@@ -126,6 +135,7 @@ def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_pre
     positions = np.arange(len(networks))
     offset = 0
     bars = []
+    data = {}
 
     bar_settings = {
         'Relay': ('relay', {'opt_level': str(3)}),
@@ -137,16 +147,22 @@ def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_pre
     }
 
     for (_, (framework, options)) in bar_settings.items():
-        means = list(filter(lambda x: x is not None,
-                            [framework_cnn_average(data_prefix, framework, network, dev, num_reps, options)
-                             for network in networks]))
+        means = []
+        data[framework] = {}
+        for network in networks:
+            mean = framework_cnn_average(data_prefix, framework, network, dev, num_reps, options)
+            if mean is None:
+                continue
+            means.append(mean)
+            data[framework][network] = mean
         if not means:
             continue
+
         bar = ax.bar(positions + offset, means, width)
         offset += width
         bars.append(bar)
     if not bars:
-        return
+        return {}
 
     ax.legend(tuple(bars), tuple([label for (label, _) in bar_settings.items()]))
     ax.set_xticks(positions + width*(len(bar_settings) / 2))
@@ -157,6 +173,7 @@ def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_pre
     plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'cnns-{}.png'.format(dev.upper()))
     plt.savefig(filename)
+    return data
 
 
 def average_across_languages(data, languages):
@@ -190,12 +207,16 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev, data_pref
         'Pytorch': ('pytorch', {})
     }
 
-    means = list(filter(lambda x: x is not None, [
-        framework_char_rnn_average(data_prefix, framework, network, hidden_size, languages, options)
-        for (_, (framework, options)) in bar_settings.items()
-    ]))
+    data = {}
+    means = []
+    for (_, (framework, options)) in bar_settings.items():
+        mean = framework_char_rnn_average(data_prefix, framework, network, hidden_size, languages, options)
+        if mean is None:
+            continue
+        means.append(mean)
+        data[framework] = mean
     if not means:
-        return
+        return {}
 
     settings = np.arange(len(bar_settings.items()))
     plt.bar(settings, means)
@@ -206,6 +227,7 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev, data_pref
     plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'char-rnns-{}.png'.format(dev.upper()))
     plt.savefig(filename)
+    return data
 
 
 def average_across_datasets(data, num_idxs, datasets):
@@ -240,12 +262,16 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev, data_prefix='', outpu
         'Pytorch': ('pytorch', {})
     }
 
-    means = list(filter(lambda x: x is not None, [
-        framework_tree_lstm_average(data_prefix, framework, num_idxs, datasets, options, dev)
-        for (_, (framework, options)) in bar_settings.items()
-    ]))
+    data = {}
+    means = []
+    for (_, (framework, options)) in bar_settings.items():
+        mean = framework_tree_lstm_average(data_prefix, framework, num_idxs, datasets, options, dev)
+        if mean is None:
+            continue
+        means.append(mean)
+        data[framework] = mean
     if not means:
-        return
+        return {}
 
     settings = np.arange(len(bar_settings.items()))
     plt.bar(settings, means)
@@ -256,7 +282,26 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev, data_prefix='', outpu
     plt.yscale('log')
     filename = prepare_out_file(output_prefix, 'tree-lstm-{}.png'.format(dev.upper()))
     plt.savefig(filename)
+    return data
 
+
+def write_json_data(opt_data_devs, cnn_data_devs, char_rnn_data, tree_lstm_data, output_prefix=''):
+    '''
+    Writes graph summary data to a JSON file. Expects the CNN trials as a list or tuple with the CPU
+    results in the first entry, GPU results in the second
+    '''
+    summary = {
+        'opt_cpu': opt_data_devs[0],
+        'cnn_cpu': cnn_data_devs[0],
+        'opt_gpu': opt_data_devs[1],
+        'cnn_gpu': cnn_data_devs[1],
+        'char-rnn': char_rnn_data,
+        'treelstm': tree_lstm_data,
+        'timestamp': str(datetime.datetime.now())
+    }
+    filename = prepare_out_file(output_prefix, 'data.json')
+    with open(filename, 'w') as outfile:
+        json.dump(summary, outfile)
 
 
 if __name__ == '__main__':
@@ -270,13 +315,17 @@ if __name__ == '__main__':
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
     num_reps = 3
     opt_levels = 4
+    opt_records = []
+    cnn_records = []
     for dev in ['cpu', 'gpu']:
-        generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev,
-                                           data_prefix=args.data_dir,
-                                           output_prefix=args.output_dir)
-        generate_cnn_comparisons(networks, num_reps, dev,
-                                 data_prefix=args.data_dir,
-                                 output_prefix=args.output_dir)
+        opt_data = generate_relay_cnn_opt_comparisons(networks, num_reps, opt_levels, dev,
+                                                      data_prefix=args.data_dir,
+                                                      output_prefix=args.output_dir)
+        opt_records.append(opt_data)
+        cnn_data = generate_cnn_comparisons(networks, num_reps, dev,
+                                            data_prefix=args.data_dir,
+                                            output_prefix=args.output_dir)
+        cnn_records.append(cnn_data)
 
     # we only have RNNs working on CPU for now
     network = 'char-rnn'
@@ -286,12 +335,14 @@ if __name__ == '__main__':
                  'Japanese', 'Korean', 'Polish', 'Portuguese', 'Russian',
                  'Scottish', 'Spanish', 'Vietnamese']
     hidden_size = args.n_hidden
-    generate_char_rnn_comparison(network, languages, hidden_size, dev,
-                                 data_prefix=args.data_dir,
-                                 output_prefix=args.output_dir)
+    char_rnn_data = generate_char_rnn_comparison(network, languages, hidden_size, dev,
+                                                 data_prefix=args.data_dir,
+                                                 output_prefix=args.output_dir)
 
     num_idxs = 500
     datasets = ['dev', 'test', 'train']
-    generate_tree_lstm_comparison(num_idxs, datasets, dev,
-                                  data_prefix=args.data_dir,
-                                  output_prefix=args.output_dir)
+    tree_lstm_data = generate_tree_lstm_comparison(num_idxs, datasets, dev,
+                                                   data_prefix=args.data_dir,
+                                                   output_prefix=args.output_dir)
+
+    write_json_data(opt_records, cnn_records, char_rnn_data, tree_lstm_data, args.output_dir)
