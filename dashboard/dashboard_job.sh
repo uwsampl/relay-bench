@@ -2,6 +2,7 @@
 #
 # Builds TVM from scratch, runs the oopsla benchmarks, makes graphs,
 # stores the data and graphs in /var/tmp, and creates a dashboard webpage
+webhook_url=$1
 
 # store path to this script
 cd "$(dirname "$0")"
@@ -54,3 +55,6 @@ cp jerry.jpg "${bundle_dir_path}"
 # generate static website in bundle to view its data
 python3 gen_webpage.py --graph-dir "${bundle_dir_path}/graph" --out-dir "${bundle_dir_path}"
 cp -r $bundle_dir_path/* $share_store_path
+
+# post to slack
+python3 slack_integration.py --data_dir "${share_store_path}/graph" --post-webhook "${webhook_url}"
