@@ -9,7 +9,7 @@ import sys
 def relay_opt_text_summary(data):
     ret = ''
     for (network, opt_times) in data.items():
-        ret += '{} times: '.format(network)
+        ret += '{}: '.format(network)
         ret += ', '.join(['{:.3f} ({})'.format(time*1e3, opt)
                           for (opt, time) in opt_times.items()])
         ret += '\n'
@@ -19,7 +19,7 @@ def relay_opt_text_summary(data):
 def cnn_text_summary(data):
     ret = ''
     for (framework, net_times) in data.items():
-        ret += '{} times: '.format(framework)
+        ret += '{}: '.format(framework)
         ret += ', '.join(['{:.3f} ({})'.format(time*1e3, net)
                           for (net, time) in net_times.items()])
         ret += '\n'
