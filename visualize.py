@@ -146,15 +146,15 @@ def generate_cnn_comparisons(networks, num_reps, dev, data_prefix='', output_pre
         'NNVM': ('nnvm', {})
     }
 
-    for (_, (framework, options)) in bar_settings.items():
+    for (name, (framework, options)) in bar_settings.items():
         means = []
-        data[framework] = {}
+        data[name] = {}
         for network in networks:
             mean = framework_cnn_average(data_prefix, framework, network, dev, num_reps, options)
             if mean is None:
                 continue
             means.append(mean)
-            data[framework][network] = mean
+            data[name][network] = mean
         if not means:
             continue
 
@@ -209,12 +209,12 @@ def generate_char_rnn_comparison(network, languages, hidden_size, dev, data_pref
 
     data = {}
     means = []
-    for (_, (framework, options)) in bar_settings.items():
+    for (name, (framework, options)) in bar_settings.items():
         mean = framework_char_rnn_average(data_prefix, framework, network, hidden_size, languages, options)
         if mean is None:
             continue
         means.append(mean)
-        data[framework] = mean
+        data[name] = mean
     if not means:
         return {}
 
@@ -264,12 +264,12 @@ def generate_tree_lstm_comparison(num_idxs, datasets, dev, data_prefix='', outpu
 
     data = {}
     means = []
-    for (_, (framework, options)) in bar_settings.items():
+    for (name, (framework, options)) in bar_settings.items():
         mean = framework_tree_lstm_average(data_prefix, framework, num_idxs, datasets, options, dev)
         if mean is None:
             continue
         means.append(mean)
-        data[framework] = mean
+        data[name] = mean
     if not means:
         return {}
 
