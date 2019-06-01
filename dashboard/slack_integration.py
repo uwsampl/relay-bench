@@ -7,21 +7,27 @@ import requests
 import sys
 
 def relay_opt_text_summary(data):
-    ret = ''
+    if len(data.items()) == 0:
+        return ''
+    opts = [opt for (opt, _) in data[list(data.keys())[0]].items()]
+    ret = 'Format: ({})\n'.format(', '.join(opts))
     for (network, opt_times) in data.items():
         ret += '{}: '.format(network)
-        ret += ', '.join(['{:.3f} ({})'.format(time*1e3, opt)
-                          for (opt, time) in opt_times.items()])
+        ret += ', '.join(['{:.3f}'.format(time*1e3)
+                          for (_, time) in opt_times.items()])
         ret += '\n'
     return ret
 
 
 def cnn_text_summary(data):
-    ret = ''
+    if len(data.items()) == 0:
+        return ''
+    nets = [net for (net, _) in data[list(data.keys())[0]].items()]
+    ret = 'Format: ({})\n'.format(', '.join(nets))
     for (framework, net_times) in data.items():
         ret += '{}: '.format(framework)
-        ret += ', '.join(['{:.3f} ({})'.format(time*1e3, net)
-                          for (net, time) in net_times.items()])
+        ret += ', '.join(['{:.3f}'.format(time*1e3)
+                          for (_, time) in net_times.items()])
         ret += '\n'
     return ret
 
