@@ -57,4 +57,4 @@ python3 gen_webpage.py --graph-dir "${bundle_dir_path}/graph" --out-dir "${bundl
 cp -r $bundle_dir_path/* $share_store_path
 
 # post to slack
-python3 slack_integration.py --data_dir "${share_store_path}/graph" --post-webhook "${webhook_url}"
+python3 slack_integration.py --data-dir "${share_store_path}/graph" --post-webhook "${webhook_url}"
