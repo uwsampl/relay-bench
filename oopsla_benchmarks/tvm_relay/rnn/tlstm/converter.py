@@ -29,17 +29,17 @@ class RoseTree:
 
 def make_nat(p, n):
     if n != 0:
-        return ConstructorValue(p.s, [make_nat(n - 1)], [])
+        return ConstructorValue(p.s.tag, [make_nat(n - 1)], None, [])
     else:
-        return ConstructorValue(p.z, [], [])
+        return ConstructorValue(p.z.tag, [], None, [])
 
 
 # creates relay list from a list
 def from_list(p, l, t):
     if len(l) == 0:
-        return ConstructorValue(p.nil, [], [t])
+        return ConstructorValue(p.nil.tag, [], None, [])
     else:
-        return ConstructorValue(p.cons, [l[0], from_list(p, l[1:], t)], [t])
+        return ConstructorValue(p.cons.tag, [l[0], from_list(p, l[1:], t)], None, [])
 
 # convert tensors
 def pytorch_to_relay(tensor):
@@ -48,9 +48,9 @@ def pytorch_to_relay(tensor):
 
 
 def from_tree(p, rt, t):
-    return ConstructorValue(p.rose,
+    return ConstructorValue(p.rose.tag,
                             [rt.head,
-                             from_list(p, [from_tree(p, x, t) for x in rt.children], t)], [t])
+                             from_list(p, [from_tree(p, x, t) for x in rt.children], t)], None, [])
 
 
 def forward(tree, inputs):
@@ -61,7 +61,6 @@ def forward(tree, inputs):
 def tree_to_dict(t):
     assert isinstance(t, ConstructorValue)
     ret = {}
-    assert t.constructor.name_hint == 'rose'
     ret['member'] = t.fields[0]
     ret['children'] = []
     for subtree in to_list(t.fields[1]):
