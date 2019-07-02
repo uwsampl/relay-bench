@@ -79,7 +79,7 @@ def rnn_cell(input_size, hidden_size, output_size):
     output = linear(input_size + hidden_size, output_size, combined)
     output = op.nn.log_softmax(output, axis=1)
     body = relay.Tuple([output, hidden])
-    return relay.Function(relay.ir_pass.free_vars(body), body)
+    return relay.Function(relay.analysis.free_vars(body), body)
 
 def main():
     names_by_language = get_data()

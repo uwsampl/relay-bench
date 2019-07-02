@@ -145,7 +145,8 @@ class Network:
             return self.call_from_outside(*inputs)
 
     def interface_type(self):
-        t = relay.ir_pass.infer_type(self.mod[self.f], mod=self.mod).checked_type
+        relay.transform.InferType()(self.mod)
+        t = self.mod[self.f].checked_type
         return relay.FuncType(t.arg_types[:len(self.inputs)], t.ret_type, t.type_params, t.type_constraints)
 
     def get(self):

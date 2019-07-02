@@ -1,7 +1,6 @@
 import torch
 import tvm
 from tvm import relay
-from tvm.relay.ir_pass import infer_type
 from tvm.relay.backend.interpreter import Value, TupleValue, ConstructorValue, TensorValue
 from tvm.relay import testing, create_executor
 from tvm.relay.prelude import Prelude

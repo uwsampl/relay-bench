@@ -84,7 +84,7 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
         net = relay.var('data', shape=input_shape)
         weight = relay.var('dense_weight', shape=(224, 224))
         net = relay.nn.dense(net, weight)
-        net = relay.Function(relay.ir_pass.free_vars(net), net)
+        net = relay.Function(relay.analysis.free_vars(net), net)
         # net = relay.testing.layers.dense_add_bias(net, name="dense")
         net, params = init.create_workload(net)
     # simple networks for experimenting
@@ -303,12 +303,12 @@ def treelstm_setup(device, method, dataset, idx):
     if use_aot:
         func = aot.compile(tlstm.get(), mod, ctx=context, tgt=target)
     else:
+        opts = relay.transform.Sequential([relay.transform.SimplifyInference(),
+                                           relay.transform.FuseOps()])
+        mod[mod.entry_func] = tlstm.get()
+        opts(mod)
         executor = relay.create_executor(mod=mod, ctx=context, target=target)
-        expr = relay.ir_pass.infer_type(tlstm.get(), mod)
-        expr = relay.ir_pass.simplify_inference(expr)
-        expr = relay.ir_pass.infer_type(expr, mod)
-        expr = relay.ir_pass.fuse_ops(expr)
-        func = executor.evaluate(expr)
+        func = executor.evaluate()
 
     thunk = lambda: func(relay_tree)
     return [thunk]
