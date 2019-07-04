@@ -47,15 +47,19 @@ echo "storing bundle in \"$bundle_dir_path\""
 # move to parent directory of this script
 cd "$script_dir"/..
 ./run_oopsla_benchmarks.sh "${bundle_dir_path}/raw_data"
-python3 visualize.py --data-dir "${bundle_dir_path}/raw_data" --output-dir "${bundle_dir_path}/graph"
+python3 analyze.py --data-dir "${bundle_dir_path}/raw_data" --output-dir "${bundle_dir_path}"
+
+# we will keep analyzed data over time
+cp "${bundle_dir_path}/data.json" "${share_store_path}/data.json"
+cp "${share_store_path}/data.json" "${share_store_path}/analyzed_data/data_${datestr}.json"
+python3 visualize.py --data-dir "${share_store_path}/analyzed_data" --output-dir "${share_store_path}/graph"
 
 # build bundle directory structure and fill it with data
 cd "$script_dir"
-cp jerry.jpg "${bundle_dir_path}"
+cp jerry.jpg "${share_store_path}"
 
 # generate static website in bundle to view its data
-python3 gen_webpage.py --graph-dir "${bundle_dir_path}/graph" --out-dir "${bundle_dir_path}"
-cp -r $bundle_dir_path/* $share_store_path
+python3 gen_webpage.py --graph-dir "$share_store_path/graph" --out-dir "$share_store_path"
 
 # post to slack
-python3 slack_integration.py --data-dir "${share_store_path}/graph" --post-webhook "${webhook_url}" --ping-users "${ping_users}"
+python3 slack_integration.py --data-dir "${share_store_path}" --post-webhook "${webhook_url}" --ping-users "${ping_users}"

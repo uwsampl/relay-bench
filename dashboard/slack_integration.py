@@ -36,24 +36,20 @@ def cnn_text_summary(data):
 def char_rnn_text_summary(data):
     ret = ''
     for (framework, time) in data.items():
-        ret += '{}: {:.3f}\n'.format(framework, time*1e3)
+        ret += '{}: {:.3f}\n'.format(framework, time['char-rnn']*1e3)
     return ret
 
 
 def tree_lstm_text_summary(data):
     ret = ''
     for (framework, time) in data.items():
-        ret += '{}: {:.3f}\n'.format(framework, time*1e3)
+        ret += '{}: {:.3f}\n'.format(framework, time['treelstm']*1e3)
     return ret
 
 
 def nans_present(data, fields):
     for field in fields:
         for (_, val) in data[field].items():
-            if not isinstance(val, dict):
-                if math.isnan(val):
-                    return True
-                continue
             for (_, time) in val.items():
                 if math.isnan(time):
                     return True
@@ -69,10 +65,10 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     benchmarks = {
-        'opt_cpu': ('Relay Optimization Level Comparisons (CPU)', relay_opt_text_summary),
-        'opt_gpu': ('Relay Optimization Level Comparisons (GPU)', relay_opt_text_summary),
-        'cnn_cpu': ('CNN Comparisons (CPU)', cnn_text_summary),
-        'cnn_gpu': ('CNN Comparisons (GPU)', cnn_text_summary),
+        'opt-cpu': ('Relay Optimization Level Comparisons (CPU)', relay_opt_text_summary),
+        'opt-gpu': ('Relay Optimization Level Comparisons (GPU)', relay_opt_text_summary),
+        'cnn-cpu': ('CNN Comparisons (CPU)', cnn_text_summary),
+        'cnn-gpu': ('CNN Comparisons (GPU)', cnn_text_summary),
         'char-rnn': ('Char RNN Comparison (CPU)', char_rnn_text_summary),
         'treelstm': ('TreeLSTM Comparison (CPU)', tree_lstm_text_summary)
     }
