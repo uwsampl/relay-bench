@@ -23,6 +23,10 @@ def format_ms(ax):
     ax.yaxis.set_major_formatter(formatter)
 
 
+def parse_timestamp(data):
+    return datetime.datetime.strptime(data['timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+
+
 def generate_relay_cnn_opt_comparisons(title, filename, data, output_prefix=''):
     fig, ax = plt.subplots()
     format_ms(ax)
@@ -55,6 +59,7 @@ def generate_relay_cnn_opt_comparisons(title, filename, data, output_prefix=''):
     plt.yscale('log')
     outfile = prepare_out_file(output_prefix, filename)
     plt.savefig(outfile)
+    plt.close()
 
 
 def generate_cnn_comparisons(title, filename, data, output_prefix=''):
@@ -88,6 +93,7 @@ def generate_cnn_comparisons(title, filename, data, output_prefix=''):
     plt.yscale('log')
     outfile = prepare_out_file(output_prefix, filename)
     plt.savefig(outfile)
+    plt.close()
 
 
 def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
@@ -107,6 +113,7 @@ def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
     plt.yscale('log')
     outfile = prepare_out_file(output_prefix, filename)
     plt.savefig(outfile)
+    plt.close()
 
 
 def generate_tree_lstm_comparison(title, filename, data, output_prefix=''):
@@ -126,6 +133,32 @@ def generate_tree_lstm_comparison(title, filename, data, output_prefix=''):
     plt.yscale('log')
     outfile = prepare_out_file(output_prefix, filename)
     plt.savefig(outfile)
+    plt.close()
+
+
+def generate_dumb_longitudinal_comparisons(sorted_data, output_prefix=''):
+    if not sorted_data:
+        return
+
+    times = [parse_timestamp(entry) for entry in sorted_data]
+    most_recent = sorted_data[-1]
+    for (benchmark, measurements) in most_recent.items():
+        for (setting, network_times) in measurements.items():
+            for (network, _) in network_times.items():
+                stats = [entry[benchmark][setting][network] for entry in sorted_data]
+
+                fig, ax = plt.subplots()
+                format_ms(ax)
+                plt.plot(times, stats)
+                plt.title('{}: {} on {} over Time'.format(benchmark, setting, network))
+                filename = 'longitudinal-{}-{}-{}.png'.format(benchmark, setting, network)
+                plt.xlabel('Date of Run')
+                plt.ylabel('Time (ms)')
+                plt.yscale('log')
+                plt.gcf().autofmt_xdate()
+                outfile = prepare_out_file(output_prefix, filename)
+                plt.savefig(outfile)
+                plt.close()
 
 
 if __name__ == '__main__':
@@ -157,10 +190,10 @@ if __name__ == '__main__':
                 data = json.load(json_file)
                 all_data.append(data)
 
-    sorted_data = sorted(
-        all_data,
-        key=lambda d: datetime.datetime.strptime(d['timestamp'], '%Y-%m-%d %H:%M:%S.%f'))
+    sorted_data = sorted(all_data, key=parse_timestamp)
 
     most_recent_data = sorted_data[-1]
     for (benchmark, (title, filename, generator)) in graph_settings.items():
         generator(title, filename, most_recent_data[benchmark], args.output_dir)
+
+    generate_dumb_longitudinal_comparisons(sorted_data, args.output_dir)
