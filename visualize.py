@@ -150,18 +150,17 @@ if __name__ == '__main__':
     }
 
     # crawl all data files, identify most recent
+    all_data = []
     for _, _, files in os.walk(args.data_dir):
-        most_recent_data = None
-        most_recent_time = None
-
         for name in files:
             with open(os.path.join(args.data_dir, name)) as json_file:
                 data = json.load(json_file)
-                time = datetime.datetime.strptime(data['timestamp'], '%Y-%m-%d %H:%M:%S.%f')
+                all_data.append(data)
 
-                if most_recent_time is None or time > most_recent_time:
-                    most_recent_data = data
-                    most_recent_time = time
+    sorted_data = sorted(
+        all_data,
+        key=lambda d: datetime.datetime.strptime(d['timestamp'], '%Y-%m-%d %H:%M:%S.%f'))
 
-        for (benchmark, (title, filename, generator)) in graph_settings.items():
-            generator(title, filename, most_recent_data[benchmark], args.output_dir)
+    most_recent_data = sorted_data[-1]
+    for (benchmark, (title, filename, generator)) in graph_settings.items():
+        generator(title, filename, most_recent_data[benchmark], args.output_dir)
