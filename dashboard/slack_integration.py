@@ -1,11 +1,17 @@
 '''Simple script that reads the dashboard JSON data and posts it to a
 Slack webhook that is passed in.'''
 import argparse
+import datetime
 import json
 import math
 import os
 import requests
 import sys
+
+def generate_ping_list(id_str):
+    user_ids = id_str.split(',')
+    return ', '.join(['<@{}>'.format(user_id) for user_id in user_ids])
+
 
 def relay_opt_text_summary(data):
     if len(data.items()) == 0:
@@ -111,12 +117,12 @@ if __name__ == '__main__':
     # ping if there's a NaN in the data and there are users to receive the ping
     if nans_present(data, benchmarks.keys()):
         # no point in writing a warning if no one will be pinged
-        if 'ping_users' not in config:
+        if 'alert_error' not in config:
             print('Benchmark errors found but there are no users to ping')
             sys.exit()
 
-        users = config['ping_users'].split(',')
-        pings = ', '.join(['<@{}>'.format(user) for user in users])
+        pings = generate_ping_list(config['alert_error'])
+
         message = {
             'text': 'Attention {}: something is broken!'.format(pings),
             'attachments': [{
@@ -126,4 +132,39 @@ if __name__ == '__main__':
                 'fields': []
             }]
         }
+        r = requests.post(post_url, json=message)
+
+    # write of upcoming deadlines
+    if 'deadlines' in config:
+        present = datetime.datetime.now()
+        message = {'text': '*Upcoming deadlines*'}
+        attachments = []
+        for (name, info) in config['deadlines'].items():
+            if 'date' not in info:
+                continue
+            date = datetime.datetime.strptime(info['date'], '%Y-%m-%d %H:%M:%S')
+            diff = date - present
+            days_left = diff.days
+            if days_left < 0:
+                # elapsed, so forget it
+                continue
+            alert = days_left <= 7
+
+            pings = generate_ping_list(info['ping'])
+            fields = [
+                {'value': '{} days, {:.2f} hours left'.format(diff.days, diff.seconds/3600),
+                 'short': False}
+            ]
+            if alert and 'ping' in info:
+                fields.append({'value': 'Beware {}!'.format(pings), 'short': False})
+
+            attachment = {
+                'color': '#fa0000' if alert else '#0fbf24',
+                'title': name,
+                'text': 'Deadline: {}'.format(info['date']),
+                'fields': fields
+            }
+            attachments.append(attachment)
+
+        message['attachments'] = attachments
         r = requests.post(post_url, json=message)
