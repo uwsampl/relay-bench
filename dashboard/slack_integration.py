@@ -58,10 +58,13 @@ def nans_present(data, fields):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='')
-    parser.add_argument('--ping-users', type=str, default='',
-                        help='Comma-separated list of user IDs to ping if there is a problem.')
-    parser.add_argument('--post-webhook', type=str, required=True)
+    parser.add_argument('--data-dir', type=str, default='',
+                        help='Directory to look for a data.json file to report')
+    parser.add_argument('--config-dir', type=str, default='',
+                        help='Directory to look for a config.json file')
+    # parser.add_argument('--ping-users', type=str, default='',
+    #                     help='Comma-separated list of user IDs to ping if there is a problem.')
+    # parser.add_argument('--post-webhook', type=str, required=True)
     args = parser.parse_args()
 
     benchmarks = {
@@ -73,38 +76,54 @@ if __name__ == '__main__':
         'treelstm': ('TreeLSTM Comparison (CPU)', tree_lstm_text_summary)
     }
 
+    config = None
+    with open(os.path.join(args.config_dir, 'config.json')) as json_file:
+        config = json.load(json_file)
+    assert config is not None
+
+    if 'webhook_url' not in config:
+        print('No webhook URL provided! Slack integration cannot run without one')
+        sys.exit()
+
+    post_url = config['webhook_url']
+
+    data = None
     with open(os.path.join(args.data_dir, 'data.json')) as json_file:
         data = json.load(json_file)
-        message = {}
-        message['attachments'] = [{
-            'fallback': 'Dashboard data after run on {}'.format(data['timestamp']),
-            'color': '#000000',
-            'pretext': 'Dashboard data after run on {}. Times are in ms.'.format(data['timestamp']),
-            'fields': [
-                {
-                    'title': title,
-                    'value': summary(data[field]),
-                    'short': False
-                }
-                for (field, (title, summary)) in benchmarks.items()
-            ]
-        }]
-        r = requests.post(args.post_webhook, json=message)
+    assert data is not None
 
-        # ping if there's a NaN in the data
-        if nans_present(data, benchmarks.keys()):
-            users = args.ping_users.split(',')
-            if not users:
-                # no point in writing a warning if no one will be pinged
-                sys.exit()
-            pings = ', '.join(['<@{}>'.format(user) for user in users])
-            message = {
-                'text': 'Attention {}: something is broken!'.format(pings),
-                'attachments': [{
-                    'color': '#fa0000',
-                    'title': 'Failing benchmarks',
-                    'text': ', '.join([title for (field, (title, _)) in benchmarks.items() if nans_present(data, [field])]),
-                    'fields': []
-                }]
+    message = {}
+    message['attachments'] = [{
+        'fallback': 'Dashboard data after run on {}'.format(data['timestamp']),
+        'color': '#000000',
+        'pretext': 'Dashboard data after run on {}. Times are in ms.'.format(data['timestamp']),
+        'fields': [
+            {
+                'title': title,
+                'value': summary(data[field]),
+                'short': False
             }
-            r = requests.post(args.post_webhook, json=message)
+            for (field, (title, summary)) in benchmarks.items()
+        ]
+    }]
+    r = requests.post(post_url, json=message)
+
+    # ping if there's a NaN in the data and there are users to receive the ping
+    if nans_present(data, benchmarks.keys()):
+        # no point in writing a warning if no one will be pinged
+        if 'ping_users' not in config:
+            print('Benchmark errors found but there are no users to ping')
+            sys.exit()
+
+        users = config['ping_users'].split(',')
+        pings = ', '.join(['<@{}>'.format(user) for user in users])
+        message = {
+            'text': 'Attention {}: something is broken!'.format(pings),
+            'attachments': [{
+                'color': '#fa0000',
+                'title': 'Failing benchmarks',
+                'text': ', '.join([title for (field, (title, _)) in benchmarks.items() if nans_present(data, [field])]),
+                'fields': []
+            }]
+        }
+        r = requests.post(post_url, json=message)

@@ -2,8 +2,6 @@
 #
 # Builds TVM from scratch, runs the oopsla benchmarks, makes graphs,
 # stores the data and graphs in /var/tmp, and creates a dashboard webpage
-webhook_url=$1
-ping_users=$2
 
 # store path to this script
 cd "$(dirname "$0")"
@@ -39,6 +37,7 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
 # make a timestamped directory to copy all data and graphs over to
 datestr="$(date +"%m-%d-%Y-%H%M")"
 share_store_path="/share/benchmarks"
+share_config_path="/share/dashboard_conf"
 bundle_dir_path="/var/tmp/benchmarks_$datestr"
 mkdir -p "$share_store_path"
 mkdir -p "$bundle_dir_path"
@@ -62,4 +61,4 @@ cp jerry.jpg "${share_store_path}"
 python3 gen_webpage.py --graph-dir "$share_store_path/graph" --out-dir "$share_store_path"
 
 # post to slack
-python3 slack_integration.py --data-dir "${share_store_path}" --post-webhook "${webhook_url}" --ping-users "${ping_users}"
+python3 slack_integration.py --data-dir "${share_store_path}" --config-dir "${share_config_path}"
