@@ -98,20 +98,21 @@ if __name__ == '__main__':
         data = json.load(json_file)
     assert data is not None
 
-    message = {}
-    message['attachments'] = [{
-        'fallback': 'Dashboard data after run on {}'.format(data['timestamp']),
-        'color': '#000000',
-        'pretext': 'Dashboard data after run on {}. Times are in ms.'.format(data['timestamp']),
-        'fields': [
-            {
-                'title': title,
-                'value': summary(data[field]),
-                'short': False
-            }
-            for (field, (title, summary)) in benchmarks.items()
-        ]
-    }]
+    message = {
+        'text': 'Dashboard data after run on {}'.format(data['timestamp']),
+        'attachments': [{
+            'color': '#000000',
+            'pretext': config['description'],
+            'fields': [
+                {
+                    'title': title,
+                    'value': summary(data[field]),
+                    'short': False
+                }
+                for (field, (title, summary)) in benchmarks.items()
+            ]
+        }]
+    }
     r = requests.post(post_url, json=message)
 
     # ping if there's a NaN in the data and there are users to receive the ping
