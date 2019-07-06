@@ -58,7 +58,7 @@ cd "$script_dir"
 cp jerry.jpg "${share_store_path}"
 
 # generate static website in bundle to view its data
-python3 gen_webpage.py --graph-dir "$share_store_path/graph" --out-dir "$share_store_path"
+python3 gen_webpage.py --graph-dir "$share_store_path/graph" --out-dir "$share_store_path" --config-dir "${share_config_path}"
 
 # post to slack
 python3 slack_integration.py --data-dir "${share_store_path}" --config-dir "${share_config_path}"
