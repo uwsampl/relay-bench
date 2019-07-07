@@ -259,7 +259,7 @@ def gluon_rnn_setup(network, device, method):
         relay.var('data')] + [
             relay.var('state%s' % i) for i in range(num_states)] + [
             relay.var(pair[0]) for pair in params]
-    mod[mod.entry_func] = relay.Function(inputs, relay.Call(relay_net, inputs))
+    mod['main'] = relay.Function(inputs, relay.Call(relay_net, inputs))
 
     context = tvm.gpu(0) if use_gpu else tvm.cpu(0)
     target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
@@ -270,10 +270,10 @@ def gluon_rnn_setup(network, device, method):
     params_v = [pair[1].asnumpy() for pair in params]
 
     if use_aot:
-        func = aot.compile(mod.entry_func, mod, ctx=context, tgt=target)
+        func = aot.compile(mod['main'], mod, ctx=context, tgt=target)
     else:
         executor = relay.create_executor(mod=mod, ctx=context, target=target)
-        func = executor.evaluate(mod.entry_func)
+        func = executor.evaluate(mod['main'])
     thunk = lambda: func(data_v, *states_v, *params_v)
     return [thunk]
 
@@ -305,7 +305,7 @@ def treelstm_setup(device, method, dataset, idx):
     else:
         opts = relay.transform.Sequential([relay.transform.SimplifyInference(),
                                            relay.transform.FuseOps()])
-        mod[mod.entry_func] = tlstm.get()
+        mod['main'] = tlstm.get()
         opts(mod)
         executor = relay.create_executor(mod=mod, ctx=context, target=target)
         func = executor.evaluate()
