@@ -9,8 +9,8 @@ rm -rf $tmp_scripts
 git clone git@github.com:uwsampl/relay-bench.git $tmp_scripts
 
 # need to set up treelstm data
-cd $tmp_scripts
-./oopsla_benchmarks/pytorch/rnn/tlstm/fetch_and_preprocess.sh
+cd $tmp_scripts/oopsla_benchmarks/pytorch/rnn/tlstm
+./fetch_and_preprocess.sh
 
 # run its run script
 cd $tmp_scripts/dashboard
