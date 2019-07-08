@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# Java class files
+*.class
+
 # Distribution / packaging
 .Python
 build/
@@ -14,7 +17,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/
@@ -118,6 +121,8 @@ source.cc
 
 # treelstm data
 oopsla_benchmarks/pytorch/rnn/tlstm/data/*
+oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-tagger/*
+oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-parser/*
 
 # data and graphs
 *.csv
