@@ -41,6 +41,7 @@ class Network:
 
         forward_compute = relay.Function(inputs + list([p[0] for p in self.parameters]), body, ret_type)
         self.mod[self.forward_var] = forward_compute
+        self.mod['main'] = self.mod[self.forward_var]
         if do_aot:
             self.forward = aot.compile(self.forward_var, self.mod, ctx=self.context, tgt=self.target)
         else:

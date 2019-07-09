@@ -301,6 +301,7 @@ def treelstm_setup(device, method, dataset, idx):
     target = tvm.target.cuda() if use_gpu else tvm.target.create('llvm')
 
     if use_aot:
+        mod['main'] = tlstm.get()
         func = aot.compile(tlstm.get(), mod, ctx=context, tgt=target)
     else:
         opts = relay.transform.Sequential([relay.transform.SimplifyInference(),
