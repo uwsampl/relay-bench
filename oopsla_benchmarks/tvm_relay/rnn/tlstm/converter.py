@@ -28,17 +28,17 @@ class RoseTree:
 
 def make_nat(p, n):
     if n != 0:
-        return ConstructorValue(p.s.tag, [make_nat(n - 1)], None, [])
+        return ConstructorValue(p.s.tag, [make_nat(n - 1)], None)
     else:
-        return ConstructorValue(p.z.tag, [], None, [])
+        return ConstructorValue(p.z.tag, [], None)
 
 
 # creates relay list from a list
 def from_list(p, l, t):
     if len(l) == 0:
-        return ConstructorValue(p.nil.tag, [], None, [])
+        return ConstructorValue(p.nil.tag, [], None)
     else:
-        return ConstructorValue(p.cons.tag, [l[0], from_list(p, l[1:], t)], None, [])
+        return ConstructorValue(p.cons.tag, [l[0], from_list(p, l[1:], t)], None)
 
 # convert tensors
 def pytorch_to_relay(tensor):
@@ -49,7 +49,7 @@ def pytorch_to_relay(tensor):
 def from_tree(p, rt, t):
     return ConstructorValue(p.rose.tag,
                             [rt.head,
-                             from_list(p, [from_tree(p, x, t) for x in rt.children], t)], None, [])
+                             from_list(p, [from_tree(p, x, t) for x in rt.children], t)], None)
 
 
 def forward(tree, inputs):
