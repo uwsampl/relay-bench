@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Builds TVM from scratch, runs the oopsla benchmarks, makes graphs,
-# stores the data and graphs in /var/tmp, and creates a dashboard webpage
+# Builds dashboard deps, runs the benchmark infrastructure,
+# builds the webpage, and invokes the slack integration
 
 # store path to this script
 cd "$(dirname "$0")"
@@ -33,32 +33,14 @@ export PATH=/usr/local/cuda-10.0/bin:/usr/local/cuda-10.0/NsightCompute-1.0${PAT
 export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
 
+dashboard_home="/share/dashboard"
+cd $script_dir/..
+experiments_dir=($pwd)/experiments
 
-# make a timestamped directory to copy all data and graphs over to
-datestr="$(date +"%m-%d-%Y-%H%M")"
-share_store_path="/share/benchmarks"
-share_config_path="/share/dashboard_conf"
-bundle_dir_path="/var/tmp/benchmarks_$datestr"
-mkdir -p "$share_store_path"
-mkdir -p "$bundle_dir_path"
-echo "storing bundle in \"$bundle_dir_path\""
+# export because benchmarks may need it
+export BENCHMARK_DEPS=($pwd)/shared
 
-# move to parent directory of this script
-cd "$script_dir"/..
-./run_oopsla_benchmarks.sh "${bundle_dir_path}/raw_data"
-python3 analyze.py --data-dir "${bundle_dir_path}/raw_data" --output-dir "${bundle_dir_path}"
-
-# we will keep analyzed data over time
-cp "${bundle_dir_path}/data.json" "${share_store_path}/data.json"
-cp "${share_store_path}/data.json" "${share_store_path}/analyzed_data/data_${datestr}.json"
-python3 visualize.py --data-dir "${share_store_path}/analyzed_data" --output-dir "${share_store_path}/graph"
-
-# build bundle directory structure and fill it with data
-cd "$script_dir"
-cp jerry.jpg "${share_store_path}"
-
-# generate static website in bundle to view its data
-python3 gen_webpage.py --graph-dir "$share_store_path/graph" --out-dir "$share_store_path" --config-dir "${share_config_path}"
-
-# post to slack
-python3 slack_integration.py --data-dir "${share_store_path}" --config-dir "${share_config_path}"
+cd $script_dir
+python3 dashboard.py --home_dir $dashboard_home --experiments-dir $experiments_dir
+python3 gen_webpage.py --home_dir $dashboard_home
+python3 slack_integration.py --home_dir $dashboard_home
