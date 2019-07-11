@@ -2,7 +2,6 @@
 import argparse
 import datetime
 import json
-import numpy as np
 import os
 import sys
 import subprocess
@@ -104,7 +103,7 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
 
     # run the run.sh file on the configs directory and the destination directory
     subprocess.call([os.path.join(experiments_dir, exp_name, 'run.sh'),
-                     os.path.join(configs_dir, exp_name, 'config.json'),
+                     os.path.join(configs_dir, exp_name),
                      exp_data_dir])
 
     # collect the status file from the destination directory, copy to status dir
@@ -114,27 +113,30 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     return status['success']
 
 
-def analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir, exp_name):
+def analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir, date_str, exp_name):
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
+    tmp_analysis_dir = os.path.join(exp_data_dir, 'analysis')
+    os.makedirs(tmp_analysis_dir)
+
     analyzed_data_dir = os.path.join(data_dir, exp_name)
     if not os.path.exists(analyzed_data_dir):
         os.makedirs(analyzed_data_dir)
 
     subprocess.call([os.path.join(experiments_dir, exp_name, 'analyze.sh'),
-                     exp_data_dir, analyzed_data_dir])
+                     exp_data_dir, tmp_analysis_dir])
 
-    # add a timestamp field to the data field
-    if not check_file_exists(analyzed_data_dir, 'data.json'):
-        status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
-        write_json(os.path.join(status_dir, exp_name), 'analysis.json', status)
-        return False
-    data = read_json(analyzed_data_dir, 'data.json')
-    analysis_time = datetime.datetime.now()
-    data['timestamp'] = analysis_time.strftime('%m-%d-%Y-%H%M')
-    subprocess.call(['rm', os.path.join(analyzed_data_dir, 'data.json')])
-    write_json(analyzed_data_dir, 'data_{}.json'.format(data['timestamp']), data)
+    status = validate_status(tmp_analysis_dir)
 
-    status = validate_status(analyzed_data_dir)
+    # read the analyzed data, append a timestamp field, and copy over to the permanent data dir
+    if status['success']:
+        data_exists = check_file_exists(tmp_analysis_dir, 'data.json')
+        if not data_exists:
+            status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
+        else:
+            data = read_json(tmp_analysis_dir, 'data.json')
+            data['timestamp'] = date_str
+            write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), data)
+
     write_json(os.path.join(status_dir, exp_name), 'analysis.json', status)
     return status['success']
 
@@ -149,6 +151,19 @@ def visualize_experiment(experiments_dir, data_dir, graph_dir, status_dir, exp_n
     write_json(os.path.join(status_dir, exp_name), 'visualization.json', status)
 
 
+def summary_valid(exp_summary_dir):
+    """
+    Checks that the experiment summary directory contains a summary.json
+    file and that the summary.json file contains the required fields, title
+    and value.
+    """
+    exists = check_file_exists(exp_summary_dir, 'summary.json')
+    if not exists:
+        return False
+    summary = read_json(exp_summary_dir, 'summary.json')
+    return 'title' in summary and 'value' in summary
+
+
 def summarize_experiment(experiments_dir, data_dir, summary_dir, status_dir, exp_name):
     exp_summary_dir = os.path.join(summary_dir, exp_name)
     exp_data_dir = os.path.join(data_dir, exp_name)
@@ -156,6 +171,11 @@ def summarize_experiment(experiments_dir, data_dir, summary_dir, status_dir, exp
                      exp_data_dir, exp_summary_dir])
 
     status = validate_status(exp_summary_dir)
+    if status['success'] and not summary_valid(exp_summary_dir):
+        status = {
+            'success': False,
+            'message': 'summary.json produced by {} is invalid'.format(exp_name)
+        }
     write_json(os.path.join(status_dir, exp_name), 'summary.json', status)
 
 
@@ -167,8 +187,15 @@ def main(home_dir, experiments_dir):
     """
     time_of_run = datetime.datetime.now()
     time_str = time_of_run.strftime('%m-%d-%Y-%H%M')
+
+    if not check_file_exists(home_dir, 'config.json'):
+        print('Dashboard config (config.json) is missing in {}'.format(home_dir))
+        sys.exit(1)
     dash_config = read_json(home_dir, 'config.json')
-    tmp_dir = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str)
+
+    tmp_data_dir = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str)
+    data_archive = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str + '_data.tar.gz')
+    backup_archive = os.path.join(dash_config['backup_dir'], 'dashboard_' + time_str + '.tar.gz')
 
     config_dir = os.path.join(home_dir, 'config')
     status_dir = os.path.join(home_dir, 'status')
@@ -176,7 +203,19 @@ def main(home_dir, experiments_dir):
     graph_dir = os.path.join(home_dir, 'graph')
     summary_dir = os.path.join(home_dir, 'summary')
 
-    # TODO: possibly set up dir structure in advance and back up previous runs?
+    # make a backup of the previous dashboard files if they exist
+    if os.path.exists(home_dir):
+        subprocess.call(['tar', '-zcf', backup_archive, home_dir])
+    for dashboard_dir in [config_dir, status_dir, data_dir, graph_dir, summary_dir]:
+        if not os.path.exists(dashboard_dir):
+            os.makedirs(dashboard_dir)
+            continue
+        # remove subdirectories to set up for new run (except in data)
+        if dashboard_dir == data_dir:
+            continue
+        for subdir, _, _ in os.walk(dashboard_dir):
+            if subdir != dashboard_dir:
+                subprocess.call(['rm', '-rf', subdir])
 
     exp_status = {}
 
@@ -207,9 +246,14 @@ def main(home_dir, experiments_dir):
     # for each active experiment not yet eliminated, run analysis
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
-        success = analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir, exp)
+        success = analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir,
+                                     time_str, exp)
         if not success:
             exp_status[exp] = 'failed'
+
+    # after analysis we can compress the data
+    subprocess.call(['tar', '-zcf', data_archive, tmp_data_dir])
+    subprocess.call(['rm', '-rf', tmp_data_dir])
 
     # for each experiment for which analysis succeeded, run visualization and summarizaion
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
