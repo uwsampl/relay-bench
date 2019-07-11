@@ -210,8 +210,8 @@ def main(home_dir, experiments_dir):
         if not os.path.exists(dashboard_dir):
             os.makedirs(dashboard_dir)
             continue
-        # remove subdirectories to set up for new run (except in data)
-        if dashboard_dir == data_dir:
+        # remove subdirectories to set up for new run (except data, config)
+        if dashboard_dir == data_dir or dashboard_dir == config_dir:
             continue
         for subdir, _, _ in os.walk(dashboard_dir):
             if subdir != dashboard_dir:
