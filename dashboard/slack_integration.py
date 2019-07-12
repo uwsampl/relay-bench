@@ -1,5 +1,4 @@
-'''Simple script that reads the dashboard JSON data and posts it to a
-Slack webhook that is passed in.'''
+'''Reads experiment summaries and posts them to Slack.'''
 import argparse
 import datetime
 import json
@@ -8,134 +7,109 @@ import os
 import requests
 import sys
 
-def generate_ping_list(id_str):
-    user_ids = id_str.split(',')
+def check_file_exists(dirname, filename):
+    full_name = os.path.join(data_prefix, filename)
+    return os.isfile(full_name)
+
+
+def read_json(dirname, filename):
+    with open(os.path.join(dirname, filename)) as json_file:
+        data = json.load(json_file)
+        return data
+
+
+def generate_ping_list(user_ids):
     return ', '.join(['<@{}>'.format(user_id) for user_id in user_ids])
 
 
-def relay_opt_text_summary(data):
-    if len(data.items()) == 0:
-        return ''
-    opts = [opt for (opt, _) in data[list(data.keys())[0]].items()]
-    ret = 'Format: ({})\n'.format(', '.join(opts))
-    for (network, opt_times) in data.items():
-        ret += '{}: '.format(network)
-        ret += ', '.join(['{:.3f}'.format(time*1e3)
-                          for (_, time) in opt_times.items()])
-        ret += '\n'
-    return ret
+def main(home_dir):
+    if not check_file_exists(home_dir, 'config.json'):
+        print('Dashboard config (config.json) is missing in {}'.format(home_dir))
+        sys.exit(1)
 
+    config = read_json(home_dir, 'config.json')
+    if webhook_url not in config:
+        print('No Slack webhook given in dashboard config in {}'.format(home_dir))
+        sys.exit(1)
 
-def cnn_text_summary(data):
-    if len(data.items()) == 0:
-        return ''
-    nets = [net for (net, _) in data[list(data.keys())[0]].items()]
-    ret = 'Format: ({})\n'.format(', '.join(nets))
-    for (framework, net_times) in data.items():
-        ret += '{}: '.format(framework)
-        ret += ', '.join(['{:.3f}'.format(time*1e3)
-                          for (_, time) in net_times.items()])
-        ret += '\n'
-    return ret
+    webhook = config['webhook_url']
 
+    # in principle the dashboard should have already run
+    # so status directories for the benchmarks should all exist
+    config_dir = os.path.join(home_dir, 'config')
+    status_dir = os.path.join(home_dir, 'status')
+    summary_dir = os.path.join(home_dir, 'summary')
 
-def char_rnn_text_summary(data):
-    ret = ''
-    for (framework, time) in data.items():
-        ret += '{}: {:.3f}\n'.format(framework, time['char-rnn']*1e3)
-    return ret
+    inactive_experiments = []
+    # failed experiments: list of (exp_name, failure stage, failure reason, [people to notify])
+    failed_experiments = []
+    # successful experiments: list of summary objects
+    successful_experiments = []
 
+    for subdir, _, _ in os.walk(status_dir):
+        if subdir == config_dir:
+            continue
+        exp_name = os.path.basename(subdir)
+        precheck_status = read_json(subdir, 'precheck.json')
+        if not precheck_status['success']:
+            failed_experiments.append((exp_name, 'precheck',
+                                       precheck_status['message'],
+                                       []))
+            continue
 
-def tree_lstm_text_summary(data):
-    ret = ''
-    for (framework, time) in data.items():
-        ret += '{}: {:.3f}\n'.format(framework, time['treelstm']*1e3)
-    return ret
+        exp_conf = read_json(os.path.join(config_dir, exp_name),
+                             'config.json')
+        notify = exp_conf['notify'].split(',')
+        if not exp_conf['active']:
+            inactive_experiments.append(exp_name)
+            continue
 
+        failure = False
+        for stage in ['run', 'analysis', 'summary']:
+            stage_status = read_json(subdir, stage + '.json')
+            if not stage_status['success']:
+                failed_experiments.append((exp_name, stage,
+                                           stage_status['message'],
+                                           notify))
+                failure = True
+                break
+        if failure:
+            continue
 
-def nans_present(data, fields):
-    for field in fields:
-        for (_, val) in data[field].items():
-            for (_, time) in val.items():
-                if math.isnan(time):
-                    return True
-    return False
+        summary = read_json(os.path.join(summary_dir, exp_name),
+                            'summary.json')
+        summary['short'] = False
+        successful_experiments.append(summary)
 
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', type=str, default='',
-                        help='Directory to look for a data.json file to report')
-    parser.add_argument('--config-dir', type=str, default='',
-                        help='Directory to look for a config.json file')
-    # parser.add_argument('--ping-users', type=str, default='',
-    #                     help='Comma-separated list of user IDs to ping if there is a problem.')
-    # parser.add_argument('--post-webhook', type=str, required=True)
-    args = parser.parse_args()
-
-    benchmarks = {
-        'opt-cpu': ('Relay Optimization Level Comparisons (CPU)', relay_opt_text_summary),
-        'opt-gpu': ('Relay Optimization Level Comparisons (GPU)', relay_opt_text_summary),
-        'cnn-cpu': ('CNN Comparisons (CPU)', cnn_text_summary),
-        'cnn-gpu': ('CNN Comparisons (GPU)', cnn_text_summary),
-        'char-rnn': ('Char RNN Comparison (CPU)', char_rnn_text_summary),
-        'treelstm': ('TreeLSTM Comparison (CPU)', tree_lstm_text_summary)
-    }
-
-    config = None
-    with open(os.path.join(args.config_dir, 'config.json')) as json_file:
-        config = json.load(json_file)
-    assert config is not None
-
-    if 'webhook_url' not in config:
-        print('No webhook URL provided! Slack integration cannot run without one')
-        sys.exit()
-
-    post_url = config['webhook_url']
-
-    data = None
-    with open(os.path.join(args.data_dir, 'data.json')) as json_file:
-        data = json.load(json_file)
-    assert data is not None
-
+    # produce messages
     message = {
-        'text': 'Dashboard data after run on {}'.format(data['timestamp']),
+        'text': 'Dashboard Results',
         'attachments': [{
             'color': '#000000',
-            'pretext': config['description'],
-            'fields': [
-                {
-                    'title': title,
-                    'value': summary(data[field]),
-                    'short': False
-                }
-                for (field, (title, summary)) in benchmarks.items()
-            ]
+            'pretext': config['slack_description'] if 'slack_description' in config else '',
+            'title': 'Successful benchmarks',
+            'fields': [summary for summary in successful_experiments]
+        },
+        {
+            'color': '#fa0000',
+            'title': 'Failed benchmarks',
+            'fields': [{
+                'title': exp_name,
+                'value': 'Failed at stage {}:\n{}'.format(stage, reason, pings)
+                + '' if not pings else '\nATTN: {}'.format(generate_ping_list(pings)),
+                'short': False
+            } for (exp_name, stage, reason, pings) in failed_experiments]
+        },
+        {
+            'color': '#616161',
+            'title': 'Inactive benchmarks',
+            'text': ', '.join(inactive_experiments)
+            'fields': []
         }]
     }
-    r = requests.post(post_url, json=message)
+    r = requests.post(webhook, json=message)
 
-    # ping if there's a NaN in the data and there are users to receive the ping
-    if nans_present(data, benchmarks.keys()):
-        # no point in writing a warning if no one will be pinged
-        if 'alert_error' not in config:
-            print('Benchmark errors found but there are no users to ping')
-            sys.exit()
-
-        pings = generate_ping_list(config['alert_error'])
-
-        message = {
-            'text': 'Attention {}: something is broken!'.format(pings),
-            'attachments': [{
-                'color': '#fa0000',
-                'title': 'Failing benchmarks',
-                'text': ', '.join([title for (field, (title, _)) in benchmarks.items() if nans_present(data, [field])]),
-                'fields': []
-            }]
-        }
-        r = requests.post(post_url, json=message)
-
-    # write of upcoming deadlines
+    # handle deadline subsystem
     if 'deadlines' in config:
         present = datetime.datetime.now()
         message = {'text': '*Upcoming deadlines*'}
@@ -151,7 +125,7 @@ if __name__ == '__main__':
                 continue
             alert = days_left <= 7
 
-            pings = generate_ping_list(info['ping'])
+            pings = generate_ping_list(info['ping'].split(','))
             fields = [
                 {'value': '{} days, {:.2f} hours left'.format(diff.days, diff.seconds/3600),
                  'short': False}
@@ -168,4 +142,12 @@ if __name__ == '__main__':
             attachments.append(attachment)
 
         message['attachments'] = attachments
-        r = requests.post(post_url, json=message)
+        r = requests.post(webhook, json=message)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--home_dir', type=str, required=True,
+                        help='Dashboard home directory')
+    args = parser.parse_args()
+    main(args.home_dir)
