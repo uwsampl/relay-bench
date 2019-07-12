@@ -113,8 +113,10 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     return status['success']
 
 
-def analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir, date_str, exp_name):
+def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
+                       data_dir, status_dir, date_str, exp_name):
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
+    exp_config_dir = os.path.join(configs_dir, exp_name)
     tmp_analysis_dir = os.path.join(exp_data_dir, 'analysis')
     os.makedirs(tmp_analysis_dir)
 
@@ -123,7 +125,7 @@ def analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir, date
         os.makedirs(analyzed_data_dir)
 
     subprocess.call([os.path.join(experiments_dir, exp_name, 'analyze.sh'),
-                     exp_data_dir, tmp_analysis_dir])
+                     exp_data_dir, exp_config_dir, tmp_analysis_dir])
 
     status = validate_status(tmp_analysis_dir)
 
@@ -141,11 +143,13 @@ def analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir, date
     return status['success']
 
 
-def visualize_experiment(experiments_dir, data_dir, graph_dir, status_dir, exp_name):
+def visualize_experiment(experiments_dir, configs_dir, data_dir,
+                         graph_dir, status_dir, exp_name):
     exp_graph_dir = os.path.join(graph_dir, exp_name)
+    exp_config_dir = os.path.join(configs_dir, exp_name)
     exp_data_dir = os.path.join(data_dir, exp_name)
     subprocess.call([os.path.join(experiments_dir, exp_name, 'visualize.sh'),
-                     exp_data_dir, exp_graph_dir])
+                     exp_data_dir, exp_config_dir, exp_graph_dir])
 
     status = validate_status(exp_graph_dir)
     write_json(os.path.join(status_dir, exp_name), 'visualization.json', status)
@@ -164,11 +168,13 @@ def summary_valid(exp_summary_dir):
     return 'title' in summary and 'value' in summary
 
 
-def summarize_experiment(experiments_dir, data_dir, summary_dir, status_dir, exp_name):
+def summarize_experiment(experiments_dir, configs_dir, data_dir,
+                         summary_dir, status_dir, exp_name):
     exp_summary_dir = os.path.join(summary_dir, exp_name)
+    exp_config_dir = os.path.join(configs_dir, exp_name)
     exp_data_dir = os.path.join(data_dir, exp_name)
     subprocess.call([os.path.join(experiments_dir, exp_name, 'summarize.sh'),
-                     exp_data_dir, exp_summary_dir])
+                     exp_data_dir, exp_config_dir, exp_summary_dir])
 
     status = validate_status(exp_summary_dir)
     if status['success'] and not summary_valid(exp_summary_dir):
