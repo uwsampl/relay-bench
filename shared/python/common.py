@@ -32,7 +32,7 @@ def read_config(dirname):
 
 
 def write_status(output_dir, success, message):
-    return write_json(output_dir, 'status.json', {
+    write_json(output_dir, 'status.json', {
         'success': success,
         'message': message
     })
