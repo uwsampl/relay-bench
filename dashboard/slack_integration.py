@@ -88,7 +88,7 @@ def main(home_dir):
             'color': '#000000',
             'pretext': config['slack_description'] if 'slack_description' in config else '',
             'title': 'Successful benchmarks',
-            'fields': [summary for summary in successful_experiments]
+            'fields': successful_experiments
         },
         {
             'color': '#fa0000',
