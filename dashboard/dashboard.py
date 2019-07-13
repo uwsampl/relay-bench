@@ -125,7 +125,7 @@ def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
         os.makedirs(analyzed_data_dir)
 
     subprocess.call([os.path.join(experiments_dir, exp_name, 'analyze.sh'),
-                     exp_data_dir, exp_config_dir, tmp_analysis_dir])
+                     exp_config_dir, exp_data_dir, tmp_analysis_dir])
 
     status = validate_status(tmp_analysis_dir)
 
@@ -149,7 +149,7 @@ def visualize_experiment(experiments_dir, configs_dir, data_dir,
     exp_config_dir = os.path.join(configs_dir, exp_name)
     exp_data_dir = os.path.join(data_dir, exp_name)
     subprocess.call([os.path.join(experiments_dir, exp_name, 'visualize.sh'),
-                     exp_data_dir, exp_config_dir, exp_graph_dir])
+                     exp_config_dir, exp_data_dir, exp_graph_dir])
 
     status = validate_status(exp_graph_dir)
     write_json(os.path.join(status_dir, exp_name), 'visualization.json', status)
@@ -174,7 +174,7 @@ def summarize_experiment(experiments_dir, configs_dir, data_dir,
     exp_config_dir = os.path.join(configs_dir, exp_name)
     exp_data_dir = os.path.join(data_dir, exp_name)
     subprocess.call([os.path.join(experiments_dir, exp_name, 'summarize.sh'),
-                     exp_data_dir, exp_config_dir, exp_summary_dir])
+                     exp_config_dir, exp_data_dir, exp_summary_dir])
 
     status = validate_status(exp_summary_dir)
     if status['success'] and not summary_valid(exp_summary_dir):
