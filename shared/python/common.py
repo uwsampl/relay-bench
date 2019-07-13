@@ -1,7 +1,11 @@
 """
 Common Python utilities for interacting with the dashboard infra.
 """
+import datetime
+import json
+import logging
 import os
+import sys
 
 def check_file_exists(dirname, filename):
     full_name = os.path.join(data_prefix, filename)
@@ -36,3 +40,21 @@ def write_status(output_dir, success, message):
         'success': success,
         'message': message
     })
+
+
+def parse_timestamp(time_str):
+    return datetime.datetime.strptime(data['timestamp'], '%m-%d-%Y-%H%M')
+
+
+def sort_data(data_dir):
+    '''Sorts all data files in the given directory by timestamp.'''
+    all_data = []
+    for _, _, files in os.walk(data_dir):
+        for name in files:
+            data = read_json(data_dir, name)
+            all_data.append(data)
+    return sorted(all_data, key=parse_timestamp)
+
+
+def render_exception(e):
+    return logging.Formatter.formatException(e, sys.exc_info())

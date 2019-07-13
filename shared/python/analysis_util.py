@@ -4,11 +4,11 @@ by trial_util.py
 """
 import csv
 import datetime
-import logging
 import os
-import sys
 
 import numpy as np
+
+from .common import render_exception
 
 def lookup_data_file(data_prefix, filename):
     full_name = os.path.join(data_prefix, filename)
@@ -68,4 +68,4 @@ def trials_average_time(data_dir, framework, task_name, num_reps, parameter_name
                     False,
                     'Encountered exception on {}, {} using params {}:\n{}'.format(
                         framework, task_name, params_to_match,
-                        logging.Formatter.formatException(e, sys.exc_info()))
+                        render_exception(e))
