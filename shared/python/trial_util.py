@@ -1,11 +1,10 @@
 import os
-import logging
-import sys
 import time
 import numpy as np
 from itertools import product
 import csv
 
+from .common import render_exception
 
 def write_row(writer, fieldnames, fields):
     record = {}
@@ -56,18 +55,18 @@ def run_trials(method, task_name,
                     except Exception as e:
                         # can provide more detailed summary if
                         # it happened inside a trial
-                        return False,
-                    'Encountered exception in trial on inputs {}:\n'.format(args)
-                    + logging.Formatter.formatException(e, sys.exc_info())
+                        return (False,
+                                'Encountered exception in trial on inputs {}:\n'.format(args)
+                                + render_Exception(e))
 
                     if t != n_input - 1:
                         time.sleep(4)
                     costs.append(score)
 
                 print(method, task_name, args, ["%.6f" % x for x in costs])
-        return True, 'success'
+        return (True, 'success')
     except Exception as e:
-        return False, 'Encountered exception:\n' + logging.Formatter.formatException(e, sys.exc_info())
+        return (False, 'Encountered exception:\n' + render_exception(e))
 
 def array2str_round(x, decimal=6):
     """ print an array of float number to pretty string with round
