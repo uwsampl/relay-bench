@@ -42,6 +42,13 @@ def write_status(output_dir, success, message):
     })
 
 
+def write_summary(output_dir, title, value):
+    write_json(output_dir, 'summary.json', {
+        'title': title,
+        'value': value
+    })
+
+
 def parse_timestamp(time_str):
     return datetime.datetime.strptime(data['timestamp'], '%m-%d-%Y-%H%M')
 
