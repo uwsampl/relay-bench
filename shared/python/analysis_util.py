@@ -8,7 +8,7 @@ import os
 
 import numpy as np
 
-from .common import render_exception
+from common import render_exception
 
 def lookup_data_file(data_prefix, filename):
     full_name = os.path.join(data_prefix, filename)
@@ -49,14 +49,17 @@ def trials_average_time(data_dir, framework, task_name, num_reps, parameter_name
 
     Returns (computed mean, success, message if failure)
     """
-    filename = lookup_data_file(dirname, '{}-{}.csv'.format(framework, task_name))
+    filename = lookup_data_file(data_dir, '{}-{}.csv'.format(framework, task_name))
     with open(filename, newline='') as csvfile:
         fieldnames = parameter_names + ['rep', 'run', 'time']
         reader = csv.DictReader(csvfile, fieldnames)
 
         def filter_func(row):
             for (name, value) in params_to_match.items():
-                if row[name] != value:
+                comp = value
+                if not isinstance(value, str):
+                    comp = str(value)
+                if row[name] != comp:
                     return False
             return True
 
@@ -68,4 +71,4 @@ def trials_average_time(data_dir, framework, task_name, num_reps, parameter_name
                     False,
                     'Encountered exception on {}, {} using params {}:\n{}'.format(
                         framework, task_name, params_to_match,
-                        render_exception(e))
+                        render_exception(e)))

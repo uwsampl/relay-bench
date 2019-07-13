@@ -4,7 +4,7 @@ import numpy as np
 from itertools import product
 import csv
 
-from .common import render_exception
+from common import render_exception
 
 def write_row(writer, fieldnames, fields):
     record = {}
@@ -34,6 +34,7 @@ def run_trials(method, task_name,
                parameter_names, parameter_ranges,
                path_prefix = '',
                append_to_csv = False):
+    try:
         filename = os.path.join(path_prefix, '{}-{}.csv'.format(method, task_name))
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))

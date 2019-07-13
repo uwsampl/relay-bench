@@ -8,8 +8,8 @@ import requests
 import sys
 
 def check_file_exists(dirname, filename):
-    full_name = os.path.join(data_prefix, filename)
-    return os.isfile(full_name)
+    full_name = os.path.join(dirname, filename)
+    return os.path.isfile(full_name)
 
 
 def read_json(dirname, filename):
@@ -28,7 +28,7 @@ def main(home_dir):
         sys.exit(1)
 
     config = read_json(home_dir, 'config.json')
-    if webhook_url not in config:
+    if 'webhook_url' not in config:
         print('No Slack webhook given in dashboard config in {}'.format(home_dir))
         sys.exit(1)
 
@@ -47,7 +47,7 @@ def main(home_dir):
     successful_experiments = []
 
     for subdir, _, _ in os.walk(status_dir):
-        if subdir == config_dir:
+        if subdir == status_dir:
             continue
         exp_name = os.path.basename(subdir)
         precheck_status = read_json(subdir, 'precheck.json')
@@ -59,7 +59,7 @@ def main(home_dir):
 
         exp_conf = read_json(os.path.join(config_dir, exp_name),
                              'config.json')
-        notify = exp_conf['notify'].split(',')
+        notify = exp_conf['notify']
         if not exp_conf['active']:
             inactive_experiments.append(exp_name)
             continue
@@ -82,15 +82,16 @@ def main(home_dir):
         successful_experiments.append(summary)
 
     # produce messages
-    message = {
-        'text': 'Dashboard Results',
-        'attachments': [{
+    attachments = []
+    if successful_experiments:
+        attachments.append({
             'color': '#000000',
             'pretext': config['slack_description'] if 'slack_description' in config else '',
             'title': 'Successful benchmarks',
             'fields': successful_experiments
-        },
-        {
+        })
+    if failed_experiments:
+        attachments.append({
             'color': '#fa0000',
             'title': 'Failed benchmarks',
             'fields': [{
@@ -99,13 +100,17 @@ def main(home_dir):
                 + '' if not pings else '\nATTN: {}'.format(generate_ping_list(pings)),
                 'short': False
             } for (exp_name, stage, reason, pings) in failed_experiments]
-        },
-        {
+        })
+    if inactive_experiments:
+        attachments.append({
             'color': '#616161',
             'title': 'Inactive benchmarks',
-            'text': ', '.join(inactive_experiments)
+            'text': ', '.join(inactive_experiments),
             'fields': []
-        }]
+        })
+    message = {
+        'text': 'Dashboard Results',
+        'attachments': attachments
     }
     r = requests.post(webhook, json=message)
 
@@ -147,7 +152,7 @@ def main(home_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--home_dir', type=str, required=True,
+    parser.add_argument('--home-dir', type=str, required=True,
                         help='Dashboard home directory')
     args = parser.parse_args()
     main(args.home_dir)

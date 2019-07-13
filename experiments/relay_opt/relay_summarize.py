@@ -1,5 +1,6 @@
 import argparse
 
+from validate_config import validate
 from common import (write_status, write_summary,
                     parse_timestamp, sort_data, render_exception)
 
@@ -20,12 +21,12 @@ def relay_opt_text_summary(data, devs, networks):
 
 
 def main(data_dir, config_dir, output_dir):
-    config, msg = valididate_config(config_dir)
+    config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
         return
 
-    devs = config['devs']
+    devs = config['devices']
     networks = config['networks']
     opt_levels = config['opt_levels']
 

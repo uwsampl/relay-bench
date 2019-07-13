@@ -6,7 +6,7 @@ from trial_util import run_trials
 from relay_util import cnn_setup, cnn_trial, cnn_teardown
 
 def main(config_dir, output_dir):
-    config, msg = valididate_config(config_dir)
+    config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
         return

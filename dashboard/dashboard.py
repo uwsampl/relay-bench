@@ -7,14 +7,14 @@ import sys
 import subprocess
 
 def check_file_exists(dirname, filename):
-    full_name = os.path.join(data_prefix, filename)
-    return os.isfile(full_name)
+    full_name = os.path.join(dirname, filename)
+    return os.path.isfile(full_name)
 
 
 def prepare_out_file(dirname, filename):
     full_name = os.path.join(dirname, filename)
     if not check_file_exists(dirname, filename):
-        os.makedirs(os.path.dirname(full_name))
+        os.makedirs(os.path.dirname(full_name), exist_ok=True)
     return full_name
 
 
@@ -63,7 +63,7 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
                  'message': 'Config directory for experiment {} is missing'.format(exp_name)},
                 False)
     conf_file = os.path.join(conf_subdir, 'config.json')
-    if not os.path.isfile(path):
+    if not os.path.isfile(conf_file):
         return ({'success': False,
                  'message': 'config.json for experiment {} is missing'.format(exp_name)},
                 False)
@@ -99,7 +99,8 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
 def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_name):
     # set up a temporary data directory for that experiment
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
-    os.makedirs(exp_data_dir)
+    exp_status_dir = os.path.join(status_dir, exp_name)
+    os.makedirs(exp_data_dir, exist_ok=True)
 
     # run the run.sh file on the configs directory and the destination directory
     subprocess.call([os.path.join(experiments_dir, exp_name, 'run.sh'),
@@ -109,7 +110,7 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
     # not literally copying because validate may have produced a status that generated an error
-    write_json(os.path.join(status_dir, exp_name), 'run.json', status)
+    write_json(exp_status_dir, 'run.json', status)
     return status['success']
 
 
@@ -118,11 +119,11 @@ def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
     exp_config_dir = os.path.join(configs_dir, exp_name)
     tmp_analysis_dir = os.path.join(exp_data_dir, 'analysis')
-    os.makedirs(tmp_analysis_dir)
+    os.makedirs(tmp_analysis_dir, exist_ok=True)
 
     analyzed_data_dir = os.path.join(data_dir, exp_name)
     if not os.path.exists(analyzed_data_dir):
-        os.makedirs(analyzed_data_dir)
+        os.makedirs(analyzed_data_dir, exist_ok=True)
 
     subprocess.call([os.path.join(experiments_dir, exp_name, 'analyze.sh'),
                      exp_config_dir, exp_data_dir, tmp_analysis_dir])
@@ -202,6 +203,8 @@ def main(home_dir, experiments_dir):
     tmp_data_dir = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str)
     data_archive = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str + '_data.tar.gz')
     backup_archive = os.path.join(dash_config['backup_dir'], 'dashboard_' + time_str + '.tar.gz')
+    os.makedirs(tmp_data_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(backup_archive), exist_ok=True)
 
     config_dir = os.path.join(home_dir, 'config')
     status_dir = os.path.join(home_dir, 'status')
@@ -214,7 +217,7 @@ def main(home_dir, experiments_dir):
         subprocess.call(['tar', '-zcf', backup_archive, home_dir])
     for dashboard_dir in [config_dir, status_dir, data_dir, graph_dir, summary_dir]:
         if not os.path.exists(dashboard_dir):
-            os.makedirs(dashboard_dir)
+            os.makedirs(dashboard_dir, exist_ok=True)
             continue
         # remove subdirectories to set up for new run (except data, config)
         if dashboard_dir == data_dir or dashboard_dir == config_dir:
@@ -233,13 +236,13 @@ def main(home_dir, experiments_dir):
         exp_name = os.path.basename(conf_subdir)
         precheck, active = experiment_precheck(experiments_dir, config_dir, exp_name)
         # write precheck result to status dir
-        write_json(status_dir, 'precheck.json', precheck)
-        exp_status[name] = 'active'
+        write_json(os.path.join(status_dir, exp_name), 'precheck.json', precheck)
+        exp_status[exp_name] = 'active'
         if not precheck['success']:
-            exp_status[name] = 'failed'
+            exp_status[exp_name] = 'failed'
             continue
         if not active:
-            exp_status[name] = 'inactive'
+            exp_status[exp_name] = 'inactive'
 
     # (run first because if anything goes wrong later, we can use the raw data)
     # for each active experiment, run and generate data
@@ -252,20 +255,20 @@ def main(home_dir, experiments_dir):
     # for each active experiment not yet eliminated, run analysis
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
-        success = analyze_experiment(experiments_dir, tmp_data_dir, data_dir, status_dir,
-                                     time_str, exp)
+        success = analyze_experiment(experiments_dir, config_dir, tmp_data_dir, data_dir,
+                                     status_dir, time_str, exp)
         if not success:
             exp_status[exp] = 'failed'
 
     # after analysis we can compress the data
     subprocess.call(['tar', '-zcf', data_archive, tmp_data_dir])
-    subprocess.call(['rm', '-rf', tmp_data_dir])
+    # subprocess.call(['rm', '-rf', tmp_data_dir])
 
     # for each experiment for which analysis succeeded, run visualization and summarizaion
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
-        visualize_experiment(experiments_dir, data_dir, graph_dir, status_dir, exp)
-        summarize_experiment(experiments_dir, data_dir, summary_dir, status_dir, exp)
+        visualize_experiment(experiments_dir, config_dir, data_dir, graph_dir, status_dir, exp)
+        summarize_experiment(experiments_dir, config_dir, data_dir, summary_dir, status_dir, exp)
 
 
 if __name__ == '__main__':

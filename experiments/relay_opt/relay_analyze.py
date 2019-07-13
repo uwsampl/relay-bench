@@ -5,7 +5,7 @@ from common import write_status, write_json
 from analysis_util import trials_average_time
 
 def main(data_dir, config_dir, output_dir):
-    config, msg = valididate_config(config_dir)
+    config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
         return
@@ -13,7 +13,8 @@ def main(data_dir, config_dir, output_dir):
     opt_levels = config['opt_levels']
     devices = config['devices']
     networks = config['networks']
-    num_reps = config['n_input']
+    num_reps = config['n_inputs']
+    batch_size = config['batch_sizes'][0]
 
     # output averages on each network for each opt level and each device
     ret = {}
@@ -26,10 +27,10 @@ def main(data_dir, config_dir, output_dir):
             for network in networks:
                 mean, success, msg = trials_average_time(data_dir, 'relay', 'opt_comparison', num_reps,
                                                          ['network', 'device', 'batch_size', 'opt_level'],
-                                                         {'hidden_size': hidden_size,
+                                                         {'batch_size': batch_size,
                                                           'network': network,
                                                           'device': dev,
-                                                          'opt_level': str(opt_level)})
+                                                          'opt_level': opt_level})
                 if not success:
                     write_status(output_dir, False, msg)
                     return

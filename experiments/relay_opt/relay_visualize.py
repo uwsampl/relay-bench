@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
 
@@ -76,12 +77,12 @@ def generate_dumb_longitudinal_comparisons(sorted_data, dev, output_prefix=''):
 
 
 def main(data_dir, config_dir, output_dir):
-    config, msg = valididate_config(config_dir)
+    config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
         return
 
-    devs = config['devs']
+    devs = config['devices']
 
     # read in data, output graphs of most recent data, and output longitudinal graphs
     all_data = sort_data(data_dir)

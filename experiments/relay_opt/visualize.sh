@@ -5,8 +5,8 @@ dest_dir=$3
 
 source $BENCHMARK_DEPS/bash/common.sh
 
-current_dir=$script_dir("$0")
+script_dir "$0"
 export PYTHONPATH=$BENCHMARK_DEPS/python:${PYTHONPATH}
-export PYTHONPATH=$current_dir:${PYTHONPATH}
+export PYTHONPATH=$dir_val:${PYTHONPATH}
 
-python3 relay_visualize.py --config-dir $config_dir --data-dir $data_dir --output-dir $dest_dir
+python3 $dir_val/relay_visualize.py --config-dir $config_dir --data-dir $data_dir --output-dir $dest_dir

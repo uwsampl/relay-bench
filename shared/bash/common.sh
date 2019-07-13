@@ -2,11 +2,12 @@
 # Bash utilities for dashboard experiments
 
 # First arg should be the name of the calling script (i.e., $0 from the script)
-# Returns the directory of that script
-function script_dir() {
+# Sets dir_val to the directory of the script
+function script_dir {
     dir=$(pwd)
     cd "$(dirname "$1")"
     ret=$(pwd)
     cd $dir
-    return $ret
+    dir_val=$ret
 }
+export -f script_dir
