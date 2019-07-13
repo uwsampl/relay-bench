@@ -8,14 +8,14 @@ import os
 import sys
 
 def check_file_exists(dirname, filename):
-    full_name = os.path.join(data_prefix, filename)
-    return os.isfile(full_name)
+    full_name = os.path.join(dirname, filename)
+    return os.path.isfile(full_name)
 
 
 def prepare_out_file(dirname, filename):
     full_name = os.path.join(dirname, filename)
     if not check_file_exists(dirname, filename):
-        os.makedirs(os.path.dirname(full_name))
+        os.makedirs(os.path.dirname(full_name), exist_ok=True)
     return full_name
 
 
@@ -49,7 +49,7 @@ def write_summary(output_dir, title, value):
     })
 
 
-def parse_timestamp(time_str):
+def parse_timestamp(data):
     return datetime.datetime.strptime(data['timestamp'], '%m-%d-%Y-%H%M')
 
 

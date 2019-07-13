@@ -14,7 +14,7 @@ def validate(config_dir):
     """
     config = read_config(config_dir)
     ret = {
-        'devs': {'cpu', 'gpu'},
+        'devices': {'cpu', 'gpu'},
         'dry_run': 8,
         'n_inputs': 3,
         'n_times_per_input': 10,
@@ -23,15 +23,15 @@ def validate(config_dir):
         'networks': ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
     }
 
-    if 'devs' in config:
-        devs = config['devs'].split(',')
+    if 'devices' in config:
+        devs = config['devices']
         if not devs:
             return None, 'No devs specified'
         acceptable_devs = {'cpu', 'gpu'}
         for dev in devs:
             if dev not in acceptable_devs:
                 return None, 'Invalid dev specified: {}'.format(dev)
-        ret['devs'] = set(devs)
+        ret['devices'] = set(devs)
 
     if 'dry_run' in config:
         if not non_negative(config['dry_run']):

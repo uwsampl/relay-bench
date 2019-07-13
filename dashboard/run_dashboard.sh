@@ -41,6 +41,6 @@ experiments_dir=($pwd)/experiments
 export BENCHMARK_DEPS=($pwd)/shared
 
 cd $script_dir
-python3 dashboard.py --home_dir $dashboard_home --experiments-dir $experiments_dir
-python3 gen_webpage.py --home_dir $dashboard_home
-python3 slack_integration.py --home_dir $dashboard_home
+python3 dashboard.py --home-dir $dashboard_home --experiments-dir $experiments_dir
+python3 gen_webpage.py --home-dir $dashboard_home
+python3 slack_integration.py --home-dir $dashboard_home
