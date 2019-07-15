@@ -10,11 +10,11 @@ def main(data_dir, config_dir, output_dir):
         write_status(output_dir, False, msg)
         return
 
-    opt_levels = config['opt_levels']
+    opt_levels = sorted(list(config['opt_levels']))
     devices = config['devices']
     networks = config['networks']
     num_reps = config['n_inputs']
-    batch_size = config['batch_sizes'][0]
+    batch_size = list(config['batch_sizes'])[0]
 
     # output averages on each network for each opt level and each device
     ret = {}

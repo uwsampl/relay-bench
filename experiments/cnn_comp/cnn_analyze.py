@@ -14,7 +14,7 @@ def main(data_dir, config_dir, output_dir):
     devices = config['devices']
     networks = config['networks']
     num_reps = config['n_inputs']
-    batch_size = config['batch_sizes'][0]
+    batch_size = list(config['batch_sizes'])[0]
 
     nice_name = {
         'relay': 'Relay',
