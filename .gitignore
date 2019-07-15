@@ -120,6 +120,10 @@ source.cc
 *.DS_Store
 
 # treelstm data
+experiments/treelstm/pt_tlstm/data/*
+experiments/treelstm/pt_tlstm/lib/stanford-tagger/*
+experiments/treelstm/pt_tlstm/lib/stanford-parser/*
+
 oopsla_benchmarks/pytorch/rnn/tlstm/data/*
 oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-tagger/*
 oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-parser/*
