@@ -29,7 +29,7 @@ def main(data_dir, config_dir, output_dir):
 
     try:
         summary = treelstm_text_summary(most_recent, devs)
-        write_summary(output_dir, 'Treelstm Comparisons', summary)
+        write_summary(output_dir, 'TreeLSTM Comparisons', summary)
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return

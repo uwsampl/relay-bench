@@ -50,6 +50,9 @@ def main(home_dir):
         if subdir == status_dir:
             continue
         exp_name = os.path.basename(subdir)
+        exp_conf = read_json(os.path.join(config_dir, exp_name),
+                             'config.json')
+
         precheck_status = read_json(subdir, 'precheck.json')
         if not precheck_status['success']:
             failed_experiments.append((exp_name, 'precheck',
@@ -57,18 +60,17 @@ def main(home_dir):
                                        []))
             continue
 
-        exp_conf = read_json(os.path.join(config_dir, exp_name),
-                             'config.json')
+        exp_title = exp_name if 'title' not in exp_conf else exp_conf['title']
         notify = exp_conf['notify']
         if not exp_conf['active']:
-            inactive_experiments.append(exp_name)
+            inactive_experiments.append(exp_title)
             continue
 
         failure = False
         for stage in ['run', 'analysis', 'summary']:
             stage_status = read_json(subdir, stage + '.json')
             if not stage_status['success']:
-                failed_experiments.append((exp_name, stage,
+                failed_experiments.append((exp_title, stage,
                                            stage_status['message'],
                                            notify))
                 failure = True
@@ -95,11 +97,11 @@ def main(home_dir):
             'color': '#fa0000',
             'title': 'Failed benchmarks',
             'fields': [{
-                'title': exp_name,
+                'title': exp_title,
                 'value': 'Failed at stage {}:\n{}'.format(stage, reason, pings)
                 + ('' if not pings else '\nATTN: {}'.format(generate_ping_list(pings))),
                 'short': False
-            } for (exp_name, stage, reason, pings) in failed_experiments]
+            } for (exp_title, stage, reason, pings) in failed_experiments]
         })
     if inactive_experiments:
         attachments.append({
