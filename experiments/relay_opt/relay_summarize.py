@@ -5,7 +5,6 @@ from common import (write_status, write_summary,
                     parse_timestamp, sort_data, render_exception)
 
 def relay_opt_text_summary(data, devs, networks):
-    dev_keys = ['opt-{}'.format(dev) for dev in devs]
     if not devs:
         return ''
     data_by_dev = {dev: data['opt-{}'.format(dev)] for dev in devs}

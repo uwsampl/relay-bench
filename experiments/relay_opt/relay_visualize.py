@@ -12,7 +12,14 @@ from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
 
-def generate_relay_opt_comparisons(title, filename, data, output_prefix=''):
+def format_ms(ax):
+    def milliseconds(value, tick_position):
+        return '{:3.1f}'.format(value*1e3)
+    formatter = FuncFormatter(milliseconds)
+    ax.yaxis.set_major_formatter(formatter)
+
+
+def generate_relay_opt_comparisons(title, filename, data, networks, output_prefix=''):
     fig, ax = plt.subplots()
     format_ms(ax)
 
@@ -22,16 +29,13 @@ def generate_relay_opt_comparisons(title, filename, data, output_prefix=''):
     if not data.items():
         return
 
-    levels = list(data.keys())
-    networks = list(list(data.items())[0][1].keys())
-
     width = 0.05
     positions = np.arange(len(data.items()))
     offset = 0
 
     bars = []
     for network in networks:
-        bar = ax.bar(positions + offset, [data[level][network] for level in levels], width)
+        bar = ax.bar(positions + offset, [data[level][network] for level in data.keys()], width)
         offset += width
         bars.append(bar)
     if not bars:
@@ -44,36 +48,35 @@ def generate_relay_opt_comparisons(title, filename, data, output_prefix=''):
     plt.xlabel('Opt Level')
     plt.ylabel('Time (ms)')
     plt.yscale('log')
-    outfile = prepare_out_file(output_prefix, filename)
+    outfile = prepare_out_file(comparison_dir, filename)
     plt.savefig(outfile)
     plt.close()
 
 
-def generate_dumb_longitudinal_comparisons(sorted_data, dev, output_prefix=''):
+def generate_longitudinal_comparisons(sorted_data, dev_key, dev, output_prefix=''):
     if not sorted_data:
         return
 
     longitudinal_dir = os.path.join(output_prefix, 'longitudinal')
 
     times = [parse_timestamp(entry) for entry in sorted_data]
-    most_recent = sorted_data[-1]
-    for (benchmark, measurements) in most_recent.items():
-        for (setting, network_times) in measurements.items():
-            for (network, _) in network_times.items():
-                stats = [entry[benchmark][setting][network] for entry in sorted_data]
+    most_recent = sorted_data[-1][dev_key]
+    for (setting, network_times) in measurements.items():
+        for (network, _) in network_times.items():
+            stats = [entry[dev_key][setting][network] for entry in sorted_data]
 
-                fig, ax = plt.subplots()
-                format_ms(ax)
-                plt.plot(times, stats)
-                plt.title('{}: {} on {} over Time on {}'.format(benchmark, setting, network, dev))
-                filename = 'longitudinal-{}-{}-{}-{}.png'.format(benchmark, setting, network, dev)
-                plt.xlabel('Date of Run')
-                plt.ylabel('Time (ms)')
-                plt.yscale('log')
-                plt.gcf().autofmt_xdate()
-                outfile = prepare_out_file(longitudinal_dir, filename)
-                plt.savefig(outfile)
-                plt.close()
+            fig, ax = plt.subplots()
+            format_ms(ax)
+            plt.plot(times, stats)
+            plt.title('{}: {} on {} over Time'.format(setting, network, dev))
+            filename = 'longitudinal-{}-{}-{}.png'.format(setting, network, dev)
+            plt.xlabel('Date of Run')
+            plt.ylabel('Time (ms)')
+            plt.yscale('log')
+            plt.gcf().autofmt_xdate()
+            outfile = prepare_out_file(longitudinal_dir, filename)
+            plt.savefig(outfile)
+            plt.close()
 
 
 def main(data_dir, config_dir, output_dir):
@@ -83,6 +86,7 @@ def main(data_dir, config_dir, output_dir):
         return
 
     devs = config['devices']
+    networks = config['networks']
 
     # read in data, output graphs of most recent data, and output longitudinal graphs
     all_data = sort_data(data_dir)
@@ -92,8 +96,10 @@ def main(data_dir, config_dir, output_dir):
         key = 'opt-{}'.format(dev)
         try:
             generate_relay_opt_comparisons('Relay CNN Opt Level on {}'.format(dev.upper()),
-                                           'relay-cnn-{}.png'.format(dev), most_recent[key], output_dir)
-            generate_longitudinal_comparisons(list(map(lambda d: d[key], all_data)), output_dir)
+                                           'relay-cnn-{}.png'.format(dev), most_recent[key],
+                                           networks, output_dir)
+            # TODO: do a better job with longitudinal comparisons
+            generate_longitudinal_comparisons(all_data, key, dev, output_dir)
         except Exception as e:
             write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
             return

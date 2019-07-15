@@ -97,7 +97,7 @@ def main(home_dir):
             'fields': [{
                 'title': exp_name,
                 'value': 'Failed at stage {}:\n{}'.format(stage, reason, pings)
-                + '' if not pings else '\nATTN: {}'.format(generate_ping_list(pings)),
+                + ('' if not pings else '\nATTN: {}'.format(generate_ping_list(pings))),
                 'short': False
             } for (exp_name, stage, reason, pings) in failed_experiments]
         })

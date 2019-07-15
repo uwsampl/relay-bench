@@ -51,6 +51,9 @@ def trials_average_time(data_dir, framework, task_name, num_reps, parameter_name
     """
     filename = lookup_data_file(data_dir, '{}-{}.csv'.format(framework, task_name))
     with open(filename, newline='') as csvfile:
+        # even though it seems redundant, parameter names does
+        # need to be a separate arg because *order matters*
+        # whereas it doesn't in a dict
         fieldnames = parameter_names + ['rep', 'run', 'time']
         reader = csv.DictReader(csvfile, fieldnames)
 
