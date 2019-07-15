@@ -58,7 +58,7 @@ def run_trials(method, task_name,
                         # it happened inside a trial
                         return (False,
                                 'Encountered exception in trial on inputs {}:\n'.format(args)
-                                + render_Exception(e))
+                                + render_exception(e))
 
                     if t != n_input - 1:
                         time.sleep(4)
