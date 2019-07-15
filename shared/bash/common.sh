@@ -11,3 +11,16 @@ function script_dir {
     dir_val=$ret
 }
 export -f script_dir
+
+# Adds the argument to the PYTHONPATH var
+function add_to_pythonpath {
+    export PYTHONPATH=$1:${PYTHONPATH}
+}
+export -f add_to_pythonpath
+
+# Adds the shared python deps to the PYTHONPATH var
+function include_shared_python_deps {
+    add_to_pythonpath "$BENCHMARK_DEPS/python"
+}
+export -f include_shared_python_deps
+
