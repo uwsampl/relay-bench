@@ -18,8 +18,8 @@ def main(data_dir, config_dir, output_dir):
     devices = config['devices']
     languages = config['languages']
     num_reps = config['n_inputs']
-    inp = config['inputs'][0]
-    hidden_size = config['hidden_sizes'][0]
+    inp = list(config['inputs'])[0]
+    hidden_size = list(config['hidden_sizes'])[0]
 
     listing_settings = {}
 
