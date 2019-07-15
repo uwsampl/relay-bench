@@ -24,23 +24,32 @@ def string_cond():
 def bool_cond():
     return (lambda value: isinstance(value, bool), "must be bool")
 
-def check_config(config, defaults, acceptable_values, conditions):
+def check_config(config, defaults=None, acceptable_values=None, conditions=None, permit_empty=None):
     """
     Given a config object (dict), set of default values (config field -> value),
     set of acceptable values (config field -> set of permitted values; not all fields need to
-    be populated), and set of conditions to check (config field -> lambda that takes the value
-    and returns boolean), returns
+    be populated), set of conditions to check (config field -> lambda that takes the value
+    and returns boolean), and a set of fields that permit empty lists, returns
     1. a sanitized config object (None if there is an error)
     2. an error message to report if a condition fails or there is an invalid value
 
     Note that for config fields that are lists, this function will turn them into sets
     to deduplicate.
+
+    defaults, acceptable_values, conditions, permit_empty are all empty by default
     """
+    defaults = defaults if defaults is not None else {}
+    acceptable_values = acceptable_values if acceptable_values is not None else {}
+    conditions = conditions if conditions is not None else {}
+    permit_empty = permit_empty if permit_empty is not None else {}
     ret = defaults
 
     for field, value in config.items():
         # for lists, validate each item and turn into a set
         if isinstance(value, list):
+            if field not in permit_empty and len(value) == 0:
+                return (None, "Config field {} is not permitted to be empty".format(field))
+
             checked_list = []
             for i in value:
                 v, msg = check_item(field, i, acceptable_values, conditions)

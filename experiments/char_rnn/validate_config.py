@@ -13,7 +13,7 @@ def validate(config_dir):
     is wrong with the config it read.
     """
     config = read_config(config_dir)
-    return check_config(
+    ret, msg = check_config(
         config,
         {
             'dry_run': 8,
@@ -50,3 +50,10 @@ def validate(config_dir):
             'n_times_per_input': non_negative_cond()
         }
     )
+
+    # also must ensure that if relay is enabled that a method and config is specified
+    if ret is not None and 'relay' in ret['frameworks']:
+        if not ret['relay_methods'] or not ret['relay_configs']:
+            return None, 'If Relay is enabled, then at least one method or config must be specified'
+
+    return ret, msg
