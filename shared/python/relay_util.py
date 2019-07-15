@@ -1,12 +1,6 @@
-import time
 import tvm
 from tvm import relay
 import numpy as np
-import onnx
-import keras
-import tensorflow
-import torch
-import mxnet as mx
 import aot
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
