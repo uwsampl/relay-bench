@@ -1,0 +1,290 @@
+{
+  "nodes": [
+    {
+      "op": "null", 
+      "name": "data0", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "data1", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "data2", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "rnnmodel2_lstm0_i2h_weight", 
+      "attrs": {
+        "__dtype__": "0", 
+        "__lr_mult__": "1.0", 
+        "__shape__": "(512, 128)", 
+        "__storage_type__": "0", 
+        "__subgraph_name__": "foreach2", 
+        "__wd_mult__": "1.0"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "rnnmodel2_lstm0_i2h_bias", 
+      "attrs": {
+        "__dtype__": "0", 
+        "__init__": "zeros", 
+        "__lr_mult__": "1.0", 
+        "__shape__": "(512,)", 
+        "__storage_type__": "0", 
+        "__subgraph_name__": "foreach2", 
+        "__wd_mult__": "1.0"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "rnnmodel2_lstm0_h2h_weight", 
+      "attrs": {
+        "__dtype__": "0", 
+        "__lr_mult__": "1.0", 
+        "__shape__": "(512, 128)", 
+        "__storage_type__": "0", 
+        "__subgraph_name__": "foreach2", 
+        "__wd_mult__": "1.0"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "rnnmodel2_lstm0_h2h_bias", 
+      "attrs": {
+        "__dtype__": "0", 
+        "__init__": "zeros", 
+        "__lr_mult__": "1.0", 
+        "__shape__": "(512,)", 
+        "__storage_type__": "0", 
+        "__subgraph_name__": "foreach2", 
+        "__wd_mult__": "1.0"
+      }, 
+      "inputs": []
+    }, 
+    {
+      "op": "_foreach", 
+      "name": "rnnmodel2__foreach0", 
+      "attrs": {
+        "in_data_locs": "[0]", 
+        "in_state_locs": "[3, 6]", 
+        "num_args": "8", 
+        "num_out_data": "1", 
+        "num_outputs": "3", 
+        "remain_locs": "[1, 2, 4, 5]"
+      }, 
+      "inputs": [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0], [4, 0, 0], [5, 0, 0], [6, 0, 0]], 
+      "subgraphs": [
+        {
+          "nodes": [
+            {
+              "op": "null", 
+              "name": "data0-0", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": []
+            }, 
+            {
+              "op": "null", 
+              "name": "rnnmodel2_lstm0_i2h_weight", 
+              "attrs": {
+                "__dtype__": "0", 
+                "__lr_mult__": "1.0", 
+                "__shape__": "(512, 128)", 
+                "__storage_type__": "0", 
+                "__subgraph_name__": "foreach2", 
+                "__wd_mult__": "1.0"
+              }, 
+              "inputs": []
+            }, 
+            {
+              "op": "null", 
+              "name": "rnnmodel2_lstm0_i2h_bias", 
+              "attrs": {
+                "__dtype__": "0", 
+                "__init__": "zeros", 
+                "__lr_mult__": "1.0", 
+                "__shape__": "(512,)", 
+                "__storage_type__": "0", 
+                "__subgraph_name__": "foreach2", 
+                "__wd_mult__": "1.0"
+              }, 
+              "inputs": []
+            }, 
+            {
+              "op": "FullyConnected", 
+              "name": "rnnmodel2_lstm0_t0_i2h", 
+              "attrs": {
+                "__subgraph_name__": "foreach2", 
+                "num_hidden": "512"
+              }, 
+              "inputs": [[0, 0, 0], [1, 0, 0], [2, 0, 0]]
+            }, 
+            {
+              "op": "null", 
+              "name": "data1-0", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": []
+            }, 
+            {
+              "op": "null", 
+              "name": "rnnmodel2_lstm0_h2h_weight", 
+              "attrs": {
+                "__dtype__": "0", 
+                "__lr_mult__": "1.0", 
+                "__shape__": "(512, 128)", 
+                "__storage_type__": "0", 
+                "__subgraph_name__": "foreach2", 
+                "__wd_mult__": "1.0"
+              }, 
+              "inputs": []
+            }, 
+            {
+              "op": "null", 
+              "name": "rnnmodel2_lstm0_h2h_bias", 
+              "attrs": {
+                "__dtype__": "0", 
+                "__init__": "zeros", 
+                "__lr_mult__": "1.0", 
+                "__shape__": "(512,)", 
+                "__storage_type__": "0", 
+                "__subgraph_name__": "foreach2", 
+                "__wd_mult__": "1.0"
+              }, 
+              "inputs": []
+            }, 
+            {
+              "op": "FullyConnected", 
+              "name": "rnnmodel2_lstm0_t0_h2h", 
+              "attrs": {
+                "__subgraph_name__": "foreach2", 
+                "num_hidden": "512"
+              }, 
+              "inputs": [[4, 0, 0], [5, 0, 0], [6, 0, 0]]
+            }, 
+            {
+              "op": "elemwise_add", 
+              "name": "rnnmodel2_lstm0_t0_plus0", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[3, 0, 0], [7, 0, 0]]
+            }, 
+            {
+              "op": "SliceChannel", 
+              "name": "rnnmodel2_lstm0_t0_slice", 
+              "attrs": {
+                "__subgraph_name__": "foreach2", 
+                "num_outputs": "4"
+              }, 
+              "inputs": [[8, 0, 0]]
+            }, 
+            {
+              "op": "sigmoid", 
+              "name": "rnnmodel2_lstm0_t0_o", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[9, 3, 0]]
+            }, 
+            {
+              "op": "sigmoid", 
+              "name": "rnnmodel2_lstm0_t0_f", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[9, 1, 0]]
+            }, 
+            {
+              "op": "null", 
+              "name": "data2-0", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": []
+            }, 
+            {
+              "op": "elemwise_mul", 
+              "name": "rnnmodel2_lstm0_t0_mul0", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[11, 0, 0], [12, 0, 0]]
+            }, 
+            {
+              "op": "sigmoid", 
+              "name": "rnnmodel2_lstm0_t0_i", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[9, 0, 0]]
+            }, 
+            {
+              "op": "tanh", 
+              "name": "rnnmodel2_lstm0_t0_c", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[9, 2, 0]]
+            }, 
+            {
+              "op": "elemwise_mul", 
+              "name": "rnnmodel2_lstm0_t0_mul1", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[14, 0, 0], [15, 0, 0]]
+            }, 
+            {
+              "op": "elemwise_add", 
+              "name": "rnnmodel2_lstm0_t0_state", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[13, 0, 0], [16, 0, 0]]
+            }, 
+            {
+              "op": "Activation", 
+              "name": "rnnmodel2_lstm0_t0_activation0", 
+              "attrs": {
+                "__subgraph_name__": "foreach2", 
+                "act_type": "tanh"
+              }, 
+              "inputs": [[17, 0, 0]]
+            }, 
+            {
+              "op": "elemwise_mul", 
+              "name": "rnnmodel2_lstm0_t0_out", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[10, 0, 0], [18, 0, 0]]
+            }, 
+            {
+              "op": "_copy", 
+              "name": "rnnmodel2_identity0", 
+              "attrs": {"__subgraph_name__": "foreach2"}, 
+              "inputs": [[19, 0, 0]]
+            }
+          ], 
+          "arg_nodes": [0, 1, 2, 4, 5, 6, 12], 
+          "node_row_ptr": [
+            0, 
+            1, 
+            2, 
+            3, 
+            4, 
+            5, 
+            6, 
+            7, 
+            8, 
+            9, 
+            13, 
+            14, 
+            15, 
+            16, 
+            17, 
+            18, 
+            19, 
+            20, 
+            21, 
+            22, 
+            23, 
+            24
+          ], 
+          "heads": [[19, 0, 0], [20, 0, 0], [17, 0, 0]]
+        }
+      ]
+    }
+  ], 
+  "arg_nodes": [0, 1, 2, 3, 4, 5, 6], 
+  "node_row_ptr": [0, 1, 2, 3, 4, 5, 6, 7, 10], 
+  "heads": [[7, 0, 0], [7, 1, 0], [7, 2, 0]], 
+  "attrs": {"mxnet_version": ["int", 10301]}
+}
