@@ -1,23 +1,8 @@
 import argparse
 
 from validate_config import validate
-from common import (write_status, write_summary,
-                    parse_timestamp, sort_data, render_exception)
-
-def cnn_comp_text_summary(data, devs, networks):
-    if not devs:
-        return ''
-    data_by_dev = {dev: data['cnn-{}'.format(dev)] for dev in devs}
-    ret = 'Format: ({})\n'.format(', '.join(networks))
-    for dev in devs:
-        ret += '_Times on {}_\n'.format(dev.upper())
-        for (framework, times) in data_by_dev[dev].items():
-            ret += '{}: '.format(framework)
-            ret += ', '.join(['{:.3f}'.format(time*1e3)
-                              for (_, time) in times.items()])
-            ret += '\n'
-    return ret
-
+from common import write_status
+from summary_util import write_generic_summary
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
@@ -27,18 +12,8 @@ def main(data_dir, config_dir, output_dir):
 
     devs = config['devices']
     networks = config['networks']
-
-    # TODO: include some kind of comparison
-    all_data = sort_data(data_dir)
-    most_recent = all_data[-1]
-
-    try:
-        summary = cnn_comp_text_summary(most_recent, devs, networks)
-        write_summary(output_dir, 'CNN Framework Comparisons', summary)
-    except Exception as e:
-        write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        return
-    write_status(output_dir, True, 'success')
+    write_generic_summary(data_dir, output_dir, config['title'], devs,
+                          networks, use_networks=True)
 
 
 if __name__ == '__main__':

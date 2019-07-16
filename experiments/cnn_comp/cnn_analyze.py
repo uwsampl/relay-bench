@@ -45,10 +45,9 @@ def main(data_dir, config_dir, output_dir):
     # output averages on each network for each framework and each device
     ret = {}
     for dev in devices:
-        dev_field = 'cnn-{}'.format(dev)
-        ret[dev_field] = {}
+        ret[dev] = {}
         for listing, (framework, field_settings) in listing_settings.items():
-            ret[dev_field][listing] = {}
+            ret[dev][listing] = {}
             for network in networks:
                 fields = default_fields + [key for key in field_settings.keys()]
                 field_values = {
@@ -64,7 +63,7 @@ def main(data_dir, config_dir, output_dir):
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                ret[dev_field][listing][network] = mean
+                ret[dev][listing][network] = mean
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')
