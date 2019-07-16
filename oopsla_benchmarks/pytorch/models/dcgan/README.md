@@ -1,1 +1,0 @@
-Taken from https://github.com/csinva/pytorch_gan_pretrained (CIFAR-10 version)

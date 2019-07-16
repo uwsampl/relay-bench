@@ -132,7 +132,7 @@ def main(home_dir):
                 continue
             alert = days_left <= 7
 
-            pings = generate_ping_list(info['ping'].split(','))
+            pings = generate_ping_list(info['ping'])
             fields = [
                 {'value': '{} days, {:.2f} hours left'.format(diff.days, diff.seconds/3600),
                  'short': False}
