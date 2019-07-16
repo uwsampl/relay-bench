@@ -9,6 +9,9 @@ __pycache__/
 # Java class files
 *.class
 
+# Emacs backups
+*~
+
 # Distribution / packaging
 .Python
 build/
