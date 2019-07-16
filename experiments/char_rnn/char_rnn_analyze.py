@@ -44,10 +44,9 @@ def main(data_dir, config_dir, output_dir):
     # output averages on each network for each framework and each device
     ret = {}
     for dev in devices:
-        dev_field = 'char_rnn-{}'.format(dev)
-        ret[dev_field] = {}
+        ret[dev] = {}
         for listing, (framework, fieldnames, field_settings) in listing_settings.items():
-            ret[dev_field][listing] = {}
+            ret[dev][listing] = {}
             field_values = {
                 'device': dev,
                 'hidden_size': hidden_size,
@@ -66,7 +65,7 @@ def main(data_dir, config_dir, output_dir):
                     write_status(output_dir, False, msg)
                     return
                 language_means.append(mean)
-            ret[dev_field][listing] = np.mean(language_means)
+            ret[dev][listing] = np.mean(language_means)
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')

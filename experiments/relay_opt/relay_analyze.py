@@ -19,11 +19,10 @@ def main(data_dir, config_dir, output_dir):
     # output averages on each network for each opt level and each device
     ret = {}
     for dev in devices:
-        dev_field = 'opt-{}'.format(dev)
-        ret[dev_field] = {}
+        ret[dev] = {}
         for opt_level in opt_levels:
             level_field = 'O{}'.format(opt_level)
-            ret[dev_field][level_field] = {}
+            ret[dev][level_field] = {}
             for network in networks:
                 mean, success, msg = trials_average_time(data_dir, 'relay', 'opt_comparison', num_reps,
                                                          ['network', 'device', 'batch_size', 'opt_level'],
@@ -34,7 +33,7 @@ def main(data_dir, config_dir, output_dir):
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                ret[dev_field][level_field][network] = mean
+                ret[dev][level_field][network] = mean
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')
