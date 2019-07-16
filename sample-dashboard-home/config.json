@@ -1,0 +1,12 @@
+{
+    "tmp_data_dir": "~/test-dashboard-data",
+    "backup_dir": "~/test-dashboard-backup",
+    "webhook_url": "slack webhook URL here",
+    "slack_description": "Something you want to show up above the slack integration message",
+    "deadlines": {
+        "Total Solar Eclipse": {
+            "date": "2024-04-08 12:00:00",
+            "ping": ["Slack IDs to ping"]
+         }
+    }
+}

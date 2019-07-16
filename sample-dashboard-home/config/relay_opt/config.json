@@ -1,0 +1,13 @@
+{
+    "active": false,
+    "dry_run": 1,
+    "n_inputs": 1,
+    "n_times_per_input": 1,
+    "devices": ["cpu"],
+    "batch_sizes": [1],
+    "opt_levels": [0],
+    "networks": ["resnet-18"],
+    "title": "Relay Opt Level Comparison",
+    "notify": ["U1FUN7EN5","U0VRBK1PS","U0EJMLFTQ","U0G3J4FGA","U0G3HALFR"],
+    "description": "Comparison of average Relay runs of different CNNs on various opt levels"
+}
