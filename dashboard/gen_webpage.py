@@ -6,6 +6,7 @@ and be populated before running this script.
 import argparse
 import json
 import os
+import shutil
 
 from PIL import Image
 
@@ -14,7 +15,7 @@ PAGE_PREFIX_TEMPLATE = '''
 <head>
 <title>TVM Relay Dashboard</title>
 </head>
-<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url(%s); background-position: center;">
+%s
 <div align="center">
 <div align="center"><h1 style="background-color: white;">TVM Relay Dashboard</h1></div>
 %s
@@ -69,10 +70,46 @@ window.onload = function(e) {
 
 LORD_JERRY_PATH='jerry.jpg'
 
-def get_img_dims(img_path, scale=1.0):
-    img = Image.open(img_path)
-    w, h = img.size
-    return w * scale, h * scale
+def main(out_dir, graph_dir, dash_home_dir):
+    with open(os.path.join(dash_home_dir, 'config.json')) as json_file:
+        main_config = json.load(json_file)
+    exp_config = get_exp_config(dash_home_dir)
+
+    set_up_out_dir(out_dir, graph_dir, main_config)
+    # Switch to the output directory, so we don't need to keep track of
+    # separate paths for loading images while the script is running and loading
+    # images when viewing the generated webpage.
+    os.chdir(out_dir)
+
+    page_prefix = init_page_prefix_template(main_config)
+    page_body = gen_page_body(exp_config)
+    page_suffix = init_page_suffix_template(main_config)
+    with open(os.path.join(out_dir, 'index.html'), 'w') as f:
+        f.write(page_prefix)
+        f.write(page_body)
+        f.write(page_suffix)
+
+
+def gen_page_body(exp_config):
+    page_body = ''
+    for (curr_dir, _, files) in os.walk('./graph'):
+        # Remove the './graph' prefix from the directory path we actually show.
+        shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
+        depth = len(shown_dir.split(os.sep))
+        section_heading_size = max(2, min(depth, 6))
+        if depth == 1 and len(shown_dir) != 0:
+            heading_text = exp_config[shown_dir]['title']
+        else:
+            heading_text = shown_dir
+        page_body += f'<h{section_heading_size} style="background-color: white;">{heading_text}</h{section_heading_size}>\n'
+        for filename in files:
+            if not filename.endswith('.png'):
+                continue
+            img_heading_size = min(section_heading_size + 1, 6)
+            img_path = os.path.join(curr_dir, filename)
+            w, h = get_img_dims(img_path, scale=0.75)
+            page_body += f'<img src="{img_path}" style="width:{w}px;height:{h}px;padding:10px;">\n'
+    return page_body
 
 
 def init_page_prefix_template(config):
@@ -81,7 +118,12 @@ def init_page_prefix_template(config):
     if 'deadlines' in config:
         for deadline_name in config['deadlines']:
             deadline_html += '<div align="center"><h2 style="background-color: white; color: red;">%s: <span id="%s"></span></h1></div>\n' % (deadline_name, deadline_name)
-    return PAGE_PREFIX_TEMPLATE % (LORD_JERRY_PATH, deadline_html)
+    if 'jerry_path' in config:
+        background_html = f'<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url({LORD_JERRY_PATH}); background-position: center;">'
+    else:
+        background_html = ''
+
+    return PAGE_PREFIX_TEMPLATE % (background_html, deadline_html)
 
 
 def init_page_suffix_template(config):
@@ -95,20 +137,29 @@ def init_page_suffix_template(config):
     return PAGE_SUFFIX_TEMPLATE % deadline_html
 
 
-def create_website(out_dir, img_paths, config):
+def set_up_out_dir(out_dir, graph_dir, config):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
-    page_body = ''
-    for img_path in img_paths:
-        w, h = get_img_dims(img_path, scale=0.75)
-        page_body += f'<img src="{img_path}" style="width:{w}px;height:{h}px;padding:10px;">\n'
+    web_graph_dir = os.path.join(out_dir, 'graph')
+    shutil.rmtree(web_graph_dir)
+    shutil.copytree(graph_dir, web_graph_dir)
+    if 'jerry_path' in config:
+        shutil.copy(config['jerry_path'], os.path.join(out_dir, LORD_JERRY_PATH))
 
-    page_prefix = init_page_prefix_template(config)
-    page_suffix = init_page_suffix_template(config)
-    with open(os.path.join(out_dir, 'index.html'), 'w') as f:
-        f.write(page_prefix)
-        f.write(page_body)
-        f.write(page_suffix)
+
+def get_exp_config(dash_home_dir):
+    exp_config = {}
+    exp_config_dir = os.path.join(dash_home_dir, 'config')
+    for exp_name in os.listdir(exp_config_dir):
+        with open(os.path.join(exp_config_dir, exp_name, 'config.json'), 'r') as f:
+            exp_config[exp_name] = json.load(f)
+    return exp_config
+
+
+def get_img_dims(img_path, scale=1.0):
+    img = Image.open(img_path)
+    w, h = img.size
+    return w * scale, h * scale
 
 
 if __name__ == '__main__':
@@ -117,21 +168,8 @@ if __name__ == '__main__':
                         help='Directory where graphs are found, should be absolute')
     parser.add_argument('--out-dir', type=str, required=True,
                         help='Directory where output should be created, should be absolute')
-    parser.add_argument('--config-dir', type=str, default='',
-                        help='Directory to look for a config.json file')
+    parser.add_argument('--dash-home-dir', type=str, default='',
+                        help='Dashboard home directory')
     args = parser.parse_args()
 
-    with open(os.path.join(args.config_dir, 'config.json')) as json_file:
-        config = json.load(json_file)
-
-    out_dir = args.out_dir
-    # Switch to the output directory, so we don't need to keep track of
-    # separate paths for loading images while the script is running and loading
-    # images when viewing the generated webpage.
-    os.chdir(out_dir)
-    img_paths = []
-    for filename in os.listdir(args.graph_dir):
-        # graphs should be indexed relatively: (site root)/graph/*.png
-        if filename.endswith('.png'):
-            img_paths.append(os.path.join('graph', filename))
-    create_website(out_dir, img_paths, config)
+    main(args.out_dir, args.graph_dir, args.dash_home_dir)

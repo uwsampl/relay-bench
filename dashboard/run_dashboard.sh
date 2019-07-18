@@ -35,12 +35,12 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
 
 dashboard_home="/share/dashboard"
 cd $script_dir/..
-experiments_dir=($pwd)/experiments
+experiments_dir=$(pwd)/experiments
 
 # export because benchmarks may need it
-export BENCHMARK_DEPS=($pwd)/shared
+export BENCHMARK_DEPS=$(pwd)/shared
 
 cd $script_dir
 python3 dashboard.py --home-dir $dashboard_home --experiments-dir $experiments_dir
-python3 gen_webpage.py --home-dir $dashboard_home
+python3 gen_webpage.py --dash-home-dir "$dashboard_home" --graph-dir "$dashboard_home/graph" --out-dir "$dashboard_home/website"
 python3 slack_integration.py --home-dir $dashboard_home
