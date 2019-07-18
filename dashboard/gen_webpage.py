@@ -141,10 +141,10 @@ def set_up_out_dir(out_dir, graph_dir, config):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     web_graph_dir = os.path.join(out_dir, 'graph')
-    shutil.rmtree(web_graph_dir)
+    shutil.rmtree(web_graph_dir, ignore_errors=True)
     shutil.copytree(graph_dir, web_graph_dir)
     if 'jerry_path' in config:
-        shutil.copy(config['jerry_path'], os.path.join(out_dir, LORD_JERRY_PATH))
+        shutil.copy(os.path.expanduser(config['jerry_path']), os.path.join(out_dir, LORD_JERRY_PATH))
 
 
 def get_exp_config(dash_home_dir):

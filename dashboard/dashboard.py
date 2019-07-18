@@ -6,7 +6,7 @@ import os
 import sys
 import subprocess
 
-from common import check_file_exists, prepare_out_file, read_json, write_json
+from common import check_file_exists, idemp_mkdir, prepare_out_file, read_json, write_json
 
 def validate_status(dirname):
     if not check_file_exists(dirname, 'status.json'):
@@ -80,7 +80,7 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     # set up a temporary data directory for that experiment
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
     exp_status_dir = os.path.join(status_dir, exp_name)
-    os.makedirs(exp_data_dir, exist_ok=True)
+    idemp_mkdir(exp_data_dir)
 
     # run the run.sh file on the configs directory and the destination directory
     subprocess.call([os.path.join(exp_dir, 'run.sh'),
@@ -101,11 +101,11 @@ def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
     exp_config_dir = os.path.join(configs_dir, exp_name)
     tmp_analysis_dir = os.path.join(exp_data_dir, 'analysis')
-    os.makedirs(tmp_analysis_dir, exist_ok=True)
+    idemp_mkdir(tmp_analysis_dir)
 
     analyzed_data_dir = os.path.join(data_dir, exp_name)
     if not os.path.exists(analyzed_data_dir):
-        os.makedirs(analyzed_data_dir, exist_ok=True)
+        idemp_mkdir(analyzed_data_dir)
 
     subprocess.call([os.path.join(exp_dir, 'analyze.sh'),
                      exp_config_dir, exp_data_dir, tmp_analysis_dir],
@@ -192,8 +192,8 @@ def main(home_dir, experiments_dir):
     tmp_data_dir = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str)
     data_archive = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str + '_data.tar.gz')
     backup_archive = os.path.join(dash_config['backup_dir'], 'dashboard_' + time_str + '.tar.gz')
-    os.makedirs(tmp_data_dir, exist_ok=True)
-    os.makedirs(os.path.dirname(backup_archive), exist_ok=True)
+    idemp_mkdir(tmp_data_dir)
+    idemp_mkdir(os.path.dirname(backup_archive))
 
     config_dir = os.path.join(home_dir, 'config')
     status_dir = os.path.join(home_dir, 'status')
@@ -206,7 +206,7 @@ def main(home_dir, experiments_dir):
         subprocess.call(['tar', '-zcf', backup_archive, home_dir])
     for dashboard_dir in [config_dir, status_dir, data_dir, graph_dir, summary_dir]:
         if not os.path.exists(dashboard_dir):
-            os.makedirs(dashboard_dir, exist_ok=True)
+            idemp_mkdir(dashboard_dir)
             continue
         # remove subdirectories to set up for new run (except data, config)
         if dashboard_dir == data_dir or dashboard_dir == config_dir:
