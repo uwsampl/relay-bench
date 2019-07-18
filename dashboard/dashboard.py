@@ -6,29 +6,7 @@ import os
 import sys
 import subprocess
 
-def check_file_exists(dirname, filename):
-    full_name = os.path.join(dirname, filename)
-    return os.path.isfile(full_name)
-
-
-def prepare_out_file(dirname, filename):
-    full_name = os.path.join(dirname, filename)
-    if not check_file_exists(dirname, filename):
-        os.makedirs(os.path.dirname(full_name), exist_ok=True)
-    return full_name
-
-
-def read_json(dirname, filename):
-    with open(os.path.join(dirname, filename)) as json_file:
-        data = json.load(json_file)
-        return data
-
-
-def write_json(dirname, filename, obj):
-    filename = prepare_out_file(dirname, filename)
-    with open(filename, 'w') as outfile:
-        json.dump(obj, outfile)
-
+from common import check_file_exists, prepare_out_file, read_json, write_json
 
 def validate_status(dirname):
     if not check_file_exists(dirname, 'status.json'):
