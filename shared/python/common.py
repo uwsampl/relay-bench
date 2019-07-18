@@ -8,11 +8,19 @@ import os
 import sys
 
 def check_file_exists(dirname, filename):
+    dirname = os.path.expanduser(dirname)
     full_name = os.path.join(dirname, filename)
     return os.path.isfile(full_name)
 
 
+def idemp_mkdir(dirname):
+    '''Creates a directory in an idempotent fashion.'''
+    dirname = os.path.expanduser(dirname)
+    os.makedirs(dirname, exist_ok=True)
+
+
 def prepare_out_file(dirname, filename):
+    dirname = os.path.expanduser(dirname)
     full_name = os.path.join(dirname, filename)
     if not check_file_exists(dirname, filename):
         os.makedirs(os.path.dirname(full_name), exist_ok=True)
@@ -20,6 +28,7 @@ def prepare_out_file(dirname, filename):
 
 
 def read_json(dirname, filename):
+    dirname = os.path.expanduser(dirname)
     with open(os.path.join(dirname, filename)) as json_file:
         data = json.load(json_file)
         return data
@@ -55,6 +64,7 @@ def parse_timestamp(data):
 
 def sort_data(data_dir):
     '''Sorts all data files in the given directory by timestamp.'''
+    data_dir = os.path.expanduser(data_dir)
     all_data = []
     for _, _, files in os.walk(data_dir):
         for name in files:
