@@ -39,6 +39,9 @@ experiments_dir=$(pwd)/experiments
 
 # export because benchmarks may need it
 export BENCHMARK_DEPS=$(pwd)/shared
+# allow using the shared Python libraries for the dashboard infra
+source $BENCHMARK_DEPS/bash/common.sh
+include_shared_python_deps
 
 cd $script_dir
 python3 dashboard.py --home-dir $dashboard_home --experiments-dir $experiments_dir
