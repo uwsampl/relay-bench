@@ -8,6 +8,6 @@
     "opt_levels": [0],
     "networks": ["resnet-18"],
     "title": "Relay Opt Level Comparison",
-    "notify": ["U1FUN7EN5","U0VRBK1PS","U0EJMLFTQ","U0G3J4FGA","U0G3HALFR"],
+    "notify": ["List of people to ping on Slack in the event of failure"],
     "description": "Comparison of average Relay runs of different CNNs on various opt levels"
 }

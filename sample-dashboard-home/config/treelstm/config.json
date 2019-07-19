@@ -9,6 +9,6 @@
     "datasets": [["dev", 1]],
     "note_on_datasets": "dev has 500 entries, test has 4927, train has 5000. You can specify to use fewer than the max to save time, etc.",
     "title": "TreeLSTM Comparison",
-    "notify": ["U1FUN7EN5","U0VRBK1PS","U0EJMLFTQ","U0G3J4FGA","U0G3HALFR"],
+    "notify": ["List of people to ping on Slack in the event of failure"],
     "description": "Comparison of different frameworks and configurations on a character-level RNN based on the PyTorch tutorial"
 }

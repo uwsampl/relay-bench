@@ -11,6 +11,6 @@
     "frameworks": ["tf", "pt", "relay", "nnvm", "mxnet"],
     "networks": ["resnet-18"],
     "title": "CNN Comparison",
-    "notify": ["U1FUN7EN5","U0VRBK1PS","U0EJMLFTQ","U0G3J4FGA","U0G3HALFR"],
+    "notify": ["List of people to ping on Slack in the event of failure"],
     "description": "Comparison of running times of different CNNs between frameworks"
 }
