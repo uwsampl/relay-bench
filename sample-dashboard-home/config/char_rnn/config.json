@@ -11,6 +11,6 @@
     "relay_configs": ["loop"],
     "languages": ["English"],
     "title": "Char RNN Comparison",
-    "notify": ["U1FUN7EN5","U0VRBK1PS","U0EJMLFTQ","U0G3J4FGA","U0G3HALFR"],
+    "notify": ["List of people to ping on Slack in the event of failure"],
     "description": "Comparison of different frameworks and configurations on a character-level RNN based on the PyTorch tutorial"
 }
