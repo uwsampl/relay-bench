@@ -7,27 +7,28 @@
 cd "$(dirname "$0")"
 script_dir=$(pwd)
 
-# build TVM
-rm -rf ~/dashboard-tvm
-git clone --recursive https://github.com/dmlc/tvm ~/dashboard-tvm
-mkdir ~/dashboard-tvm/build
-cp config.cmake ~/dashboard-tvm/build
-cd ~/dashboard-tvm; make -j 32
+export TVM_HOME=~/dashboard-tvm
+# ensure the newly-pulled tvm will be on the Python path
+export PYTHONPATH="$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}"
+
+# build a fresh TVM from scratch
+rm -rf "$TVM_HOME"
+git clone --recursive https://github.com/dmlc/tvm "$TVM_HOME"
+mkdir "$TVM_HOME/build"
+cp config.cmake "$TVM_HOME/build"
+cd "$TVM_HOME"
+make -j 32
+
+aot_path=~/dashboard-aot
+# ensure relay AOT will be on the Python path
+export PYTHONPATH="$aot_path:${PYTHONPATH}"
 
 # pull in a new relay AOT compiler
-rm -rf ~/dashboard-aot
-git clone https://github.com/uwsampl/relay-aot.git ~/dashboard-aot
-
-# have to set the newly-pulled tvm to be the one called from python
-export TVM_HOME=~/dashboard-tvm
-export PYTHONPATH=$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}
-
-# ensure relay AOT will be on the Python path
-aot_path=~/dashboard-aot
-export PYTHONPATH=$aot_path:${PYTHONPATH}
+rm -rf "$aot_path"
+git clone https://github.com/uwsampl/relay-aot.git "$aot_path"
 
 # ensure CUDA will be present in the path
-export PATH=/usr/local/cuda-10.0/bin:/usr/local/cuda-10.0/NsightCompute-1.0${PATH:+:${PATH}}
+export PATH="/usr/local/cuda-10.0/bin:/usr/local/cuda-10.0/NsightCompute-1.0${PATH:+:${PATH}}"
 
 # need CUDA LD libraries too
 export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
