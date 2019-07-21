@@ -1,0 +1,12 @@
+{
+    "active": true,
+    "title": "Relay-to-VTA ResNet-18 Statistics",
+    "description": "Run ResNet-18 on VTA simulator and physical boards and collect statistics from both",
+    "notify": [],
+    "device": "vta",
+    "targets": ["sim"],
+    "tracker_host": "123.45.6.78",
+    "tracker_port": 4200,
+    "n_times_per_input": 4,
+    "num_reps": 3
+}
