@@ -18,9 +18,9 @@ PHYS_TARGETS = {'pynq'}
 def generate_longitudinal_comparisons(sorted_data, output_dir):
     longitudinal_dir = os.path.join(output_dir, 'longitudinal')
 
-    times = [parse_timestamp(entry) for entry in sorted_data]
     most_recent = sorted_data[-1]
     for target in most_recent.keys() & SIM_TARGETS:
+        times = [parse_timestamp(entry) for entry in sorted_data if target in entry]
         for stat in most_recent[target].keys():
             stats = [entry[target][stat] for entry in sorted_data if target in entry]
             fig, ax = plt.subplots()
@@ -36,6 +36,7 @@ def generate_longitudinal_comparisons(sorted_data, output_dir):
             plt.close()
 
     for target in most_recent.keys() & PHYS_TARGETS:
+        times = [parse_timestamp(entry) for entry in sorted_data if target in entry]
         means = [entry[target]['mean'] for entry in sorted_data if target in entry]
         print(means)
         std_devs = [entry[target]['std_dev'] for entry in sorted_data if target in entry]
