@@ -12,14 +12,17 @@ from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
 
+SIM_TARGETS = {'sim', 'tsim'}
+PHYS_TARGETS = {'pynq'}
+
 def generate_longitudinal_comparisons(sorted_data, output_dir):
     longitudinal_dir = os.path.join(output_dir, 'longitudinal')
 
     times = [parse_timestamp(entry) for entry in sorted_data]
     most_recent = sorted_data[-1]
-    for target in most_recent.keys() & {'sim', 'tsim'}:
+    for target in most_recent.keys() & SIM_TARGETS:
         for stat in most_recent[target].keys():
-            stats = [entry[target][stat] for entry in sorted_data]
+            stats = [entry[target][stat] for entry in sorted_data if target in entry]
             fig, ax = plt.subplots()
             plt.plot(times, stats)
             plt.title('{} on {} over Time'.format(stat, target))
@@ -32,10 +35,10 @@ def generate_longitudinal_comparisons(sorted_data, output_dir):
             plt.savefig(outfile)
             plt.close()
 
-    for target in most_recent.keys() & {'pynq'}:
-        means = [entry[target]['mean'] for entry in sorted_data]
+    for target in most_recent.keys() & PHYS_TARGETS:
+        means = [entry[target]['mean'] for entry in sorted_data if target in entry]
         print(means)
-        std_devs = [entry[target]['std_dev'] for entry in sorted_data]
+        std_devs = [entry[target]['std_dev'] for entry in sorted_data if target in entry]
         print(std_devs)
         fig, ax = plt.subplots()
         plt.errorbar(times, means, yerr=std_devs)
