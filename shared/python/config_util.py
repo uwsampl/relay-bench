@@ -41,7 +41,7 @@ def check_config(config, defaults=None, acceptable_values=None, conditions=None,
     defaults = defaults if defaults is not None else {}
     acceptable_values = acceptable_values if acceptable_values is not None else {}
     conditions = conditions if conditions is not None else {}
-    permit_empty = permit_empty if permit_empty is not None else {}
+    permit_empty = permit_empty if permit_empty is not None else {'notify'}
     ret = defaults
 
     for field, value in config.items():
