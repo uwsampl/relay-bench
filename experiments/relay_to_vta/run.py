@@ -39,7 +39,7 @@ from vta.testing import simulator
 from vta.top import graph_pack
 
 from validate_config import validate
-from common import write_json, write_status
+from common import read_json, write_json, write_status
 
 # Name of Gluon model to compile
 MODEL = 'resnet18_v1'
@@ -52,17 +52,11 @@ STOP_PACK = 'nn.global_avg_pool2d'
 # TODO(weberlo): What's the flippin' diff between `vta_env.target`, and `vta_env.TARGET`?
 
 def init_vta_env(target):
-    vta_config_path = os.path.join(os.environ['TVM_HOME'], 'vta', 'config', 'vta_config.json')
-    with open(vta_config_path, 'r') as f:
-        contents = f.readlines()
-
-    # Patch the target in the VTA config file to match the given target.
-    for i in range(len(contents)):
-        if '"TARGET"' in contents[i]:
-            contents[i] = '    "TARGET" : "{}",\n'.format(target)
-
-    with open(vta_config_path, 'w') as f:
-        f.write(''.join(contents))
+    config_dir = os.path.join(os.environ['TVM_HOME'], 'vta', 'config')
+    config_filename = 'vta_config.json'
+    vta_config = read_json(config_dir, config_filename)
+    vta_config['TARGET'] = target
+    write_json(config_dir, config_filename, vta_config)
     return vta.get_env()
 
 
