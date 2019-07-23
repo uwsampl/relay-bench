@@ -47,6 +47,8 @@ def cnn_setup(network, device, batch_size, enable_xla):
     # implementations from running (this is a TF bug)
     if dev == '/cpu:0':
         os.putenv('CUDA_VISIBLE_DEVICES', '')
+    else:
+        os.putenv('CUDA_VISIBLE_DEVICES', '0')
 
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True), log_device_placement=False)
     if enable_xla:
