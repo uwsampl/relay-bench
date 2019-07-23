@@ -251,7 +251,7 @@ def main(home_dir, experiments_dir):
 
     # after analysis we can compress the data
     subprocess.call(['tar', '-zcf', data_archive, tmp_data_dir])
-    # subprocess.call(['rm', '-rf', tmp_data_dir])
+    subprocess.call(['rm', '-rf', tmp_data_dir])
 
     # for each experiment for which analysis succeeded, run visualization and summarizaion
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
