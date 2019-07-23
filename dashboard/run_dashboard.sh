@@ -2,6 +2,7 @@
 #
 # Builds dashboard deps, runs the benchmark infrastructure,
 # builds the webpage, and invokes the slack integration
+dashboard_home=$1
 
 # store path to this script
 cd "$(dirname "$0")"
@@ -34,7 +35,6 @@ export PATH="/usr/local/cuda-10.0/bin:/usr/local/cuda-10.0/NsightCompute-1.0${PA
 export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
 
-dashboard_home="/share/dashboard"
 cd $script_dir/..
 experiments_dir=$(pwd)/experiments
 
