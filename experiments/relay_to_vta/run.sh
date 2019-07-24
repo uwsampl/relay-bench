@@ -9,4 +9,5 @@ add_to_pythonpath $(pwd)
 
 export PYTHONPATH="$TVM_HOME/vta/python:$PYTHONPATH"
 
-python3 run.py --config-dir $config_dir --output-dir $data_dir
+python3 run.py --target "sim" --config-dir $config_dir --output-dir $data_dir
+python3 run.py --target "pynq" --config-dir $config_dir --output-dir $data_dir
