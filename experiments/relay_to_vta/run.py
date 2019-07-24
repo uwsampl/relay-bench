@@ -34,12 +34,8 @@ import tvm
 from tvm import rpc, autotvm, relay
 from tvm.contrib import graph_runtime, util
 
-import vta
-from vta.testing import simulator
-from vta.top import graph_pack
-
 from validate_config import validate
-from common import read_json, write_json, write_status
+from common import check_file_exists, read_json, write_json, write_status
 
 # Name of Gluon model to compile
 MODEL = 'resnet18_v1'
@@ -49,18 +45,17 @@ MODEL = 'resnet18_v1'
 START_PACK = 'nn.max_pool2d'
 STOP_PACK = 'nn.global_avg_pool2d'
 
-# TODO(weberlo): What's the flippin' diff between `vta_env.target`, and `vta_env.TARGET`?
-
-def init_vta_env(target):
+def set_up_vta_env(target):
     config_dir = os.path.join(os.environ['TVM_HOME'], 'vta', 'config')
     config_filename = 'vta_config.json'
     vta_config = read_json(config_dir, config_filename)
     vta_config['TARGET'] = target
     write_json(config_dir, config_filename, vta_config)
-    return vta.get_env()
 
 
 def init_remote(vta_env, config):
+    import vta
+
     if vta_env.TARGET in ['sim', 'tsim']:
         # To target the simulator, we use a local RPC session as the execution
         # remote.
@@ -94,6 +89,10 @@ def init_remote(vta_env, config):
 
 def build_resnet(remote, target, ctx, vta_env):
     """Build the inference graph runtime."""
+    import vta
+    from vta.testing import simulator
+    from vta.top import graph_pack
+
     # Load pre-configured AutoTVM schedules.
     with autotvm.tophub.context(target):
         # Populate the shape and data type dictionary for ResNet input.
@@ -161,6 +160,8 @@ def get_test_image(vta_env):
 
 def run_model(resnet_module, remote, ctx, vta_env, config):
     """Perform ResNet-18 inference on an ImageNet sample and collect stats."""
+    from vta.testing import simulator
+
     image = get_test_image(vta_env)
     # Set the module input to be `image`.
     resnet_module.set_input('data', image)
@@ -213,31 +214,38 @@ def check_results(resnet_module, remote, vta_env):
     assert(cat_detected)
 
 
-def main(config_dir, output_dir):
+def main(target_name, config_dir, output_dir):
     """Run the experiment."""
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
         return
 
-    result = {}
-    for target_name in config['targets']:
-        vta_env = init_vta_env(target_name)
-        device = config['device']
-        target = vta_env.target if device == 'vta' else vta_env.target_vta_cpu
+    set_up_vta_env(target_name)
+    # We can't import VTA until we've modified the config file, because it's
+    # the *import* that loads the config.
+    import vta
+    vta_env = vta.get_env()
 
-        # Make sure TVM was compiled with RPC support.
-        assert tvm.module.enabled('rpc')
-        remote, reconfig_time = init_remote(vta_env, config)
-        # Get execution context from remote
-        ctx = remote.ext_dev(0) if device == 'vta' else remote.cpu(0)
+    device = config['device']
+    target = vta_env.target if device == 'vta' else vta_env.target_vta_cpu
 
-        resnet_module = build_resnet(remote, target, ctx, vta_env)
-        sim_stats = run_model(resnet_module, remote, ctx, vta_env, config)
-        if reconfig_time is not None:
-            sim_stats['reconfig_time'] = reconfig_time
+    # Make sure TVM was compiled with RPC support.
+    assert tvm.module.enabled('rpc')
+    remote, reconfig_time = init_remote(vta_env, config)
+    # Get execution context from remote
+    ctx = remote.ext_dev(0) if device == 'vta' else remote.cpu(0)
 
-        result[target_name] = sim_stats
+    resnet_module = build_resnet(remote, target, ctx, vta_env)
+    stats = run_model(resnet_module, remote, ctx, vta_env, config)
+    if reconfig_time is not None:
+        stats['reconfig_time'] = reconfig_time
+
+    if check_file_exists(output_dir, 'data.json'):
+        result = read_json(output_dir, 'data.json')
+    else:
+        result = {}
+    result[target_name] = stats
 
     write_json(output_dir, 'data.json', result)
     write_status(output_dir, True, 'success')
@@ -245,7 +253,8 @@ def main(config_dir, output_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--target', type=str, required=True)
     parser.add_argument('--config-dir', type=str, required=True)
     parser.add_argument('--output-dir', type=str, required=True)
     args = parser.parse_args()
-    main(args.config_dir, args.output_dir)
+    main(args.target, args.config_dir, args.output_dir)
