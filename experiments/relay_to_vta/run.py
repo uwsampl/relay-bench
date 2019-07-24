@@ -181,8 +181,8 @@ def run_model(resnet_module, remote, ctx, vta_env, config):
     else:
         tcost = timer()
         stats = {
-            'mean': tcost.mean * 1000 / env.BATCH,
-            'std_dev': np.std(tcost.results) * 1000 / env.BATCH
+            'mean': tcost.mean * 1000 / vta_env.BATCH,
+            'std_dev': np.std(tcost.results) * 1000 / vta_env.BATCH
         }
 
     check_results(resnet_module, remote, vta_env)
