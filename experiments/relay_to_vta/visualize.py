@@ -38,9 +38,7 @@ def generate_longitudinal_comparisons(sorted_data, output_dir):
     for target in most_recent.keys() & PHYS_TARGETS:
         times = [parse_timestamp(entry) for entry in sorted_data if target in entry]
         means = [entry[target]['mean'] for entry in sorted_data if target in entry]
-        print(means)
         std_devs = [entry[target]['std_dev'] for entry in sorted_data if target in entry]
-        print(std_devs)
         fig, ax = plt.subplots()
         plt.errorbar(times, means, yerr=std_devs)
         plt.title('Mean Inference Time on {} over Time'.format(target))
