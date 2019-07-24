@@ -7,16 +7,7 @@ import os
 import requests
 import sys
 
-def check_file_exists(dirname, filename):
-    full_name = os.path.join(dirname, filename)
-    return os.path.isfile(full_name)
-
-
-def read_json(dirname, filename):
-    with open(os.path.join(dirname, filename)) as json_file:
-        data = json.load(json_file)
-        return data
-
+from common import check_file_exists, read_json
 
 def generate_ping_list(user_ids):
     return ', '.join(['<@{}>'.format(user_id) for user_id in user_ids])
