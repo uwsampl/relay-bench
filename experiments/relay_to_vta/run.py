@@ -37,6 +37,10 @@ from tvm.contrib import graph_runtime, util
 from validate_config import validate
 from common import check_file_exists, read_json, write_json, write_status
 
+import vta
+from vta.testing import simulator
+from vta.top import graph_pack
+
 # Name of Gluon model to compile
 MODEL = 'resnet18_v1'
 # The `START_PACK` and `STOP_PACK` labels indicate where to start and end the
@@ -45,17 +49,17 @@ MODEL = 'resnet18_v1'
 START_PACK = 'nn.max_pool2d'
 STOP_PACK = 'nn.global_avg_pool2d'
 
-def set_up_vta_env(target):
+def init_vta_env(target):
+    """Read the VTA config and set the target to `target`."""
     config_dir = os.path.join(os.environ['TVM_HOME'], 'vta', 'config')
     config_filename = 'vta_config.json'
     vta_config = read_json(config_dir, config_filename)
-    vta_config['TARGET'] = target
-    write_json(config_dir, config_filename, vta_config)
+    vta_config["TARGET"] = target
+    return vta.Environment(vta_config)
 
 
 def init_remote(vta_env, config):
-    import vta
-
+    """Create an RPC session based on the given config."""
     if vta_env.TARGET in ['sim', 'tsim']:
         # To target the simulator, we use a local RPC session as the execution
         # remote.
@@ -89,10 +93,6 @@ def init_remote(vta_env, config):
 
 def build_resnet(remote, target, ctx, vta_env):
     """Build the inference graph runtime."""
-    import vta
-    from vta.testing import simulator
-    from vta.top import graph_pack
-
     # Load pre-configured AutoTVM schedules.
     with autotvm.tophub.context(target):
         # Populate the shape and data type dictionary for ResNet input.
@@ -160,8 +160,6 @@ def get_test_image(vta_env):
 
 def run_model(resnet_module, remote, ctx, vta_env, config):
     """Perform ResNet-18 inference on an ImageNet sample and collect stats."""
-    from vta.testing import simulator
-
     image = get_test_image(vta_env)
     # Set the module input to be `image`.
     resnet_module.set_input('data', image)
@@ -192,6 +190,7 @@ def run_model(resnet_module, remote, ctx, vta_env, config):
 
 
 def check_results(resnet_module, remote, vta_env):
+    """Verify the input was classified correctly."""
     # Get classification results.
     tvm_output = resnet_module.get_output(
         0, tvm.nd.empty((vta_env.BATCH, 1000), 'float32', remote.cpu(0)))
@@ -214,17 +213,8 @@ def check_results(resnet_module, remote, vta_env):
     assert(cat_detected)
 
 
-def main(target_name, config_dir, output_dir):
-    """Run the experiment."""
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return
-
-    set_up_vta_env(target_name)
-    # We can't import VTA until we've modified the config file, because it's
-    # the *import* that loads the config.
-    import vta
+def run_single(config):
+    """Run the experiment on a single target."""
     vta_env = vta.get_env()
 
     device = config['device']
@@ -241,11 +231,20 @@ def main(target_name, config_dir, output_dir):
     if reconfig_time is not None:
         stats['reconfig_time'] = reconfig_time
 
-    if check_file_exists(output_dir, 'data.json'):
-        result = read_json(output_dir, 'data.json')
-    else:
-        result = {}
-    result[target_name] = stats
+    return stats
+
+
+def main(config_dir, output_dir):
+    """Run the experiment."""
+    config, msg = validate(config_dir)
+    if config is None:
+        write_status(output_dir, False, msg)
+        return
+
+    result = {}
+    for target_name in config['targets']:
+        with init_vta_env(target_name):
+            result[target_name] = run_single(config)
 
     write_json(output_dir, 'data.json', result)
     write_status(output_dir, True, 'success')
@@ -253,8 +252,7 @@ def main(target_name, config_dir, output_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--target', type=str, required=True)
     parser.add_argument('--config-dir', type=str, required=True)
     parser.add_argument('--output-dir', type=str, required=True)
     args = parser.parse_args()
-    main(args.target, args.config_dir, args.output_dir)
+    main(args.config_dir, args.output_dir)
