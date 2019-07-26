@@ -180,6 +180,8 @@ def run_model(resnet_module, remote, ctx, vta_env, config):
             stats[key] //= divisor
     else:
         tcost = timer()
+        # Convert times from seconds to milliseconds and divide by the batch
+        # size, since the evaluator doesn't account for that.
         stats = {
             'mean': tcost.mean * 1000 / vta_env.BATCH,
             'std_dev': np.std(tcost.results) * 1000 / vta_env.BATCH
