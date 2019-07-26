@@ -20,8 +20,9 @@ def summary_by_dev(data, devs):
     if not devs:
         return ''
     data_by_dev = {dev: data[dev] for dev in devs}
+    ret = ''
     for dev in devs:
-        ret = '_Times on {}_\n'.format(dev.upper())
+        ret += '_Times on {}_\n'.format(dev.upper())
         for (setting, time) in data_by_dev[dev].items():
             ret += '{}: {:.3f}\n'.format(setting, time*1e3)
     return ret
