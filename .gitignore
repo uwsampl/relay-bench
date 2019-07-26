@@ -129,9 +129,9 @@ experiments/treelstm/pt_tlstm/lib/stanford-parser/*
 experiments/treelstm/pt_tlstm/lib/stanford-postagger-2015-01-30/*
 experiments/treelstm/pt_tlstm/lib/stanford-postagger**
 
-oopsla_benchmarks/pytorch/rnn/tlstm/data/*
-oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-tagger/*
-oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-parser/*
+# pulled-in resources for training loop
+experiments/training_loop/marisa-tvm
+experiments/training_loop/beacon
 
 # data and graphs
 *.csv
