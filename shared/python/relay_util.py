@@ -1,7 +1,34 @@
 import tvm
 from tvm import relay
+from tvm.relay import transform
 import numpy as np
 import aot
+
+def convert_passes(pass_names):
+    def match_pass_name(name):
+        if name == 'FoldScaleAxis':
+            return transform.FoldScaleAxis()
+        if name == 'BackwardFoldScaleAxis':
+            return transform.BackwardFoldScaleAxis()
+        if name == 'ForwardFoldScaleAxis':
+            return transform.ForwardFoldScaleAxis()
+        if name == 'FuseOps':
+            return transform.FuseOps(3)
+        if name == 'FoldConstant':
+            return transform.FoldConstant()
+        if name == 'CombineParallelConv2d':
+            return transform.CombineParallelConv2d()
+        if name == 'AlterOpLayout':
+            return transform.AlterOpLayout()
+        if name == 'EliminateCommonSubexpr':
+            return transform.EliminateCommonSubexpr()
+        if name == 'PartialEvaluate':
+            return transform.PartialEvaluate()
+        if name == 'CanonicalizeCast':
+            return transform.CanonicalizeCast()
+        raise Exception('Name {} does not match any pass'.format(name))
+    return [match_pass_name(name) for name in pass_names]
+
 
 def get_network(name, batch_size, dtype='float32', ir='relay'):
     """Get the symbol definition and random weight of a network
@@ -107,8 +134,15 @@ def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
     return mod
 
 
-def cnn_setup(network, dev, batch_size, opt):
+def cnn_setup(network, dev, batch_size, opt, passes=''):
     net, params, image_shape = get_network(network, batch_size)
+    if passes != '':
+        relay_passes = convert_passes(passes.split('|'))
+        # always include simplify inference because we *must*
+        # eliminate batch normas
+        seq = transform.Sequential([transform.SimplifyInference()] + relay_passes)
+        net = seq(net)
+
     mod = setup_relay_mod(net, image_shape, 'data', params, dev, opt)
     return [mod]
 
