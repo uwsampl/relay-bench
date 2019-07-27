@@ -134,6 +134,10 @@ def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
     return mod
 
 
+# note: passes should be a |-separated list of passes to apply before setting up the mod
+# (i.e., before any passes from opt levels are added). The reason for the | separarator is
+# that you can't write a comma-separated list to a CSV. General recommendation: if you want
+# to use individual passes, set opt to 0
 def cnn_setup(network, dev, batch_size, opt, passes=''):
     net, params, image_shape = get_network(network, batch_size)
     if passes != '':
