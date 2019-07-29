@@ -42,14 +42,6 @@ def cnn_setup(network, device, batch_size, enable_xla):
     data_format = 'channels_first' if dev == '/gpu:0' else 'channels_last'
     net, image_shape = instantiate_network(network, batch_size, data_format)
 
-    # if we want to run on CPU we have to trick TF into believing
-    # there is no GPU available at all to prevent "fallback" GPU
-    # implementations from running (this is a TF bug)
-    if dev == '/cpu:0':
-        os.putenv('CUDA_VISIBLE_DEVICES', '')
-    else:
-        os.putenv('CUDA_VISIBLE_DEVICES', '0')
-
     config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True), log_device_placement=False)
     if enable_xla:
         config.graph_options.optimizer_options.global_jit_level = tf.OptimizerOptions.ON_1
@@ -70,11 +62,9 @@ def cnn_trial(dev, sess, output):
 
 def cnn_teardown(dev, sess, output):
     sess.__exit__(None, None, None)
-    if dev == '/cpu:0':
-        os.unsetenv('CUDA_VISIBLE_DEVICES')
 
 
-def main(config_dir, output_dir):
+def main(config_dir, output_dir, device):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
@@ -82,6 +72,10 @@ def main(config_dir, output_dir):
 
     if 'tf' not in config['frameworks']:
         write_status(output_dir, True, 'TF not run')
+        sys.exit(0)
+
+    if device not in config['devices']:
+        write_stats(output_dir, True, 'TF not run on {}'.format(device))
         sys.exit(0)
 
     enable_xla = [False]
@@ -93,9 +87,10 @@ def main(config_dir, output_dir):
         config['dry_run'], config['n_times_per_input'], config['n_inputs'],
         cnn_trial, cnn_setup, cnn_teardown,
         ['network', 'device', 'batch_size', 'enable_xla'],
-        [config['networks'], config['devices'],
+        [config['networks'], [device],
          config['batch_sizes'], enable_xla],
-        path_prefix=output_dir)
+        path_prefix=output_dir,
+        append_to_csv=True)
 
     write_status(output_dir, success, msg)
     if not success:
@@ -105,5 +100,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--config-dir", type=str, required=True)
     parser.add_argument("--output-dir", type=str, required=True)
+    parser.add_argument("--device", type=str, required=True)
     args = parser.parse_args()
-    main(args.config_dir, args.output_dir)
+    main(args.config_dir, args.output_dir, args.device)
