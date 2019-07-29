@@ -59,7 +59,7 @@ def treelstm_teardown(thunk):
     pass
 
 
-def main(config_dir, output_dir):
+def main(config_dir, output_dir, dataset):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
@@ -70,24 +70,35 @@ def main(config_dir, output_dir):
         sys.exit(0)
 
     datasets = config['datasets']
-    for dataset, max_idx in datasets:
-        success, msg = run_trials(
-            'relay', 'treelstm',
-            config['dry_run'], config['n_times_per_input'], config['n_inputs'],
-            treelstm_trial, treelstm_setup, treelstm_teardown,
-            ['device', 'method', 'dataset', 'idx'],
-            [config['devices'], config['relay_methods'],
-             [dataset], [i for i in range(max_idx)]],
-            path_prefix=output_dir,
-            append_to_csv=True)
-        if not success:
-            write_status(output_dir, success, msg)
-            sys.exit(1)
+    max_idx = -1
+    for pair in config['datasets']:
+        if pair[0] == dataset:
+            max_idx = pair[1]
+            break
+
+    # dataset is not included in the config, so skip
+    if max_idx == -1:
+        write_status(output_dir, True, 'Dataset {} not run'.format(dataset))
+        sys.exit(0)
+
+    success, msg = run_trials(
+        'relay', 'treelstm',
+        config['dry_run'], config['n_times_per_input'], config['n_inputs'],
+        treelstm_trial, treelstm_setup, treelstm_teardown,
+        ['device', 'method', 'dataset', 'idx'],
+        [config['devices'], config['relay_methods'],
+         [dataset], [i for i in range(max_idx)]],
+        path_prefix=output_dir,
+        append_to_csv=True)
+    if not success:
+        write_status(output_dir, success, msg)
+        sys.exit(1)
     write_status(output_dir, True, 'success')
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--config-dir", type=str, required=True)
     parser.add_argument("--output-dir", type=str, required=True)
+    parser.add_argument("--dataset", type=str, required=True)
     args = parser.parse_args()
-    main(args.config_dir, args.output_dir)
+    main(args.config_dir, args.output_dir, args.dataset)

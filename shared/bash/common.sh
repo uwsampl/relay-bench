@@ -34,11 +34,12 @@ function check_python_exit_code {
 }
 export -f check_python_exit_code
 
-# Takes three arguments (a Python script meant to run a trial, a directory meant
-# to be the config dir, and a directory meant to be the output dir) and runs the
-# following: python3 script.py --config-dir config_dir --output-dir output_dir
+# Takes at least three arguments (a Python script meant to run a trial,
+# a directory meant to be the config dir, and a directory meant to be
+# the output dir) and runs the following:
+# python3 script.py --config-dir config_dir --output-dir output_dir [all remaining args]
 # Exits if the exit code is nonzero
 function python_run_trial {
-    check_python_exit_code "$1" "--config-dir" "$2" "--output-dir" "$3"
+    check_python_exit_code "$1" "--config-dir" "$2" "--output-dir" "$3" "${@:4}"
 }
 export -f python_run_trial
