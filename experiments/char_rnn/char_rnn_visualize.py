@@ -3,7 +3,6 @@ import os
 
 import matplotlib
 matplotlib.use('Agg')
-from matplotlib.ticker import FuncFormatter
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -11,33 +10,22 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
-
-def format_ms(ax):
-    def milliseconds(value, tick_position):
-        return '{:3.1f}'.format(value*1e3)
-    formatter = FuncFormatter(milliseconds)
-    ax.yaxis.set_major_formatter(formatter)
+from plot_util import PlotType, make_plot
 
 def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
-    fig, ax = plt.subplots()
-    format_ms(ax)
-
-    comparison_dir = os.path.join(output_prefix, 'comparison')
-
     means = [measurement for (_, measurement) in data.items()]
     if not means:
         return
 
+    comparison_dir = os.path.join(output_prefix, 'comparison')
+    x_label = 'Framework'
+    y_label = 'Time (ms)'
     settings = np.arange(len(data.items()))
-    plt.bar(settings, means)
-    plt.xticks(settings, [name for (name, _) in data.items()])
-    plt.title(title)
-    plt.xlabel('Framework')
-    plt.ylabel('Time (ms)')
-    plt.yscale('log')
-    outfile = prepare_out_file(comparison_dir, filename)
-    plt.savefig(outfile)
-    plt.close()
+    x_tick_labels = [name for (name, _) in data.items()]
+    make_plot(PlotType.BAR, title, x_label, y_label,
+              settings, means,
+              comparison_dir, filename,
+              x_tick_labels=x_tick_labels)
 
 
 def generate_longitudinal_comparisons(sorted_data, dev, output_prefix=''):
@@ -51,18 +39,14 @@ def generate_longitudinal_comparisons(sorted_data, dev, output_prefix=''):
     for (setting, time) in most_recent.items():
         stats = [entry[dev][setting] for entry in sorted_data]
 
-        fig, ax = plt.subplots()
-        format_ms(ax)
-        plt.plot(times, stats)
-        plt.title('{} on {} over Time'.format(setting, dev))
+        title = '{} on {} over Time'.format(setting, dev)
         filename = 'longitudinal-{}-{}.png'.format(setting, dev)
-        plt.xlabel('Date of Run')
-        plt.ylabel('Time (ms)')
-        plt.yscale('log')
-        plt.gcf().autofmt_xdate()
-        outfile = prepare_out_file(longitudinal_dir, filename)
-        plt.savefig(outfile)
-        plt.close()
+        x_label = 'Date of Run'
+        y_label = 'Time (ms)'
+
+        make_plot(PlotType.LINE, title, x_label, y_label,
+                  times, stats,
+                  longitudinal_dir, filename)
 
 
 def main(data_dir, config_dir, output_dir):
