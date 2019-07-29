@@ -50,7 +50,7 @@ def main(home_dir):
             failed_experiments.append((exp_name, 'precheck',
                                        textwrap.shorten(
                                            precheck_status['message'],
-                                           width=50),
+                                           width=280),
                                        []))
             continue
 
@@ -67,7 +67,7 @@ def main(home_dir):
                 failed_experiments.append((exp_title, stage,
                                            textwrap.shorten(
                                                stage_status['message'],
-                                               width=50),
+                                               width=280),
                                            notify))
                 failure = True
                 break
