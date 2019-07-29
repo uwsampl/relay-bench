@@ -6,6 +6,7 @@ import math
 import os
 import requests
 import sys
+import textwrap
 
 from common import check_file_exists, read_json
 
@@ -47,7 +48,9 @@ def main(home_dir):
         precheck_status = read_json(subdir, 'precheck.json')
         if not precheck_status['success']:
             failed_experiments.append((exp_name, 'precheck',
-                                       precheck_status['message'],
+                                       textwrap.shorten(
+                                           precheck_status['message'],
+                                           width=50),
                                        []))
             continue
 
@@ -62,7 +65,9 @@ def main(home_dir):
             stage_status = read_json(subdir, stage + '.json')
             if not stage_status['success']:
                 failed_experiments.append((exp_title, stage,
-                                           stage_status['message'],
+                                           textwrap.shorten(
+                                               stage_status['message'],
+                                               width=50),
                                            notify))
                 failure = True
                 break
