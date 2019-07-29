@@ -81,4 +81,14 @@ if ! $data_exists; then
 fi
 
 python_run_trial "run_pt.py" $config_dir $data_dir
-python_run_trial "run_relay.py" $config_dir $data_dir
+
+# Because the AoT compiler spawns a lot of subprocesses and potentially
+# leaks memory, we're going to spawn each dataset's run as a separate
+# process to minimize the chance of running out of memory. Very ugly.
+declare -a datasets=("dev"
+                     "test"
+                     "train")
+for dataset in "${datasets[@]}"
+do
+    python_run_trial "run_relay.py" $config_dir $data_dir "--dataset" "$dataset"
+done
