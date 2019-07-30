@@ -75,7 +75,7 @@ def main(config_dir, output_dir, device):
         sys.exit(0)
 
     if device not in config['devices']:
-        write_stats(output_dir, True, 'TF not run on {}'.format(device))
+        write_status(output_dir, True, 'TF not run on {}'.format(device))
         sys.exit(0)
 
     enable_xla = [False]
