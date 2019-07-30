@@ -6,7 +6,8 @@ import os
 import sys
 import subprocess
 
-from common import check_file_exists, idemp_mkdir, prepare_out_file, read_json, write_json
+from common import (check_file_exists, idemp_mkdir, prepare_out_file,
+                    read_json, write_json, read_config)
 
 def validate_status(dirname):
     if not check_file_exists(dirname, 'status.json'):
@@ -19,6 +20,20 @@ def validate_status(dirname):
         return {'success': False,
                 'message': 'status.json in {} has no \'message\' field'.format(dirname)}
     return status
+
+
+def build_tvm_branch(remote, branch):
+    """
+    Given a remote URL and a branch, this function sets the TVM install
+    to that branch and rebuilds.
+    """
+    # ugly to call a bash script like this but better than specifying
+    # all the git commands in Python
+    benchmark_deps = os.environ['BENCHMARK_DEPS']
+    bash_deps = os.path.join(benchmark_deps, 'bash')
+    subprocess.call([os.path.join(bash_deps, 'build_tvm_branch.sh'),
+                     remote, branch],
+                    cwd=bash_deps)
 
 
 def experiment_precheck(experiments_dir, configs_dir, exp_name):
@@ -76,6 +91,15 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
 
 def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
+    exp_conf = os.path.join(configs_dir, exp_name)
+
+    # check if we need a TVM branch
+    config = read_config(exp_conf)
+    used_branch = False
+    if 'tvm_branch' in config:
+        used_branch = True
+        tvm_remote = config['tvm_remote'] if 'tvm_remote' in config else 'origin'
+        build_tvm_branch(tvm_remote, config['tvm_branch'])
 
     # set up a temporary data directory for that experiment
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
@@ -83,9 +107,12 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     idemp_mkdir(exp_data_dir)
 
     # run the run.sh file on the configs directory and the destination directory
-    subprocess.call([os.path.join(exp_dir, 'run.sh'),
-                     os.path.join(configs_dir, exp_name), exp_data_dir],
+    subprocess.call([os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
                     cwd=exp_dir)
+
+    # if we branched on tvm, return to the normal state
+    if used_branch:
+        build_tvm_branch('origin', 'master')
 
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
