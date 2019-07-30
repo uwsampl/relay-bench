@@ -130,7 +130,6 @@ experiments/treelstm/pt_tlstm/lib/stanford-postagger-2015-01-30/*
 experiments/treelstm/pt_tlstm/lib/stanford-postagger**
 
 # pulled-in resources for training loop
-experiments/training_loop/marisa-tvm
 experiments/training_loop/beacon
 
 # data and graphs

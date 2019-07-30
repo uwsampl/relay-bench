@@ -10,5 +10,7 @@
     "num_classes": [10],
     "title": "Training Loop Comparison",
     "notify": ["List of people to ping on Slack in the event of failure"],
-    "description": "Comparison of different frameworks on a training loop for a multi-layer perceptron (MLP) model using the MNIST data set"
+    "description": "Comparison of different frameworks on a training loop for a multi-layer perceptron (MLP) model using the MNIST data set",
+    "tvm_remote": "git@github.com:MarisaKirisame/tvm.git",
+    "tvm_branch": "add-grads"
 }
