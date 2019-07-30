@@ -17,6 +17,13 @@ from pt_models.dcgan.dcgan import Generator as dcgan
 from pt_models.dqn import DQN_PARAMS
 from pt_models.dqn.dqn import DQN as dqn
 
+def load_params(location, dev):
+    if dev != 'cpu':
+        return torch.load(location)
+    else:
+        return torch.load(location, map_location='cpu')
+
+
 def instantiate_network(network, batch_size, dev):
     image_shape = (224, 3, 224, batch_size)
 
