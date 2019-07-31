@@ -94,5 +94,5 @@ def generate_longitudinal_comparisons(sorted_data, output_dir):
         make_plot(PlotType.LINE, title,
                   'Date of Run', 'Time (ms)',
                   times, stats,
-                  output_dir, filename,
+                  longitudinal_dir, filename,
                   num_y_ticks=7)
