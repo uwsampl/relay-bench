@@ -1,12 +1,15 @@
 """Utility definitions for Matplotlib"""
 import datetime
 import enum
+import itertools
 import os
+
+import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
-from common import prepare_out_file
+from common import prepare_out_file, gather_stats, traverse_fields
 
 NUM_Y_TICKS = 10
 GRID_COLOR = '#e8e8e8'
@@ -44,7 +47,7 @@ def make_plot(plot_type, title, x_label, y_label,
     plt.ylabel(y_label)
     if log_scale:
         plt.yscale('log')
-    _format_ms(ax)
+    format_ms(ax)
     # rotate dates on the x axis, so they don't overlap
     if isinstance(x[0], datetime.datetime):
         plt.gcf().autofmt_xdate()
@@ -61,8 +64,53 @@ def make_plot(plot_type, title, x_label, y_label,
     plt.close()
 
 
-def _format_ms(ax):
+def format_ms(ax):
     def milliseconds(value, tick_position):
         return '{:3.1f}'.format(value*1e3)
     formatter = FuncFormatter(milliseconds)
     ax.yaxis.set_major_formatter(formatter)
+
+
+def set_y_axis_ticks(ax, y_values, min_clamp=1e-6, max_clamp=1e-3, num_steps=5):
+    epsilon = 1e-7
+    y_min = min(y_values)
+    y_max = max(y_values)
+    min_bound = max(y_min - epsilon, min_clamp)
+    max_bound = max(y_max + epsilon, max_clamp)
+    # +2: min step, num_steps in the middle, max step
+    step_width = (max_bound - min_bound) / (num_steps+2)
+    ax.set_yticks(np.arange(min_bound, max_bound + step_width, step_width))
+
+
+def generate_longitudinal_comparisons(sorted_data, output_dir):
+    '''
+    Generic longitudinal graph generator. Given a list of JSON
+    objects sorted by timestamp, generates a
+    longitudinal graph for every combination of the
+    entries' fields (based on traversing the most recent entry) and
+    writes it to output_dir/longitudinal.
+    '''
+    if not sorted_data:
+        return
+
+    field_values = traverse_fields(sorted_data[-1])
+    longitudinal_dir = os.path.join(output_dir, 'longitudinal')
+
+    for fields in itertools.product(*field_values):
+        stats, times = gather_stats(sorted_data, fields)
+        if not stats:
+            print('Missing!')
+            print(stats)
+            continue
+        fig, ax = plt.subplots()
+        format_ms(ax)
+        ax.plot(times, stats)
+        set_y_axis_ticks(ax, stats)
+        plt.title('({}) over Time'.format(','.join(fields)))
+        filename = 'longitudinal-{}.png'.format('-'.join(fields))
+        plt.xlabel('Date of Run')
+        plt.ylabel('Time (ms)')
+        plt.gcf().autofmt_xdate()
+        outfile = prepare_out_file(longitudinal_dir, filename)
+        plt.savefig(outfile)
+        plt.close()

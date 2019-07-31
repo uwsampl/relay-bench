@@ -11,12 +11,7 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
-
-def format_ms(ax):
-    def milliseconds(value, tick_position):
-        return '{:3.1f}'.format(value*1e3)
-    formatter = FuncFormatter(milliseconds)
-    ax.yaxis.set_major_formatter(formatter)
+from plot_util import format_ms, generate_longitudinal_comparisons
 
 
 def generate_relay_opt_comparisons(title, filename, data, networks, output_prefix=''):
@@ -53,32 +48,6 @@ def generate_relay_opt_comparisons(title, filename, data, networks, output_prefi
     plt.close()
 
 
-def generate_longitudinal_comparisons(sorted_data, dev, output_prefix=''):
-    if not sorted_data:
-        return
-
-    longitudinal_dir = os.path.join(output_prefix, 'longitudinal')
-
-    times = [parse_timestamp(entry) for entry in sorted_data]
-    most_recent = sorted_data[-1][dev]
-    for (setting, network_times) in most_recent.items():
-        for (network, _) in network_times.items():
-            stats = [entry[dev][setting][network] for entry in sorted_data]
-
-            fig, ax = plt.subplots()
-            format_ms(ax)
-            plt.plot(times, stats)
-            plt.title('{}: {} on {} over Time'.format(setting, network, dev))
-            filename = 'longitudinal-{}-{}-{}.png'.format(setting, network, dev)
-            plt.xlabel('Date of Run')
-            plt.ylabel('Time (ms)')
-            plt.yscale('log')
-            plt.gcf().autofmt_xdate()
-            outfile = prepare_out_file(longitudinal_dir, filename)
-            plt.savefig(outfile)
-            plt.close()
-
-
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
@@ -92,16 +61,16 @@ def main(data_dir, config_dir, output_dir):
     all_data = sort_data(data_dir)
     most_recent = all_data[-1]
 
-    for dev in devs:
-        try:
+    try:
+        generate_longitudinal_comparisons(all_data, output_dir)
+        for dev in devs:
             generate_relay_opt_comparisons('Relay CNN Opt Level on {}'.format(dev.upper()),
                                            'relay-cnn-{}.png'.format(dev), most_recent[dev],
                                            networks, output_dir)
-            # TODO: do a better job with longitudinal comparisons
-            generate_longitudinal_comparisons(all_data, dev, output_dir)
-        except Exception as e:
-            write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-            return
+
+    except Exception as e:
+        write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
+        return
 
     write_status(output_dir, True, 'success')
 

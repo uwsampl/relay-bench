@@ -73,5 +73,62 @@ def sort_data(data_dir):
     return sorted(all_data, key=parse_timestamp)
 
 
+def gather_stats(sorted_data, fields):
+    '''
+    Expects input in the form of a list of data objects with timestamp
+    fields (like those returned by sort_data).
+    For each entry, this looks up entry[field[0]][field[1]]...
+    for all entries that have all the fields, skipping those that
+    don't. Returns a pair (list of entry values,
+    list of corresponding entry timestamps)
+    '''
+    stats = []
+    times = []
+    for entry in sorted_data:
+        stat = entry
+        not_present = False
+        for field in fields:
+            if field not in stat:
+                not_present = True
+                break
+            stat = stat[field]
+        if not_present:
+            continue
+        times.append(parse_timestamp(entry))
+        stats.append(stat)
+    return (stats, times)
+
+
+def traverse_fields(entry, omit_timestamp=True):
+    '''
+    Returns a list of sets of nested fields (one set per level of nesting)
+    of a JSON data entry produced by a benchmark analysis script.
+    Ignores the dashboard-appended 'timestamp' field at the top level by default.
+    '''
+    level_fields = {field for field in entry.keys()
+                    if not (omit_timestamp and field == 'timestamp')}
+    values_to_check = [value for value in entry.values()
+                       if isinstance(value, dict)]
+
+    tail = []
+    max_len = 0
+    for value in values_to_check:
+        next_fields = traverse_fields(value)
+        tail.append(next_fields)
+        if len(next_fields) > max_len:
+            max_len = len(next_fields)
+
+    # combine all the field lists (union of each level's sets)
+    final_tail = []
+    for i in range(max_len):
+        u = set({})
+        final_tail.append(u.union(*[fields_list[i]
+                                    for fields_list in tail
+                                    if len(fields_list) > i]))
+
+    return [level_fields] + final_tail
+
+
+
 def render_exception(e):
     return logging.Formatter.formatException(e, sys.exc_info())
