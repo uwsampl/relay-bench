@@ -37,6 +37,8 @@ def main(home_dir):
     failed_experiments = []
     # successful experiments: list of summary objects
     successful_experiments = []
+    # experiments on which visualization failed (just names)
+    failed_graphs = []
 
     for subdir, _, _ in os.walk(status_dir):
         if subdir == status_dir:
@@ -71,8 +73,16 @@ def main(home_dir):
                                            notify))
                 failure = True
                 break
+
         if failure:
             continue
+
+        # failure to visualize is not as big a deal as failing to
+        # run or analyze the experiment, so we only report it but
+        # don't fail to report the summary
+        visualization_status = read_json(subdir, 'visualization.json')
+        if not visualization_status['success']:
+            failed_graphs.append(exp_title)
 
         summary = read_json(os.path.join(summary_dir, exp_name),
                             'summary.json')
@@ -104,6 +114,13 @@ def main(home_dir):
             'color': '#616161',
             'title': 'Inactive benchmarks',
             'text': ', '.join(inactive_experiments),
+            'fields': []
+        })
+    if failed_graphs:
+        attachments.append({
+            'color': '#fa0000',
+            'title': 'Failed to Visualize',
+            'text': ', '.join(failed_graphs),
             'fields': []
         })
     message = {
