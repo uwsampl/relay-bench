@@ -11,12 +11,8 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
+from plot_util import format_ms, generate_longitudinal_comparisons
 
-def format_ms(ax):
-    def milliseconds(value, tick_position):
-        return '{:3.1f}'.format(value*1e3)
-    formatter = FuncFormatter(milliseconds)
-    ax.yaxis.set_major_formatter(formatter)
 
 def generate_treelstm_comparison(title, filename, data, output_prefix=''):
     fig, ax = plt.subplots()
@@ -77,16 +73,16 @@ def main(data_dir, config_dir, output_dir):
     all_data = sort_data(data_dir)
     most_recent = all_data[-1]
 
-    for dev in devs:
-        try:
+    try:
+        generate_longitudinal_comparisons(all_data, output_dir)
+        for dev in devs:
             generate_treelstm_comparison('TreeLSTM Comparison on {}'.format(dev.upper()),
                                          'treelstm-{}.png'.format(dev),
                                          most_recent[dev], output_dir)
-            # TODO: do a better job with longitudinal comparisons
-            generate_longitudinal_comparisons(all_data, dev, output_dir)
-        except Exception as e:
-            write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-            return
+
+    except Exception as e:
+        write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
+        return
 
     write_status(output_dir, True, 'success')
 
