@@ -71,17 +71,6 @@ def format_ms(ax):
     ax.yaxis.set_major_formatter(formatter)
 
 
-def set_y_axis_ticks(ax, y_values, min_clamp=1e-6, max_clamp=1e-3, num_steps=5):
-    epsilon = 1e-7
-    y_min = min(y_values)
-    y_max = max(y_values)
-    min_bound = max(y_min - epsilon, min_clamp)
-    max_bound = max(y_max + epsilon, max_clamp)
-    # +2: min step, num_steps in the middle, max step
-    step_width = (max_bound - min_bound) / (num_steps+2)
-    ax.set_yticks(np.arange(min_bound, max_bound + step_width, step_width))
-
-
 def generate_longitudinal_comparisons(sorted_data, output_dir):
     '''
     Generic longitudinal graph generator. Given a list of JSON
@@ -99,18 +88,11 @@ def generate_longitudinal_comparisons(sorted_data, output_dir):
     for fields in itertools.product(*field_values):
         stats, times = gather_stats(sorted_data, fields)
         if not stats:
-            print('Missing!')
-            print(stats)
             continue
-        fig, ax = plt.subplots()
-        format_ms(ax)
-        ax.plot(times, stats)
-        set_y_axis_ticks(ax, stats)
-        plt.title('({}) over Time'.format(','.join(fields)))
+        title = '({}) over Time'.format(','.join(fields))
         filename = 'longitudinal-{}.png'.format('-'.join(fields))
-        plt.xlabel('Date of Run')
-        plt.ylabel('Time (ms)')
-        plt.gcf().autofmt_xdate()
-        outfile = prepare_out_file(longitudinal_dir, filename)
-        plt.savefig(outfile)
-        plt.close()
+        make_plot(PlotType.LINE, title,
+                  'Date of Run', 'Time (ms)',
+                  times, stats,
+                  output_dir, filename,
+                  num_y_ticks=7)
