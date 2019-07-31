@@ -25,7 +25,8 @@ def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
     make_plot(PlotType.BAR, title, x_label, y_label,
               settings, means,
               comparison_dir, filename,
-              x_tick_labels=x_tick_labels)
+              x_tick_labels=x_tick_labels,
+              log_scale=True)
 
 
 def main(data_dir, config_dir, output_dir):
