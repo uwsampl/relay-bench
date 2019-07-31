@@ -107,8 +107,7 @@ def gen_page_body(exp_config):
                 continue
             img_heading_size = min(section_heading_size + 1, 6)
             img_path = os.path.join(curr_dir, filename)
-            w, h = get_img_dims(img_path, scale=0.75)
-            page_body += f'<img src="{img_path}" style="width:{w}px;height:{h}px;padding:10px;">\n'
+            page_body += f'<img src="{img_path}" style="height:400px;padding:10px;">\n'
     return page_body
 
 
@@ -154,12 +153,6 @@ def get_exp_config(dash_home_dir):
         with open(os.path.join(exp_config_dir, exp_name, 'config.json'), 'r') as f:
             exp_config[exp_name] = json.load(f)
     return exp_config
-
-
-def get_img_dims(img_path, scale=1.0):
-    img = Image.open(img_path)
-    w, h = img.size
-    return w * scale, h * scale
 
 
 if __name__ == '__main__':
