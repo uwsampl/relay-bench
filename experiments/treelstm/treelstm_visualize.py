@@ -36,31 +36,6 @@ def generate_treelstm_comparison(title, filename, data, output_prefix=''):
     plt.close()
 
 
-def generate_longitudinal_comparisons(sorted_data, dev, output_prefix=''):
-    if not sorted_data:
-        return
-
-    longitudinal_dir = os.path.join(output_prefix, 'longitudinal')
-
-    times = [parse_timestamp(entry) for entry in sorted_data]
-    most_recent = sorted_data[-1][dev]
-    for (setting, time) in most_recent.items():
-        stats = [entry[dev][setting] for entry in sorted_data]
-
-        fig, ax = plt.subplots()
-        format_ms(ax)
-        plt.plot(times, stats)
-        plt.title('{} on {} over Time'.format(setting, dev))
-        filename = 'longitudinal-{}-{}.png'.format(setting, dev)
-        plt.xlabel('Date of Run')
-        plt.ylabel('Time (ms)')
-        plt.yscale('log')
-        plt.gcf().autofmt_xdate()
-        outfile = prepare_out_file(longitudinal_dir, filename)
-        plt.savefig(outfile)
-        plt.close()
-
-
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
