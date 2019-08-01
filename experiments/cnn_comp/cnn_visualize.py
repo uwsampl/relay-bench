@@ -11,40 +11,21 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
-from plot_util import format_ms, generate_longitudinal_comparisons
+from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
 def generate_cnn_comparisons(title, filename, data, networks, output_prefix=''):
-    fig, ax = plt.subplots()
-    format_ms(ax)
-
     comparison_dir = os.path.join(output_prefix, 'comparison')
 
     # empty data: nothing to do
     if not data.items():
         return
 
-    width = 0.05
-    positions = np.arange(len(networks))
-    offset = 0
-
-    bars = []
-    for (_, measurements) in data.items():
-        bar = ax.bar(positions + offset, [measurements[network] for network in networks], width)
-        offset += width
-        bars.append(bar)
-    if not bars:
-        return
-
-    ax.legend(tuple(bars), tuple([name for (name, _) in data.items()]))
-    ax.set_xticks(positions + width*(len(data.items()) / 2))
-    ax.set_xticklabels(tuple(networks))
-    plt.title(title)
-    plt.xlabel('Network')
-    plt.ylabel('Time (ms)')
-    plt.yscale('log')
-    outfile = prepare_out_file(comparison_dir, filename)
-    plt.savefig(outfile)
-    plt.close()
+    PlotBuilder().set_title(title) \
+                 .set_x_label('Network') \
+                 .set_y_label('Time (ms)') \
+                 .set_y_scale(PlotScale.LOG) \
+                 .make(PlotType.MULTI_BAR, data) \
+                 .save(comparison_dir, filename)
 
 
 def main(data_dir, config_dir, output_dir):
@@ -66,7 +47,6 @@ def main(data_dir, config_dir, output_dir):
             generate_cnn_comparisons('CNN Comparison on {}'.format(dev.upper()),
                                      'cnns-{}.png'.format(dev),
                                      most_recent[dev], networks, output_dir)
-
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return

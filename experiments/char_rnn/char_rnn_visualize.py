@@ -10,7 +10,7 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
-from plot_util import PlotType, make_plot, generate_longitudinal_comparisons
+from plot_util import PlotType, PlotBuilder, generate_longitudinal_comparisons
 
 def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
     means = [measurement for (_, measurement) in data.items()]
@@ -18,15 +18,11 @@ def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
         return
 
     comparison_dir = os.path.join(output_prefix, 'comparison')
-    x_label = 'Framework'
-    y_label = 'Time (ms)'
-    settings = np.arange(len(data.items()))
-    x_tick_labels = [name for (name, _) in data.items()]
-    make_plot(PlotType.BAR, title, x_label, y_label,
-              settings, means,
-              comparison_dir, filename,
-              x_tick_labels=x_tick_labels,
-              log_scale=True)
+    PlotBuilder().set_title(title) \
+                 .set_x_label('Framework') \
+                 .set_y_label('Time (ms)') \
+                 .make(PlotType.BAR, data) \
+                 .save(comparison_dir, filename)
 
 
 def main(data_dir, config_dir, output_dir):
