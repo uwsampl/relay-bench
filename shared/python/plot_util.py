@@ -141,16 +141,10 @@ class PlotBuilder:
         if len(x_data) == 0 or len(y_data) == 0:
             return
 
-        if isinstance(x_data[0], dict) and 'label' in x_data[0]:
-            assert False
-            # create tick labels on the x_axis, if they're specified
-            x_locs = list(map(lambda x: x['loc'], x_data))
-            x_labels = list(map(lambda x: x['label'], x_data))
-            plt.plot(x_locs, data['y'])
-            plt.xticks(x_locs, x_labels)
-        else:
-            # otherwise, plot it normally
-            plt.plot(x_data, y_data)
+        # plot the line
+        plt.plot(x_data, y_data, zorder=3)
+        # then emphasize the data points that shape the line
+        plt.scatter(x_data, y_data, zorder=3)
 
         # rotate dates on the x axis, so they don't overlap
         if isinstance(x_data[0], datetime.datetime):
