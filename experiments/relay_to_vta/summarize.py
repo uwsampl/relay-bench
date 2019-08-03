@@ -17,15 +17,21 @@ def main(data_dir, config_dir, output_dir):
     most_recent = all_data[-1]
     summary = ''
 
-    for target in most_recent.keys() & SIM_TARGETS:
-        summary = '_Stats on {}_\n'.format(target.upper())
-        for (stat, val) in most_recent[target].items():
-            summary += '{}: {:.2E}\n'.format(stat, Decimal(val))
-
-    for target in most_recent.keys() & PHYS_TARGETS:
-        data = most_recent[target]
-        summary += '_Time on {}_: {} ± {}\n'.format(
-            target.upper(), data['mean'], data['std_dev'])
+    del most_recent['timestamp']
+    for (model, targets) in most_recent.items():
+        # simulated target summary
+        sim_targets = {target: targets[target] for target in targets if target in SIM_TARGETS}
+        for (target, devices) in sim_targets.items():
+            for (device, stats) in devices.items():
+                summary += '_Stats on ({}, {}, {}) & _\n'.format(model, target.upper(), device.upper())
+                for (stat, val) in stats.items():
+                    summary += '{}: {:.2E}\n'.format(stat, Decimal(val))
+        # physical target summary
+        phys_targets = {target: v for (target, v) in targets.items() if target in PHYS_TARGETS}
+        for (target, devices) in phys_targets.items():
+            for (device, mean_time) in devices.items():
+                summary += 'Time on ({}, {}, {}): {:.2f}\n'.format(
+                        model, target.upper(), device.upper(), mean_time)
 
     write_summary(output_dir, config['title'], summary)
     write_status(output_dir, True, 'success')
