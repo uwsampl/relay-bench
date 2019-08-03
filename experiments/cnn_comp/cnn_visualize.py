@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from validate_config import validate
-from common import (write_status, prepare_out_file, parse_timestamp,
+from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
@@ -41,8 +41,12 @@ def main(data_dir, config_dir, output_dir):
     all_data = sort_data(data_dir)
     most_recent = all_data[-1]
 
+    last_two_weeks = [entry for entry in all_data
+                      if time_difference(most_recent, entry).days < 14]
+
     try:
-        generate_longitudinal_comparisons(all_data, output_dir)
+        generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
+        generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
         for dev in devs:
             generate_cnn_comparisons('CNN Comparison on {}'.format(dev.upper()),
                                      'cnns-{}.png'.format(dev),

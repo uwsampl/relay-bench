@@ -62,6 +62,15 @@ def parse_timestamp(data):
     return datetime.datetime.strptime(data['timestamp'], '%m-%d-%Y-%H%M')
 
 
+def time_difference(entry1, entry2):
+    '''
+    Returns a datetime object corresponding to the difference in
+    timestamps between two data entries.
+    (Entry 1 time - entry 2 time)
+    '''
+    return parse_timestamp(entry1) - parse_timestamp(entry2)
+
+
 def sort_data(data_dir):
     '''Sorts all data files in the given directory by timestamp.'''
     data_dir = os.path.expanduser(data_dir)
