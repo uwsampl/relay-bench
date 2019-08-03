@@ -207,7 +207,8 @@ def format_ms(ax):
     ax.yaxis.set_major_formatter(formatter)
 
 
-def generate_longitudinal_comparisons(sorted_data, output_dir):
+def generate_longitudinal_comparisons(sorted_data, output_dir,
+                                      subdir_name='longitudinal'):
     '''
     Generic longitudinal graph generator. Given a list of JSON
     objects sorted by timestamp, generates a
@@ -219,7 +220,7 @@ def generate_longitudinal_comparisons(sorted_data, output_dir):
         return
 
     field_values = traverse_fields(sorted_data[-1])
-    longitudinal_dir = os.path.join(output_dir, 'longitudinal')
+    longitudinal_dir = os.path.join(output_dir, subdir_name)
 
     for fields in itertools.product(*field_values):
         stats, times = gather_stats(sorted_data, fields)
