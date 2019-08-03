@@ -15,13 +15,15 @@ def validate(config_dir):
     config, msg = check_config(
         config,
         {
-            'device': 'vta',
+            'models': ['resnet18_v1'],
+            'devices': ['vta'],
             'targets': ['sim'],
             'n_times_per_input': 4,
             'num_reps': 3
         },
         {
-            'device': {'vta', 'arm_cpu'},
+            'models': {'resnet18_v1'},
+            'devices': {'vta', 'arm_cpu'},
             'targets': {'pynq', 'sim', 'tsim'}
         },
         {

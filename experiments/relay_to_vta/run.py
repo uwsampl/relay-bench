@@ -22,6 +22,7 @@ This experiment runs ResNet-18 inference on the VTA accelerator design to
 perform a single ImageNet classification task.
 """
 import argparse
+import itertools
 import json
 import os
 import time
@@ -34,15 +35,13 @@ import tvm
 from tvm import rpc, autotvm, relay
 from tvm.contrib import graph_runtime, util
 
-from validate_config import validate
-from common import check_file_exists, read_json, write_json, write_status
-
 import vta
 from vta.testing import simulator
 from vta.top import graph_pack
 
-# Name of Gluon model to compile
-MODEL = 'resnet18_v1'
+from validate_config import validate
+from common import check_file_exists, read_json, write_json, write_status
+
 # The `START_PACK` and `STOP_PACK` labels indicate where to start and end the
 # graph packing relay pass---in other words, where to start and finish
 # offloading to VTA.
@@ -84,14 +83,12 @@ def init_remote(vta_env, config):
         # Reconfigure the JIT runtime and FPGA.
         # You can program the FPGA with your own custom bitstream
         # by passing the path to the bitstream file instead of None.
-        reconfig_start = time.time()
         vta.reconfig_runtime(remote)
         vta.program_fpga(remote, bitstream=None)
-        reconfig_time = time.time() - reconfig_start
-        return remote, reconfig_time
+        return remote
 
 
-def build_resnet(remote, target, ctx, vta_env):
+def build_model(model_name, remote, target, ctx, vta_env):
     """Build the inference graph runtime."""
     # Load pre-configured AutoTVM schedules.
     with autotvm.tophub.context(target):
@@ -100,7 +97,7 @@ def build_resnet(remote, target, ctx, vta_env):
         shape_dict = {'data': (vta_env.BATCH, 3, 224, 224)}
 
         # Get off-the-shelf gluon model and convert to Relay.
-        gluon_model = vision.get_model(MODEL, pretrained=True)
+        gluon_model = vision.get_model(model_name, pretrained=True)
 
         # Start frontend compilation.
         mod, params = relay.frontend.from_mxnet(gluon_model, shape_dict)
@@ -134,7 +131,7 @@ def build_resnet(remote, target, ctx, vta_env):
             else:
                 graph, lib, params = relay.build(
                     relay_prog, target=target,
-                    params=params, target_host=env.target_host)
+                    params=params, target_host=vta_env.target_host)
 
         # Send the inference library over to the remote RPC server
         temp = util.tempdir()
@@ -142,9 +139,9 @@ def build_resnet(remote, target, ctx, vta_env):
         remote.upload(temp.relpath('graphlib.o'))
         lib = remote.load_module('graphlib.o')
 
-        resnet_module = graph_runtime.create(graph, lib, ctx)
-        resnet_module.set_input(**params)
-        return resnet_module
+        graph_module = graph_runtime.create(graph, lib, ctx)
+        graph_module.set_input(**params)
+        return graph_module
 
 
 def get_test_image(vta_env):
@@ -158,14 +155,16 @@ def get_test_image(vta_env):
     return image
 
 
-def run_model(resnet_module, remote, ctx, vta_env, config):
+def run_model(graph_module, remote, ctx, vta_env, config):
     """Perform ResNet-18 inference on an ImageNet sample and collect stats."""
+    # TODO(weberlo): Set the input differently depending on the model.  This is
+    # currently specialized to ResNet.
     image = get_test_image(vta_env)
     # Set the module input to be `image`.
-    resnet_module.set_input('data', image)
+    graph_module.set_input('data', image)
 
     # Perform inference and gather execution statistics.
-    timer = resnet_module.module.time_evaluator(
+    timer = graph_module.module.time_evaluator(
         'run', ctx, number=config['n_times_per_input'], repeat=config['num_reps'])
 
     if vta_env.TARGET in ['sim', 'tsim']:
@@ -180,21 +179,18 @@ def run_model(resnet_module, remote, ctx, vta_env, config):
             stats[key] //= divisor
     else:
         tcost = timer()
-        # Convert times from seconds to milliseconds and divide by the batch
-        # size, since the evaluator doesn't account for that.
-        stats = {
-            'mean': tcost.mean * 1000 / vta_env.BATCH,
-            'std_dev': np.std(tcost.results) * 1000 / vta_env.BATCH
-        }
+        # Divide by the batch size, since the evaluator doesn't account for
+        # that.
+        mean_time = tcost.mean / vta_env.BATCH
 
-    check_results(resnet_module, remote, vta_env)
-    return stats
+    check_results(graph_module, remote, vta_env)
+    return mean_time
 
 
-def check_results(resnet_module, remote, vta_env):
+def check_results(graph_module, remote, vta_env):
     """Verify the input was classified correctly."""
     # Get classification results.
-    tvm_output = resnet_module.get_output(
+    tvm_output = graph_module.get_output(
         0, tvm.nd.empty((vta_env.BATCH, 1000), 'float32', remote.cpu(0)))
     top_categories = np.argsort(tvm_output.asnumpy()[0])
 
@@ -215,25 +211,23 @@ def check_results(resnet_module, remote, vta_env):
     assert(cat_detected)
 
 
-def run_single(config):
+def run_single(model, target_name, device, config):
     """Run the experiment on a single target."""
-    vta_env = vta.get_env()
+    with init_vta_env(target_name):
+        vta_env = vta.get_env()
 
-    device = config['device']
-    target = vta_env.target if device == 'vta' else vta_env.target_vta_cpu
+        target = vta_env.target if device == 'vta' else vta_env.target_vta_cpu
 
-    # Make sure TVM was compiled with RPC support.
-    assert tvm.module.enabled('rpc')
-    remote, reconfig_time = init_remote(vta_env, config)
-    # Get execution context from remote
-    ctx = remote.ext_dev(0) if device == 'vta' else remote.cpu(0)
+        # Make sure TVM was compiled with RPC support.
+        assert tvm.module.enabled('rpc')
+        remote = init_remote(vta_env, config)
+        # Get execution context from remote
+        ctx = remote.ext_dev(0) if device == 'vta' else remote.cpu(0)
 
-    resnet_module = build_resnet(remote, target, ctx, vta_env)
-    stats = run_model(resnet_module, remote, ctx, vta_env, config)
-    if reconfig_time is not None:
-        stats['reconfig_time'] = reconfig_time
+        graph_module = build_model(model, remote, target, ctx, vta_env)
+        mean_time = run_model(graph_module, remote, ctx, vta_env, config)
 
-    return stats
+        return mean_time
 
 
 def main(config_dir, output_dir):
@@ -244,9 +238,19 @@ def main(config_dir, output_dir):
         return
 
     result = {}
-    for target_name in config['targets']:
-        with init_vta_env(target_name):
-            result[target_name] = run_single(config)
+    config_iter = itertools.product(
+            config['models'],
+            config['targets'],
+            config['devices'])
+    for (model, target, device) in config_iter:
+        # TODO(weberlo): There has to be some idiom to get rid of this boilerplate.
+        if model not in result:
+            result[model] = {}
+        if target not in result[model]:
+            result[model][target] = {}
+        if device not in result[model][target]:
+            result[model][target][device] = {}
+        result[model][target][device] = run_single(model, target, device, config)
 
     write_json(output_dir, 'data.json', result)
     write_status(output_dir, True, 'success')
