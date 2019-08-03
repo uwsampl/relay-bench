@@ -36,6 +36,13 @@ def build_tvm_branch(remote, branch):
                     cwd=bash_deps)
 
 
+def get_tvm_hash():
+    tvm_home = os.environ['TVM_HOME']
+    git_check = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'],
+                                        cwd=tvm_home)
+    return git_check.decode('UTF-8').strip()
+
+
 def experiment_precheck(experiments_dir, configs_dir, exp_name):
     """
     Checks:
@@ -49,26 +56,27 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
     (boolean, true if all is preconfigured correctly) and a 'message' containing an
     explanation as a string if one is necessary
     2. whether the experiment is active (boolean), False if experiment is invalid
+    3. Tuple of (tvm repo, tvm branch) if the config specifies a differnent one
     """
     conf_subdir = os.path.join(configs_dir, exp_name)
     if not os.path.exists(conf_subdir):
         return ({'success': False,
                  'message': 'Config directory for experiment {} is missing'.format(exp_name)},
-                False)
+                False, None)
     conf_file = os.path.join(conf_subdir, 'config.json')
     if not os.path.isfile(conf_file):
         return ({'success': False,
                  'message': 'config.json for experiment {} is missing'.format(exp_name)},
-                False)
+                False, None)
     exp_conf = read_json(conf_subdir, 'config.json')
     if 'active' not in exp_conf:
         return ({'success': False,
                  'message': 'config.json for experiment {} has no active field'.format(exp_name)},
-                False)
+                False, None)
 
     # no need to check experiment subdirectory if the experiment itself is not active
     if not exp_conf['active']:
-        return ({'success': True, 'message': 'Inactive'}, False)
+        return ({'success': True, 'message': 'Inactive'}, False, None)
 
     exp_subdir = os.path.join(experiments_dir, exp_name)
     if not os.path.exists(exp_subdir):
@@ -86,20 +94,17 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
                      'message': 'Required file {} in {} is not executable'.format(script,
                                                                                  exp_subdir)},
                     False)
-    return ({'success': True, 'message': ''}, True)
+
+    tvm_info = ('origin', 'master')
+    if 'tvm_branch' in exp_conf:
+        remote = exp_conf['tvm_remote'] if 'tvm_remote' in exp_conf else 'origin'
+        tvm_info = (remote, exp_conf['tvm_branch'])
+    return ({'success': True, 'message': ''}, True, tvm_info)
 
 
 def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
     exp_conf = os.path.join(configs_dir, exp_name)
-
-    # check if we need a TVM branch
-    config = read_config(exp_conf)
-    used_branch = False
-    if 'tvm_branch' in config:
-        used_branch = True
-        tvm_remote = config['tvm_remote'] if 'tvm_remote' in config else 'origin'
-        build_tvm_branch(tvm_remote, config['tvm_branch'])
 
     # set up a temporary data directory for that experiment
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
@@ -110,10 +115,6 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     subprocess.call([os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
                     cwd=exp_dir)
 
-    # if we branched on tvm, return to the normal state
-    if used_branch:
-        build_tvm_branch('origin', 'master')
-
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
     # not literally copying because validate may have produced a status that generated an error
@@ -122,7 +123,7 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
 
 
 def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
-                       data_dir, status_dir, date_str, exp_name):
+                       data_dir, status_dir, date_str, tvm_hash, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
 
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
@@ -148,6 +149,7 @@ def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
         else:
             data = read_json(tmp_analysis_dir, 'data.json')
             data['timestamp'] = date_str
+            data['tvm_hash'] = tvm_hash
             write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), data)
 
     write_json(os.path.join(status_dir, exp_name), 'analysis.json', status)
@@ -211,6 +213,10 @@ def main(home_dir, experiments_dir):
     time_of_run = datetime.datetime.now()
     time_str = time_of_run.strftime('%m-%d-%Y-%H%M')
 
+    master_hash = get_tvm_hash()
+    tvm_info = {}
+    tvm_hashes = {}
+
     if not check_file_exists(home_dir, 'config.json'):
         print('Dashboard config (config.json) is missing in {}'.format(home_dir))
         sys.exit(1)
@@ -250,10 +256,13 @@ def main(home_dir, experiments_dir):
         if conf_subdir == config_dir:
             continue
         exp_name = os.path.basename(conf_subdir)
-        precheck, active = experiment_precheck(experiments_dir, config_dir, exp_name)
+        precheck, active, branch_info = experiment_precheck(experiments_dir,
+                                                            config_dir,
+                                                            exp_name)
         # write precheck result to status dir
         write_json(os.path.join(status_dir, exp_name), 'precheck.json', precheck)
         exp_status[exp_name] = 'active'
+        tvm_info[exp_name] = branch_info
         if not precheck['success']:
             exp_status[exp_name] = 'failed'
             continue
@@ -264,15 +273,30 @@ def main(home_dir, experiments_dir):
     # for each active experiment, run and generate data
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
+        # handle TVM branching if the experiment needs a different TVM
+        (remote, branch) = tvm_info[exp]
+        used_branch = False
+        tvm_hash = master_hash
+
+        if remote != 'origin' or branch != 'master':
+            used_branch = True
+            build_tvm_branch(tvm_remote, config['tvm_branch'])
+            tvm_hash = get_tvm_hash()
+
+        tvm_hashes[exp] = tvm_hash
+
         success = run_experiment(experiments_dir, config_dir, tmp_data_dir, status_dir, exp)
         if not success:
             exp_status[exp] = 'failed'
+
+        if used_branch:
+            build_tvm_branch('origin', 'master')
 
     # for each active experiment not yet eliminated, run analysis
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
         success = analyze_experiment(experiments_dir, config_dir, tmp_data_dir, data_dir,
-                                     status_dir, time_str, exp)
+                                     status_dir, time_str, tvm_hashes[exp], exp)
         if not success:
             exp_status[exp] = 'failed'
 
