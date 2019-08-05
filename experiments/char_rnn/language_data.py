@@ -56,3 +56,10 @@ def letter_to_topi(letter):
 
 def topi_to_letter(topi):
     return ALL_LETTERS[topi]
+
+def main():
+    # just run get_data to ensure that the state is initialized
+    get_data()
+
+if __name__ == '__main__':
+    main()
