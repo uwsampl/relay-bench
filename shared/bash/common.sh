@@ -24,6 +24,28 @@ function include_shared_python_deps {
 }
 export -f include_shared_python_deps
 
+# Produces a status JSON file in the target directory
+# First arg: Is the status successful?
+# Second arg: Status message
+# Third arg: Target directory
+function emit_status_file {
+    flag=$1
+    msg=$2
+    dest=$3
+
+    flag_str="true"
+    if [ $flag = false ] || [ $flag = 0 ]; then
+        flag_str="false"
+    fi
+
+    # have to filter out newlines from the message and escape quotes
+    # or it won't be valid JSON
+    altered_msg=$(echo "$msg" | sed 's/$/\\n/' | tr -d '\n' | sed 's/"/\\"/g')
+    content="\{\"success\": $flag_str, \"message\": \"$altered_msg\"\}"
+    echo "$content" > "$dest/status.json"
+}
+export -f emit_status_file
+
 # Runs a Python script with the passed arguments and exits if its exit
 # code is nonzero
 function check_python_exit_code {
@@ -43,3 +65,23 @@ function python_run_trial {
     check_python_exit_code "$1" "--config-dir" "$2" "--output-dir" "$3" "${@:4}"
 }
 export -f python_run_trial
+
+# Runs a given script with arguments and captures stderr in a status.json
+# file if the script exits with a nonzero code (then this function calls exit)
+# Input format: wrap_script_status "dest_for_status" [script with args]
+#
+# Warning: Do not use with a script that handles its own failures or sets a
+# status because this will overwrite the status that the script sets
+function wrap_script_status {
+    dest=$1
+    out=$(mktemp)
+    bash "${@:2}" 2>$out
+    msg=$(cat $out)
+    rm $out
+    if [ $? -ne 0 ]; then
+        emit_status_file false $msg $dest
+        exit 1;
+    fi
+    emit_status_file true "" $dest
+}
+export -f wrap_script_status
