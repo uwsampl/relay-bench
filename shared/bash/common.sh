@@ -41,7 +41,7 @@ function emit_status_file {
     # have to filter out newlines from the message and escape quotes
     # or it won't be valid JSON
     altered_msg=$(echo "$msg" | sed 's/$/\\n/' | tr -d '\n' | sed 's/"/\\"/g')
-    content="\{\"success\": $flag_str, \"message\": \"$altered_msg\"\}"
+    content="{\"success\": $flag_str, \"message\": \"$altered_msg\"}"
     echo "$content" > "$dest/status.json"
 }
 export -f emit_status_file
@@ -76,9 +76,10 @@ function wrap_script_status {
     dest=$1
     out=$(mktemp)
     bash "${@:2}" 2>$out
+    success=$?
     msg=$(cat $out)
     rm $out
-    if [ $? -ne 0 ]; then
+    if [ $success -ne 0 ]; then
         emit_status_file false $msg $dest
         exit 1;
     fi
