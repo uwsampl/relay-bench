@@ -22,13 +22,14 @@ DEVICE_TO_TEXT = {
     'arm_cpu': 'Mobile CPU',
     'vta': 'Mobile CPU w/ FPGA'
 }
+METADATA_KEYS = {'timestamp', 'tvm_hash'}
 
 def generate_arm_vta_comparisons(data, output_prefix):
     comparison_dir = os.path.join(output_prefix, 'comparison')
 
     plot_data = {}
     for (model, targets) in data.items():
-        if model == 'timestamp':
+        if model in METADATA_KEYS:
             continue
         model = MODEL_TO_TEXT[model]
         phys_targets = {target: v for (target, v) in targets.items() if target in PHYS_TARGETS}
