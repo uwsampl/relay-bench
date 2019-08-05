@@ -71,7 +71,7 @@ export -f python_run_trial
 # Input format: wrap_script_status "dest_for_status" [script with args]
 #
 # Warning: Do not use with a script that handles its own failures or sets a
-# status because this will overwrite the status that the script sets
+# status because this may overwrite the status that the script sets
 function wrap_script_status {
     dest=$1
     out=$(mktemp)
@@ -83,6 +83,5 @@ function wrap_script_status {
         emit_status_file false $msg $dest
         exit 1;
     fi
-    emit_status_file true "" $dest
 }
 export -f wrap_script_status
