@@ -18,6 +18,7 @@ def main(data_dir, config_dir, output_dir):
     summary = ''
 
     del most_recent['timestamp']
+    del most_recent['tvm_hash']
     for (model, targets) in most_recent.items():
         # simulated target summary
         sim_targets = {target: targets[target] for target in targets if target in SIM_TARGETS}
