@@ -17,7 +17,7 @@ def convert_passes(pass_names):
         if name == 'FoldConstant':
             return transform.FoldConstant()
         if name == 'CombineParallelConv2d':
-            return transform.CombineParallelConv2d()
+            return transform.CombineParallelConv2D()
         if name == 'AlterOpLayout':
             return transform.AlterOpLayout()
         if name == 'EliminateCommonSubexpr':
