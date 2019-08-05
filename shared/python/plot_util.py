@@ -113,14 +113,14 @@ class PlotBuilder:
         for framework_data in data.values():
             # TODO(weberlo): handle unit conversions better
             # seconds to milliseconds
-            y_data = np.array(list(framework_data.values())) * 1e3
+            single_y_data = np.array(list(framework_data.values())) * 1e3
             bar = self.ax.bar(
                     positions + offset,
-                    y_data,
+                    single_y_data,
                     MULTI_BAR_WIDTH,
                     zorder=3)
             offset += MULTI_BAR_WIDTH
-            self._label_bar_val(bar, y_data)
+            self._label_bar_val(bar, single_y_data)
             bars.append(bar)
         if not bars:
             return
@@ -146,6 +146,9 @@ class PlotBuilder:
         y_data = data['y']
         if len(x_data) == 0 or len(y_data) == 0:
             return
+        # TODO(weberlo): handle unit conversions better
+        # seconds to milliseconds
+        y_data = list(np.array(y_data) * 1e3)
 
         # plot the line
         plt.plot(x_data, y_data, zorder=3)
