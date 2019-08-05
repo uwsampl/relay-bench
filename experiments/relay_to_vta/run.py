@@ -237,20 +237,24 @@ def main(config_dir, output_dir):
         write_status(output_dir, False, msg)
         return
 
-    result = {}
-    config_iter = itertools.product(
-            config['models'],
-            config['targets'],
-            config['devices'])
-    for (model, target, device) in config_iter:
-        # TODO(weberlo): There has to be some idiom to get rid of this boilerplate.
-        if model not in result:
-            result[model] = {}
-        if target not in result[model]:
-            result[model][target] = {}
-        if device not in result[model][target]:
-            result[model][target][device] = {}
-        result[model][target][device] = run_single(model, target, device, config)
+    try:
+        result = {}
+        config_iter = itertools.product(
+                config['models'],
+                config['targets'],
+                config['devices'])
+        for (model, target, device) in config_iter:
+            # TODO(weberlo): There has to be some idiom to get rid of this boilerplate.
+            if model not in result:
+                result[model] = {}
+            if target not in result[model]:
+                result[model][target] = {}
+            if device not in result[model][target]:
+                result[model][target][device] = {}
+            result[model][target][device] = run_single(model, target, device, config)
+    except Exception as e:
+        write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
+        return
 
     write_json(output_dir, 'data.json', result)
     write_status(output_dir, True, 'success')
