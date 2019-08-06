@@ -180,14 +180,29 @@ class PlotBuilder:
 
 
     def _label_bar_val(self, bar_container, y_data):
-        for bar, val in zip(bar_container.get_children(), y_data):
-            text = '{:.2}'.format(val)
-            if 'e+' in text:
+        def _format_val(val):
+            # NOTE: This function is full of gross heuristics.
+
+            # Try a format option where we force the number of significant
+            # figures and another format option that forces the number of
+            # decimal places. We use whichever results in a shorter string.
+            force_sig_figs_text = '{:.2}'.format(val)
+            force_num_decimal_places_text = '{:.2f}'.format(val)
+            if len(force_sig_figs_text) < len(force_num_decimal_places_text):
+                text = force_sig_figs_text
+            else:
+                text = force_num_decimal_places_text
+
+            if 'e+' in text or (val > 1.0 and len(text) > 4):
                 # If scientific notation with a positive exponent is required
-                # to represent it, just show it as an int
+                # to represent it or too many decimals are required, just show
+                # it as an int.
                 text = '{}'.format(int(val))
+            return text
+
+        for bar, val in zip(bar_container.get_children(), y_data):
             self.ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() * BAR_LABEL_Y_COEFF,
-                         text,
+                         _format_val(val),
                          ha='center', va='bottom')
 
     def _set_y_axis_ticks(self, y_data, num_ticks=NUM_Y_TICKS):
