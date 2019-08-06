@@ -15,9 +15,6 @@ def validate(config_dir):
     config, msg = check_config(
         config,
         {
-            'models': ['resnet18_v1'],
-            'devices': ['vta'],
-            'targets': ['sim'],
             'n_times_per_input': 4,
             'num_reps': 3
         },
