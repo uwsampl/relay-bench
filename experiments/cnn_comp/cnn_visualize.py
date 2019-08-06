@@ -24,6 +24,8 @@ def generate_cnn_comparisons(title, filename, data, networks, output_prefix=''):
                  .set_x_label('Network') \
                  .set_y_label('Time (ms)') \
                  .set_y_scale(PlotScale.LOG) \
+                 .set_bar_width(0.15) \
+                 .set_figsize((13, 6)) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(comparison_dir, filename)
 
@@ -45,8 +47,8 @@ def main(data_dir, config_dir, output_dir):
                       if time_difference(most_recent, entry).days < 14]
 
     try:
-        generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
-        generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
+        # generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
+        # generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
         for dev in devs:
             generate_cnn_comparisons('CNN Comparison on {}'.format(dev.upper()),
                                      'cnns-{}.png'.format(dev),
