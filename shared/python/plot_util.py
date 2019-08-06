@@ -11,9 +11,10 @@ from matplotlib.ticker import FuncFormatter
 
 from common import prepare_out_file, gather_stats, traverse_fields
 
-BAR_LABEL_Y_OFFS = 15
-MULTI_BAR_WIDTH = 0.05
-MULTI_BAR_Y_TOP_PAD_COEFF = 1.08
+BAR_LABEL_Y_COEFF = 1.05
+BAR_WIDTH = 0.2
+# MULTI_BAR_Y_TOP_PAD_COEFF = 1.08
+MULTI_BAR_Y_TOP_PAD_COEFF = 1.2
 NUM_Y_TICKS = 10
 GRID_COLOR = '#e8e8e8'
 PLOT_STYLE = 'seaborn-paper'
@@ -40,16 +41,17 @@ class PlotScale(enum.Enum):
 
 class PlotBuilder:
     def __init__(self):
-        fig, ax = plt.subplots()
-        self.fix = fig
-        self.ax = ax
-
-        self.multi_bar_width = MULTI_BAR_WIDTH
+        self.bar_width = BAR_WIDTH
         self.num_y_ticks = NUM_Y_TICKS
         self.style = PLOT_STYLE
+        self.figsize = plt.rcParams['figure.figsize']
 
     def make(self, plot_type, data):
         self.plot_type = plot_type
+
+        fig, ax = plt.subplots(figsize=self.figsize)
+        self.fig = fig
+        self.ax = ax
         # TODO(weberlo): it doesn't seem like the `context` call is influencing
         # the style
         #with plt.style.context(self.style):
@@ -117,16 +119,16 @@ class PlotBuilder:
             bar = self.ax.bar(
                     positions + offset,
                     single_y_data,
-                    MULTI_BAR_WIDTH,
+                    self.bar_width,
                     zorder=3)
-            offset += MULTI_BAR_WIDTH
+            offset += self.bar_width
             self._label_bar_val(bar, single_y_data)
             bars.append(bar)
         if not bars:
             return
         self.ax.legend(tuple(bars), tuple(bar_types))
         # center x ticks in the middle of each multi-bar cluster and add labels
-        x_tick_positions = positions + MULTI_BAR_WIDTH*((len(data) - 1) / 2)
+        x_tick_positions = positions + self.bar_width*((len(data) - 1) / 2)
         plt.xticks(x_tick_positions, tuple(tick_labels))
 
         # flatten nested dictionaries to get raw values
@@ -137,7 +139,6 @@ class PlotBuilder:
         # TODO(weberlo): handle unit conversions better
         # seconds to milliseconds
         y_data = list(np.array(y_data) * 1e3)
-        self._set_y_axis_ticks(y_data)
 
         return self._post_bar_setup(y_data)
 
@@ -180,9 +181,13 @@ class PlotBuilder:
 
     def _label_bar_val(self, bar_container, y_data):
         for bar, val in zip(bar_container.get_children(), y_data):
-            height = bar.get_height()
-            self.ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + BAR_LABEL_Y_OFFS,
-                         '{}'.format(int(val)),
+            text = '{:.2}'.format(val)
+            if 'e+' in text:
+                # If scientific notation with a positive exponent is required
+                # to represent it, just show it as an int
+                text = '{}'.format(int(val))
+            self.ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() * BAR_LABEL_Y_COEFF,
+                         text,
                          ha='center', va='bottom')
 
     def _set_y_axis_ticks(self, y_data, num_ticks=NUM_Y_TICKS):
@@ -242,6 +247,14 @@ class PlotBuilder:
 
     def set_y_scale(self, scale):
         self.y_scale = scale
+        return self
+
+    def set_bar_width(self, bar_width):
+        self.bar_width = bar_width
+        return self
+
+    def set_figsize(self, figsize):
+        self.figsize = figsize
         return self
 
 
