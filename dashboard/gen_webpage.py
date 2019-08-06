@@ -48,7 +48,7 @@ function install_countdown(nm, tgt) {
     } else if(s > 0) {
       tm = s + " seconds";
     } else {
-      tm = tgt + " passed";
+      tm = "passed";
     }
     elem(nm).innerHTML = tm;
 
