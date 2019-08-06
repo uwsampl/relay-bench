@@ -72,16 +72,47 @@ export -f python_run_trial
 #
 # Warning: Do not use with a script that handles its own failures or sets a
 # status because this may overwrite the status that the script sets
+#
+# Note that wrap_script_status will not work with a non-script command and
+# wrap_command_status will not work with a script
 function wrap_script_status {
-    dest=$1
+    dest="$1"
     out=$(mktemp)
     bash "${@:2}" 2>$out
     success=$?
     msg=$(cat $out)
     rm $out
     if [ $success -ne 0 ]; then
-        emit_status_file false $msg $dest
+        emit_status_file false "$msg" "$dest"
         exit 1;
     fi
 }
 export -f wrap_script_status
+
+# Runs a given command with arguments and captures stderr in a status.json
+# file if the script exits with a nonzero code (then this function calls exit).
+# Note that if an argument to the command needs to be quoted in bash for
+# the command to work, the argument to *this function* should contain
+# escaped quotes (e.g., python3 -c "print('lol')" should be passed to this
+# function as wrap_command_status $dir python3 -c "\"print('lol')\"")
+#
+# Input format: wrap_command_status "dest_for_status" [command with args]
+#
+# Warning: Do not use with a command that handles its own failures or sets a
+# status because this may overwrite the status that the command sets
+#
+# Note that wrap_script_status will not work with a non-script command and
+# wrap_command_status will not work with a script
+function wrap_command_status {
+    dest="$1"
+    out=$(mktemp)
+    bash -c "${*:2}" 2>$out
+    success=$?
+    msg=$(cat $out)
+    rm $out
+    if [ $success -ne 0 ]; then
+        emit_status_file false "$msg" "$dest"
+        exit 1;
+    fi
+}
+export -f wrap_command_status

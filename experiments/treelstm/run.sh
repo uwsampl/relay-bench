@@ -76,7 +76,7 @@ function check_data_exists {
 check_data_exists
 if ! $data_exists; then
     cd pt_tlstm
-    wrap_script_status $data_dir fetch_and_preprocess.sh
+    wrap_script_status "$data_dir" "fetch_and_preprocess.sh"
     cd ..
 fi
 
