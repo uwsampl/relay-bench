@@ -68,7 +68,15 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
         return ({'success': False,
                  'message': 'config.json for experiment {} is missing'.format(exp_name)},
                 False, None)
-    exp_conf = read_json(conf_subdir, 'config.json')
+
+    exp_conf = None
+    try:
+        exp_conf = read_json(conf_subdir, 'config.json')
+    except Exception as e:
+        return ({'success': False,
+                 'message': 'Exception when parsing config.json for experiment {}'.format(exp_name)},
+                False, None)
+
     if 'active' not in exp_conf:
         return ({'success': False,
                  'message': 'config.json for experiment {} has no active field'.format(exp_name)},
