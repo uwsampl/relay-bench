@@ -46,8 +46,7 @@ def generate_arm_vta_comparisons(data, output_prefix):
 
     for (target, target_plot_data) in plot_data.items():
         filename = 'arm-vta-{}.png'.format(target)
-        PlotBuilder().set_title('Mobile CPU vs Mobile CPU w/ FPGA') \
-                     .set_y_label('Inference Time (ms)') \
+        PlotBuilder().set_y_label('Inference Time (ms)') \
                      .set_y_scale(PlotScale.LOG) \
                      .make(PlotType.MULTI_BAR, target_plot_data) \
                      .save(comparison_dir, filename)
