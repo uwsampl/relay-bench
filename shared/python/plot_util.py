@@ -8,6 +8,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
+from matplotlib.font_manager import FontProperties
 
 from common import prepare_out_file, gather_stats, traverse_fields
 
@@ -126,7 +127,19 @@ class PlotBuilder:
             bars.append(bar)
         if not bars:
             return
-        self.ax.legend(tuple(bars), tuple(bar_types))
+
+        font_prop = FontProperties()
+        font_prop.set_size('small')
+        self.ax.legend(tuple(bars), tuple(bar_types),
+                fancybox=False,
+                framealpha=1.0,
+                facecolor='white',
+                edgecolor='black',
+                loc='upper center',
+                bbox_to_anchor=(0.5, 1.0),
+                ncol=len(bars),
+                prop=font_prop)
+
         # center x ticks in the middle of each multi-bar cluster and add labels
         x_tick_positions = positions + self.bar_width*((len(data) - 1) / 2)
         plt.xticks(x_tick_positions, tuple(tick_labels))
