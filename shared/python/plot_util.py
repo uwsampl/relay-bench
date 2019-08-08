@@ -14,11 +14,12 @@ from common import prepare_out_file, gather_stats, traverse_fields
 
 BAR_LABEL_Y_COEFF = 1.05
 BAR_WIDTH = 0.2
-# MULTI_BAR_Y_TOP_PAD_COEFF = 1.08
-MULTI_BAR_Y_TOP_PAD_COEFF = 1.2
-NUM_Y_TICKS = 10
+MULTI_BAR_Y_TOP_PAD_COEFF = 1.17
+NUM_Y_TICKS = 5
 GRID_COLOR = '#e8e8e8'
 PLOT_STYLE = 'seaborn-paper'
+LINEAR_AXIS_STEPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+LOG_AXIS_BASES = [2, 5, 10]
 
 class PlotType(enum.Enum):
     # Bar plot with a single bar per x tick
@@ -85,7 +86,7 @@ class PlotBuilder:
                 self.ax.get_xaxis().get_major_formatter().labelOnlyBase = False
         plt.minorticks_off()
         format_ms(self.ax)
-        self._set_y_axis_ticks(y_data)
+        self._set_up_y_axis(y_data)
         return self
 
     def _make_bar(self, data):
@@ -218,7 +219,41 @@ class PlotBuilder:
                          _format_val(val),
                          ha='center', va='bottom')
 
-    def _set_y_axis_ticks(self, y_data, num_ticks=NUM_Y_TICKS):
+    def _set_up_y_axis(self, y_data):
+        def _choose_linear_step(y_min, y_max):
+            best_step = LINEAR_AXIS_STEPS[0]
+            best_step_start = None
+            best_step_stop = None
+            min_diff = float('inf')
+            for step in LINEAR_AXIS_STEPS:
+                step_start = int(y_min / step) * step
+                step_stop = int((y_max / step) + 1) * step
+                diff = abs(((step_stop - step_start) / step) - self.num_y_ticks)
+                if diff <= min_diff:
+                    best_step = step
+                    best_step_start = step_start
+                    best_step_stop = step_stop
+                    min_diff = diff
+            return best_step, best_step_start, best_step_stop
+
+        def _choose_log_base(y_min, y_max):
+            best_base = LOG_AXIS_BASES[0]
+            best_base_start = None
+            best_base_stop = None
+            min_diff = float('inf')
+            for base in LOG_AXIS_BASES:
+                base_start = int(np.log(y_min) / np.log(base))
+                base_stop = int((np.log(y_max) / np.log(base)) + 1)
+                diff = abs((base_stop - base_start) - self.num_y_ticks)
+                if diff <= min_diff:
+                    best_base = base
+                    min_diff = diff
+                    best_base_start = base_start
+                    best_base_stop = base_stop
+            return best_base, best_base_start, best_base_stop
+
+        y_data = list(y_data)
+
         if not hasattr(self, 'y_scale') or self.y_scale == PlotScale.LINEAR:
             y_scale = PlotScale.LINEAR
         else:
@@ -234,19 +269,21 @@ class PlotBuilder:
 
         y_min = min(y_data)
         y_max = max(y_data)
+        if y_scale == PlotScale.LINEAR:
+            step, start, stop = _choose_linear_step(y_min, y_max)
+            self.ax.set_yticks([i for i in range(start, stop+1, step)])
+        elif y_scale == PlotScale.LOG:
+            base, start, stop = _choose_log_base(y_min, y_max)
+            self.ax.set_yticks([base**i for i in range(start, stop+1)])
+
         if self.plot_type == PlotType.MULTI_BAR:
             # add padding on the top to make room for bar labels
             if y_scale == PlotScale.LOG:
-                y_max = np.power(10, np.log10(y_max) * MULTI_BAR_Y_TOP_PAD_COEFF)
+                y_max = np.power(base, (np.log(y_max) / np.log(base)) * MULTI_BAR_Y_TOP_PAD_COEFF)
             else:
                 y_max *= MULTI_BAR_Y_TOP_PAD_COEFF
+            self.ax.set_ylim([y_min, y_max])
 
-        if y_scale == PlotScale.LINEAR:
-            self.ax.set_yticks(np.linspace(y_min, y_max, num=num_ticks))
-        elif y_scale == PlotScale.LOG:
-            start = np.log10(y_min)
-            stop = np.log10(y_max)
-            self.ax.set_yticks(np.logspace(start, stop, base=10, num=num_ticks))
 
     def save(self, dirname, filename):
         outfile = prepare_out_file(dirname, filename)
