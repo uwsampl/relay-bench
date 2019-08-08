@@ -82,11 +82,13 @@ class PlotBuilder:
             plt.xscale(self.x_scale.as_plt_arg())
         if hasattr(self, 'y_scale'):
             plt.yscale(self.y_scale.as_plt_arg())
+            # TODO(weberlo): DO WE NEED THIS LINE?
             if self.y_scale == PlotScale.LOG:
                 self.ax.get_xaxis().get_major_formatter().labelOnlyBase = False
         plt.minorticks_off()
         format_ms(self.ax)
         self._set_up_y_axis(y_data)
+
         return self
 
     def _make_bar(self, data):
@@ -95,10 +97,7 @@ class PlotBuilder:
 
         x_locs = np.arange(len(data.items()))
         x_labels = list(data.keys())
-        y_data = list(data.values())
-        # TODO(weberlo): handle unit conversions better
-        # seconds to milliseconds
-        y_data = np.array(y_data) * 1e3
+        y_data = self._process_y_data(list(data.values()))
         bar = plt.bar(x_locs, y_data, zorder=3)
         self._label_bar_val(bar, y_data)
         plt.xticks(x_locs, x_labels)
@@ -114,10 +113,11 @@ class PlotBuilder:
         positions = np.arange(len(tick_labels))
         offset = 0
         bars = []
+
         for framework_data in data.values():
             # TODO(weberlo): handle unit conversions better
             # seconds to milliseconds
-            single_y_data = np.array(list(framework_data.values())) * 1e3
+            single_y_data = self._process_y_data(list(framework_data.values()))
             bar = self.ax.bar(
                     positions + offset,
                     single_y_data,
@@ -150,10 +150,7 @@ class PlotBuilder:
                 itertools.chain.from_iterable(
                     map(lambda x:
                         list(x.values()), data.values())))
-        # TODO(weberlo): handle unit conversions better
-        # seconds to milliseconds
-        y_data = list(np.array(y_data) * 1e3)
-
+        y_data = self._process_y_data(y_data)
         return self._post_bar_setup(y_data)
 
     def _make_line(self, data):
@@ -161,9 +158,7 @@ class PlotBuilder:
         y_data = data['y']
         if len(x_data) == 0 or len(y_data) == 0:
             return
-        # TODO(weberlo): handle unit conversions better
-        # seconds to milliseconds
-        y_data = list(np.array(y_data) * 1e3)
+        y_data = self._process_y_data(y_data)
 
         # plot the line
         plt.plot(x_data, y_data, zorder=3)
@@ -178,6 +173,11 @@ class PlotBuilder:
 
         return y_data
 
+    def _process_y_data(self, y_data):
+        # TODO(weberlo): handle unit conversions better
+        # seconds to milliseconds and remove NaNs
+        return list(np.array([y for y in y_data if y != float('nan')]) * 1e3)
+
     def _post_bar_setup(self, y_data):
         # only use a grid on the y axis
         self.ax.xaxis.grid(False)
@@ -191,7 +191,6 @@ class PlotBuilder:
             return y_data + [1]
         else:
             return y_data + [0]
-
 
     def _label_bar_val(self, bar_container, y_data):
         def _format_val(val):
