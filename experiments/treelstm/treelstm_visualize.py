@@ -11,29 +11,16 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
-from plot_util import format_ms, generate_longitudinal_comparisons
+from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
 
 def generate_treelstm_comparison(title, filename, data, output_prefix=''):
-    fig, ax = plt.subplots()
-    format_ms(ax)
-
     comparison_dir = os.path.join(output_prefix, 'comparison')
-
-    means = [measurement for (_, measurement) in data.items()]
-    if not means:
-        return
-
-    settings = np.arange(len(data.items()))
-    plt.bar(settings, means)
-    plt.xticks(settings, [name for (name, _) in data.items()])
-    plt.title(title)
-    plt.xlabel('Framework')
-    plt.ylabel('Time (ms)')
-    plt.yscale('log')
-    outfile = prepare_out_file(comparison_dir, filename)
-    plt.savefig(outfile)
-    plt.close()
+    PlotBuilder().set_title(title) \
+                 .set_y_label('Time (ms)') \
+                 .set_y_scale(PlotScale.LOG) \
+                 .make(PlotType.BAR, data) \
+                 .save(comparison_dir, filename)
 
 
 def main(data_dir, config_dir, output_dir):
@@ -53,11 +40,11 @@ def main(data_dir, config_dir, output_dir):
 
     try:
         generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
-        generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')        for dev in devs:
+        generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
+        for dev in devs:
             generate_treelstm_comparison('TreeLSTM Comparison on {}'.format(dev.upper()),
                                          'treelstm-{}.png'.format(dev),
                                          most_recent[dev], output_dir)
-
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return
