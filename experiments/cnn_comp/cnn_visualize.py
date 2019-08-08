@@ -13,6 +13,13 @@ from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
+MODEL_TO_TEXT = {
+    'nature-dqn': 'Nature DQN',
+    'vgg-16': 'VGG-16',
+    'resnet-18': 'ResNet-18',
+    'mobilenet': 'MobileNet'
+}
+
 def generate_cnn_comparisons(title, filename, data, networks, output_prefix=''):
     comparison_dir = os.path.join(output_prefix, 'comparison')
 
@@ -20,8 +27,16 @@ def generate_cnn_comparisons(title, filename, data, networks, output_prefix=''):
     if not data.items():
         return
 
+    # make model names presentable
+    for (framework, models) in data.items():
+        # NOTE: need to convert the keys to a list, since we're mutating them
+        # during traversal.
+        for model in list(models.keys()):
+            val = models[model]
+            del models[model]
+            models[MODEL_TO_TEXT[model]] = val
+
     PlotBuilder().set_title(title) \
-                 .set_x_label('Network') \
                  .set_y_label('Time (ms)') \
                  .set_y_scale(PlotScale.LOG) \
                  .set_bar_width(0.15) \
