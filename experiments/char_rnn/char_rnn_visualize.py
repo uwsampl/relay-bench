@@ -10,7 +10,7 @@ import numpy as np
 from validate_config import validate
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
-from plot_util import PlotType, PlotBuilder, generate_longitudinal_comparisons
+from plot_util import PlotScale, PlotType, PlotBuilder, generate_longitudinal_comparisons
 
 def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
     means = [measurement for (_, measurement) in data.items()]
@@ -21,6 +21,7 @@ def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
     PlotBuilder().set_title(title) \
                  .set_x_label('Framework') \
                  .set_y_label('Time (ms)') \
+                 .set_y_scale(PlotScale.LOG) \
                  .make(PlotType.BAR, data) \
                  .save(comparison_dir, filename)
 
