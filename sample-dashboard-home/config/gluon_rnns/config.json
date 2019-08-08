@@ -1,0 +1,15 @@
+{
+    "active": false,
+    "dry_run": 1,
+    "n_inputs": 1,
+    "n_times_per_input": 1,
+    "devices": ["cpu"],
+    "relay_method": ["aot", "intp"],
+    "frameworks": ["relay", "mxnet"],
+    "networks": ["rnn", "lstm", "gru"],
+    "title": "Gluon RNN Comparison",
+    "notify": ["List of people to ping on Slack in the event of failure"],
+    "description": "Comparison of running times of different RNNs from the Gluon model zoo between MxNet and Relay",
+    "tvm_remote": "git@github.com:jroesch/tvm.git",
+    "tvm_branch": "fix-converter"
+}
