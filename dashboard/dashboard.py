@@ -288,7 +288,7 @@ def main(home_dir, experiments_dir):
 
         if remote != 'origin' or branch != 'master':
             used_branch = True
-            build_tvm_branch(tvm_remote, config['tvm_branch'])
+            build_tvm_branch(remote, branch)
             tvm_hash = get_tvm_hash()
 
         tvm_hashes[exp] = tvm_hash
