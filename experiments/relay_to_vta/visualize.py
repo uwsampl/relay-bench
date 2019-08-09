@@ -1,13 +1,6 @@
 import argparse
 import os
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.ticker import FuncFormatter
-import matplotlib.pyplot as plt
-
-import numpy as np
-
 from validate_config import validate
 from common import (write_status, prepare_out_file, parse_timestamp,
                     sort_data, render_exception)
