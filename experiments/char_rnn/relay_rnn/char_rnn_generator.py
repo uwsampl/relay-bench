@@ -12,7 +12,6 @@ from tvm import relay
 from tvm.relay import op
 from tvm.relay import create_executor, Module
 from tvm.relay.prelude import Prelude
-import aot
 
 import language_data as data
 from language_data import topi_to_letter, letter_to_topi
