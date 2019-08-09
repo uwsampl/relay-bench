@@ -31,6 +31,7 @@ def instantiate_network(network, batch_size, dev):
         net = models.resnet18(pretrained=True)
     elif network == 'vgg-16':
         net = models.vgg16(pretrained=True)
+        image_shape = (batch_size, 3, 224, 224)
     elif network == 'mobilenet':
         net = mobilenet(n_class=1000)
         state_dict = load_params(MOBILENET_PARAMS, dev)
