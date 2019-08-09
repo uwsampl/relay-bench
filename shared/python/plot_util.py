@@ -312,12 +312,11 @@ class PlotBuilder:
 
         y_min = min(y_data)
         y_max = max(y_data)
+        formatter = _format_sub_one
         if y_scale == PlotScale.LINEAR:
             step, start, stop = _choose_linear_step(y_min, y_max)
             if step is not None:
-                if step < 1.0:
-                    formatter = _format_sub_one
-                else:
+                if step >= 1.0:
                     formatter = _format_int
                 self.ax.set_yticks([i for i in np.arange(start, stop+step, step)])
         elif y_scale == PlotScale.LOG:
