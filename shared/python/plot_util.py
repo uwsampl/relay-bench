@@ -6,6 +6,8 @@ import os
 
 import numpy as np
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import cycler
 from matplotlib.ticker import FuncFormatter
@@ -18,14 +20,17 @@ BAR_WIDTH = 0.2
 MIN_NUM_Y_TICKS = 3
 TARGET_NUM_Y_TICKS = 5
 MAX_NUM_Y_TICKS = 10
-GRID_COLOR = '#e8e8e8'
-# matplotlib default palette is ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728',
-# '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-COLOR_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
-#COLOR_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#bcbd22', '#17becf']
 LINEAR_AXIS_STEPS = [0.001, 0.01, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
 LOG_AXIS_BASES = [2, 5, 10]
 PLOT_STYLE = 'seaborn'
+
+class UnitType(enum.Enum):
+    SECONDS = 0
+    # Speedup or Slowdown
+    COMPARATIVE = 1
+
+
+UNIT_TYPE = UnitType.SECONDS
 
 class PlotType(enum.Enum):
     # Bar plot with a single bar per x tick
@@ -61,6 +66,7 @@ class PlotBuilder:
         self.bar_width = BAR_WIDTH
         self.figsize = plt.rcParams['figure.figsize']
         self.style = plt.style.context(PLOT_STYLE)
+        self.unit_type = UNIT_TYPE
 
     def make(self, plot_type, data):
         self.style.__enter__()
@@ -71,7 +77,6 @@ class PlotBuilder:
         plt.rcParams['font.family'] = ['Roboto', 'DejaVu Sans']
         plt.rcParams['figure.titleweight'] = 'bold'
         plt.rcParams['lines.linewidth'] = 2
-        #plt.rcParams['axes.prop_cycle'] = cycler('color', COLOR_PALETTE)
 
         fig, ax = plt.subplots(figsize=self.figsize)
         self.fig = fig
@@ -185,15 +190,22 @@ class PlotBuilder:
         return y_data
 
     def _process_y_data(self, y_data):
-        # TODO(weberlo): handle unit conversions better
         # TODO(weberlo): this is a garbage way to deal with NaNs
-        # seconds to milliseconds and replace NaNs with the minimum y value
-        min_y = min(filter(lambda y: not np.isnan(y), y_data))
-        return list(np.array([min_y if np.isnan(y) else y for y in y_data]) * 1e3)
+        # replace NaNs with the minimum y value
+        def _valid_num(val):
+            return val is not None and not np.isnan(val)
+        min_y = min(filter(_valid_num, y_data))
+        without_nans = np.array([min_y if not _valid_num(y) else y for y in y_data])
+        if self.unit_type == UnitType.SECONDS:
+            # TODO(weberlo): handle unit conversions better
+            # seconds to milliseconds
+            return list(without_nans * 1e3)
+        else:
+            return list(without_nans)
 
     def _post_bar_setup(self, y_data):
-        ## only use a grid on the y axis
-        #self.ax.xaxis.grid(False)
+        # only use a grid on the y axis
+        self.ax.xaxis.grid(False)
         #self.ax.yaxis.grid(True, color=GRID_COLOR, zorder=0)
         # disable x-axis ticks (but show labels) by setting the tick length to 0
         self.ax.tick_params(axis='both', which='both',length=0)
@@ -227,9 +239,11 @@ class PlotBuilder:
             return text
 
         for bar, val in zip(bar_container.get_children(), y_data):
-            self.ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() * BAR_LABEL_Y_COEFF,
-                         _format_val(val),
-                         ha='center', va='bottom')
+            # TODO(weberlo): 0.0 should be considered valid
+            if val is not None and not np.isnan(val) and val != 0.0:
+                self.ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() * BAR_LABEL_Y_COEFF,
+                             _format_val(val),
+                             ha='center', va='bottom')
 
     def _set_up_y_axis(self, y_data):
         # TODO(weberlo): Refactor `_choose_linear_step` and `_choose_log_base`.
@@ -299,7 +313,7 @@ class PlotBuilder:
                     formatter = _format_sub_one
                 else:
                     formatter = _format_int
-                self.ax.set_yticks([i for i in np.arange(start, stop, step)])
+                self.ax.set_yticks([i for i in np.arange(start, stop+step, step)])
         elif y_scale == PlotScale.LOG:
             base, start, stop = _choose_log_base(y_min, y_max)
             formatter = _format_int
@@ -350,6 +364,10 @@ class PlotBuilder:
 
     def set_figsize(self, figsize):
         self.figsize = figsize
+        return self
+
+    def set_unit_type(self, unit_type):
+        self.unit_type = unit_type
         return self
 
 
