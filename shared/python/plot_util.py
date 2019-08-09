@@ -15,7 +15,6 @@ from matplotlib.font_manager import FontProperties
 
 from common import prepare_out_file, gather_stats, traverse_fields
 
-BAR_LABEL_Y_COEFF = 1.05
 BAR_WIDTH = 0.2
 MIN_NUM_Y_TICKS = 3
 TARGET_NUM_Y_TICKS = 5
@@ -109,6 +108,12 @@ class PlotBuilder:
 
         return self
 
+    def save(self, dirname, filename):
+        outfile = prepare_out_file(dirname, filename)
+        plt.savefig(outfile, dpi=500, bbox_inches='tight')
+        self.style.__exit__(None, None, None)
+        plt.close()
+
     def _make_bar(self, data):
         if len(data.items()) == 0:
             return
@@ -117,7 +122,7 @@ class PlotBuilder:
         x_labels = list(data.keys())
         y_data = self._process_y_data(list(data.values()))
         bar = plt.bar(x_locs, y_data, zorder=3)
-        self._label_bar_val(bar, y_data)
+        self._label_bar_val(bar, y_data, np.mean(y_data))
         plt.xticks(x_locs, x_labels)
 
         return self._post_bar_setup(y_data)
@@ -132,6 +137,14 @@ class PlotBuilder:
         offset = 0
         bars = []
 
+        # flatten nested dictionaries to get raw values
+        all_y_data = list(
+                itertools.chain.from_iterable(
+                    map(lambda x:
+                        list(x.values()), data.values())))
+        all_y_data = self._process_y_data(all_y_data)
+        all_data_mean = np.mean(list(filter(_is_valid_num, all_y_data)))
+
         for i, framework_data in enumerate(data.values()):
             framework_y_data = self._process_y_data(list(framework_data.values()))
             bar = self.ax.bar(
@@ -140,7 +153,7 @@ class PlotBuilder:
                     self.bar_width,
                     zorder=3)
             offset += self.bar_width
-            self._label_bar_val(bar, framework_y_data)
+            self._label_bar_val(bar, framework_y_data, all_data_mean)
             bars.append(bar)
         if not bars:
             return
@@ -161,13 +174,7 @@ class PlotBuilder:
         x_tick_positions = positions + self.bar_width*((len(data) - 1) / 2)
         plt.xticks(x_tick_positions, tuple(tick_labels))
 
-        # flatten nested dictionaries to get raw values
-        y_data = list(
-                itertools.chain.from_iterable(
-                    map(lambda x:
-                        list(x.values()), data.values())))
-        y_data = self._process_y_data(y_data)
-        return self._post_bar_setup(y_data)
+        return self._post_bar_setup(all_y_data)
 
     def _make_line(self, data):
         x_data = data['x']
@@ -185,17 +192,13 @@ class PlotBuilder:
         if isinstance(x_data[0], datetime.datetime):
             plt.gcf().autofmt_xdate()
 
-        #self.ax.grid(True, color=GRID_COLOR, zorder=0)
-
         return y_data
 
     def _process_y_data(self, y_data):
         # TODO(weberlo): this is a garbage way to deal with NaNs
-        # replace NaNs with the minimum y value
-        def _valid_num(val):
-            return val is not None and not np.isnan(val)
-        min_y = min(filter(_valid_num, y_data))
-        without_nans = np.array([min_y if not _valid_num(y) else y for y in y_data])
+        # replace NaNs/Nones with the minimum y value
+        min_y = min(filter(_is_valid_num, y_data))
+        without_nans = np.array([min_y if not _is_valid_num(y) else y for y in y_data])
         if self.unit_type == UnitType.SECONDS:
             # TODO(weberlo): handle unit conversions better
             # seconds to milliseconds
@@ -206,7 +209,6 @@ class PlotBuilder:
     def _post_bar_setup(self, y_data):
         # only use a grid on the y axis
         self.ax.xaxis.grid(False)
-        #self.ax.yaxis.grid(True, color=GRID_COLOR, zorder=0)
         # disable x-axis ticks (but show labels) by setting the tick length to 0
         self.ax.tick_params(axis='both', which='both',length=0)
 
@@ -217,7 +219,7 @@ class PlotBuilder:
         else:
             return y_data + [0]
 
-    def _label_bar_val(self, bar_container, y_data):
+    def _label_bar_val(self, bar_container, y_data, all_data_mean):
         def _format_val(val):
             # NOTE: This function is full of gross heuristics.
 
@@ -240,8 +242,12 @@ class PlotBuilder:
 
         for bar, val in zip(bar_container.get_children(), y_data):
             # TODO(weberlo): 0.0 should be considered valid
-            if val is not None and not np.isnan(val) and val != 0.0:
-                self.ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() * BAR_LABEL_Y_COEFF,
+            if _is_valid_num(val) and val != 0.0:
+                if self.y_scale == PlotScale.LINEAR:
+                    label_height = val + all_data_mean * 0.03
+                else:
+                    label_height = val * 1.05
+                self.ax.text(bar.get_x() + bar.get_width()/2, label_height,
                              _format_val(val),
                              ha='center', va='bottom')
 
@@ -331,12 +337,8 @@ class PlotBuilder:
 
         self.ax.yaxis.set_major_formatter(FuncFormatter(formatter))
 
-
-    def save(self, dirname, filename):
-        outfile = prepare_out_file(dirname, filename)
-        plt.savefig(outfile, dpi=500, bbox_inches='tight')
-        self.style.__exit__(None, None, None)
-        plt.close()
+    def _filter_y_data(self, y_data):
+        pass
 
     def set_title(self, title):
         self.title = title
@@ -397,3 +399,7 @@ def generate_longitudinal_comparisons(sorted_data, output_dir,
             .set_y_label('Time (ms)') \
             .make(PlotType.LINE, {'x': times, 'y': stats}) \
             .save(longitudinal_dir, 'longitudinal-{}.png'.format('-'.join(fields)))
+
+
+def _is_valid_num(val):
+    return val is not None and not np.isnan(val)
