@@ -106,10 +106,10 @@ export -f wrap_script_status
 function wrap_command_status {
     dest="$1"
     out=$(mktemp)
-    bash -c "${*:2}" 2>$out
+    bash -c "${*:2}" &>"$out"
     success=$?
-    msg=$(cat $out)
-    rm $out
+    msg=$(cat "$out")
+    rm "$out"
     if [ $success -ne 0 ]; then
         emit_status_file false "$msg" "$dest"
         exit 1;
