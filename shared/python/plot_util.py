@@ -66,6 +66,7 @@ class PlotBuilder:
         self.figsize = plt.rcParams['figure.figsize']
         self.style = plt.style.context(PLOT_STYLE)
         self.unit_type = UNIT_TYPE
+        self.sig_figs = 4
 
     def make(self, plot_type, data):
         self.style.__enter__()
@@ -221,23 +222,14 @@ class PlotBuilder:
 
     def _label_bar_val(self, bar_container, y_data, all_data_mean):
         def _format_val(val):
-            # NOTE: This function is full of gross heuristics.
+            # g = use significant figures
+            sig_fig_format = '{{:#.{}g}}'.format(self.sig_figs)
+            text = sig_fig_format.format(val)
 
-            # Try a format option where we force the number of significant
-            # figures and another format option that forces the number of
-            # decimal places. We use whichever results in a shorter string.
-            force_sig_figs_text = '{:.2}'.format(val)
-            force_num_decimal_places_text = '{:.2f}'.format(val)
-            if len(force_sig_figs_text) < len(force_num_decimal_places_text):
-                text = force_sig_figs_text
-            else:
-                text = force_num_decimal_places_text
-
-            if 'e+' in text or (val > 1.0 and len(text) > 4):
-                # If scientific notation with a positive exponent is required
-                # to represent it or too many decimals are required, just show
-                # it as an int.
-                text = '{}'.format(int(val))
+            if 'e+' in text and len(text) > 6:
+                # If scientific notation with a large positive exponent is required
+                # to represent it, use fewer sig figs
+                text = '{:#.1g}'.format(val)
             return text
 
         for bar, val in zip(bar_container.get_children(), y_data):
@@ -249,7 +241,8 @@ class PlotBuilder:
                     label_height = val * 1.05
                 self.ax.text(bar.get_x() + bar.get_width()/2, label_height,
                              _format_val(val),
-                             ha='center', va='bottom')
+                             ha='center', va='bottom',
+                             size='x-small')
 
     def _set_up_y_axis(self, y_data):
         # TODO(weberlo): Refactor `_choose_linear_step` and `_choose_log_base`.
@@ -365,6 +358,10 @@ class PlotBuilder:
 
     def set_figsize(self, figsize):
         self.figsize = figsize
+        return self
+
+    def set_sig_figs(self, sig_figs):
+        self.sig_figs = sig_figs
         return self
 
     def set_unit_type(self, unit_type):
