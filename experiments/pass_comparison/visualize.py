@@ -1,51 +1,43 @@
 import argparse
 import os
 
-import matplotlib
-matplotlib.use('Agg')
-from matplotlib.ticker import FuncFormatter
-import matplotlib.pyplot as plt
-
 import numpy as np
 
 from validate_config import validate
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
-from plot_util import format_ms, generate_longitudinal_comparisons
+from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
+MODEL_TO_TEXT = {
+    'nature-dqn': 'Nature DQN',
+    'vgg-16': 'VGG-16',
+    'resnet-18': 'ResNet-18',
+    'mobilenet': 'MobileNet'
+}
 
 def generate_relay_opt_comparisons(title, filename, data, networks, output_prefix=''):
-    fig, ax = plt.subplots()
-    format_ms(ax)
-
     comparison_dir = os.path.join(output_prefix, 'comparison')
 
     # empty data: nothing to do
     if not data.items():
         return
 
-    width = 0.05
-    positions = np.arange(len(data.items()))
-    offset = 0
+    # make model names presentable
+    for (pass_name, models) in data.items():
+        # NOTE: need to convert the keys to a list, since we're mutating them
+        # during traversal.
+        for model in list(models.keys()):
+            val = models[model]
+            del models[model]
+            models[MODEL_TO_TEXT[model]] = val
 
-    bars = []
-    for network in networks:
-        bar = ax.bar(positions + offset, [data[pass_name][network] for pass_name in data.keys()], width)
-        offset += width
-        bars.append(bar)
-    if not bars:
-        return
-
-    ax.legend(tuple(bars), tuple(networks))
-    ax.set_xticks(positions + width*(len(networks) / 2))
-    ax.set_xticklabels([name for (name, _) in data.items()])
-    plt.title(title)
-    plt.xlabel('Pass Applied')
-    plt.ylabel('Time (ms)')
-    plt.yscale('log')
-    outfile = prepare_out_file(comparison_dir, filename)
-    plt.savefig(outfile)
-    plt.close()
+    PlotBuilder().set_title(title) \
+                 .set_y_label('Time (ms)') \
+                 .set_y_scale(PlotScale.LOG) \
+                 .set_bar_width(0.15) \
+                 .set_figsize((13, 6)) \
+                 .make(PlotType.MULTI_BAR, data) \
+                 .save(comparison_dir, filename)
 
 
 def main(data_dir, config_dir, output_dir):
