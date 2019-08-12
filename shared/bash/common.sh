@@ -78,10 +78,11 @@ export -f python_run_trial
 function wrap_script_status {
     dest="$1"
     out=$(mktemp)
-    bash "${@:2}" 2>$out
+    bash "${@:2}" &>"$out"
     success=$?
-    msg=$(cat $out)
-    rm $out
+    cp "$out" "$dest/out.log"
+    msg=$(tail -n 50 "$out")
+    rm "$out"
     if [ $success -ne 0 ]; then
         emit_status_file false "$msg" "$dest"
         exit 1;
@@ -108,7 +109,8 @@ function wrap_command_status {
     out=$(mktemp)
     bash -c "${*:2}" &>"$out"
     success=$?
-    msg=$(cat "$out")
+    cp "$out" "$dest/out.log"
+    msg=$(tail -n 50 "$out")
     rm "$out"
     if [ $success -ne 0 ]; then
         emit_status_file false "$msg" "$dest"
