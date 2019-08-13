@@ -11,13 +11,17 @@ def main(config_dir, output_dir):
         write_status(output_dir, False, msg)
         return
 
+    # must preprocess the passes to work with cnn_setup
+    # (has to be a |-separated list in order to be written to CSV)
+    passes = ['|'.join(pass_list) for pass_list in config['passes']]
+
     success, msg = run_trials(
         'relay', 'pass_comparison',
         config['dry_run'], config['n_times_per_input'], config['n_inputs'],
         cnn_trial, cnn_setup, cnn_teardown,
         ['network', 'device', 'batch_size', 'opt_level', 'pass'],
         [config['networks'], config['devices'],
-         config['batch_sizes'], [0], config['passes']],
+         config['batch_sizes'], [0], passes],
         path_prefix=output_dir)
 
     write_status(output_dir, success, msg)

@@ -15,7 +15,7 @@ def main(data_dir, config_dir, output_dir):
     networks = config['networks']
     num_reps = config['n_inputs']
     batch_size = list(config['batch_sizes'])[0]
-    passes = config['passes']
+    passes = ['|'.join(pass_list) for pass_list in config['passes']]
 
     # output averages on each network for each opt level and each device
     ret = {}
