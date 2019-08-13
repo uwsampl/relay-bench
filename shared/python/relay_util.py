@@ -26,6 +26,8 @@ def convert_passes(pass_names):
             return transform.PartialEvaluate()
         if name == 'CanonicalizeCast':
             return transform.CanonicalizeCast()
+        if name == 'CanonicalizeOps':
+            return transform.CanonicalizeOps()
         raise Exception('Name {} does not match any pass'.format(name))
     return [match_pass_name(name) for name in pass_names]
 
