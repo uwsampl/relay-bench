@@ -90,5 +90,8 @@ declare -a datasets=("dev"
                      "train")
 for dataset in "${datasets[@]}"
 do
-    python_run_trial "run_relay.py" $config_dir $data_dir "--dataset" "$dataset"
+    # launch interpreter and AoT as separate subprocesses because
+    # they seem to leak memory. Also very ugly
+    python_run_trial "run_relay.py" $config_dir $data_dir "--dataset" "$dataset" "--method" "intp"
+    python_run_trial "run_relay.py" $config_dir $data_dir "--dataset" "$dataset" "--method" "aot"
 done
