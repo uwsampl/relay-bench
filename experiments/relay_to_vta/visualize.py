@@ -37,6 +37,8 @@ def generate_arm_vta_comparisons(data, output_prefix):
                 if model not in plot_data[target][device]:
                     plot_data[target][device][model] = mean_time
 
+    print(plot_data)
+
     for (target, target_plot_data) in plot_data.items():
         filename = 'arm-vta-{}.png'.format(target)
         PlotBuilder().set_y_label('Inference Time (ms)') \
@@ -59,6 +61,7 @@ def main(data_dir, config_dir, output_dir):
         generate_longitudinal_comparisons(all_data, output_dir)
         generate_arm_vta_comparisons(most_recent, output_dir)
     except Exception as e:
+        print(render_exception(e))
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return
 

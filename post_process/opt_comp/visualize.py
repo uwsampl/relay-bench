@@ -6,16 +6,23 @@ from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 
-def generate_opt_comparisons(data, output_dir):
+def generate_opt_comparisons(raw_data, output_dir):
     filename = 'opt-comp-gpu.png'
 
     # empty data: nothing to do
-    if not data.items():
+    if not raw_data.items():
         return
+
+    data = {
+        'raw': raw_data,
+        'meta': ['O Level', 'Network', 'Mean Inference Time Speedup Relative to\nNo Optimizations (O0)']
+    }
 
     PlotBuilder().set_y_label(f'Mean Inference Time Speedup Relative to\nNo Optimizations (O0)') \
                  .set_y_scale(PlotScale.LINEAR) \
-                 .set_bar_width(0.25) \
+                 .set_bar_width(0.45) \
+                 .set_sig_figs(3) \
+                 .set_figsize((13, 6)) \
                  .set_unit_type(UnitType.COMPARATIVE) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(output_dir, filename)

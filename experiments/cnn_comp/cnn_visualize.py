@@ -62,6 +62,7 @@ def main(data_dir, config_dir, output_dir):
                                      'cnns-{}.png'.format(dev),
                                      most_recent[dev], networks, output_dir)
     except Exception as e:
+        print(render_exception(e))
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return
 

@@ -1,6 +1,7 @@
 """Utility definitions for Matplotlib"""
 import datetime
 import enum
+import functools
 import itertools
 import os
 
@@ -12,21 +13,23 @@ import matplotlib.pyplot as plt
 from matplotlib import cycler
 from matplotlib.ticker import FuncFormatter
 from matplotlib.font_manager import FontProperties
+import seaborn as sns
+import pandas as pd
 
 from common import prepare_out_file, gather_stats, traverse_fields
 
-BAR_WIDTH = 0.2
-MIN_NUM_Y_TICKS = 3
+MIN_NUM_Y_TICKS = 2
 TARGET_NUM_Y_TICKS = 5
 MAX_NUM_Y_TICKS = 10
 LINEAR_AXIS_STEPS = [0.001, 0.01, 0.1, 0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
-LOG_AXIS_BASES = [2, 5, 10]
-PLOT_STYLE = 'seaborn'
+LOG_AXIS_BASES = [2, 10]
+NUM_SIG_FIGS = 4
 
 class UnitType(enum.Enum):
     SECONDS = 0
+    MILLISECONDS = 1
     # Speedup or Slowdown
-    COMPARATIVE = 1
+    COMPARATIVE = 2
 
 
 UNIT_TYPE = UnitType.SECONDS
@@ -45,7 +48,7 @@ class PlotType(enum.Enum):
 
 Y_TOP_PAD_COEFF = {
     PlotType.BAR: 1.1,
-    PlotType.MULTI_BAR: 1.17,
+    PlotType.MULTI_BAR: 1.07,
     PlotType.LINE: 1.0
 }
 
@@ -62,25 +65,20 @@ class PlotScale(enum.Enum):
 
 class PlotBuilder:
     def __init__(self):
-        self.bar_width = BAR_WIDTH
         self.figsize = plt.rcParams['figure.figsize']
-        self.style = plt.style.context(PLOT_STYLE)
         self.unit_type = UNIT_TYPE
-        self.sig_figs = 4
+        self.sig_figs = NUM_SIG_FIGS
 
     def make(self, plot_type, data):
-        self.style.__enter__()
-
         self.plot_type = plot_type
 
-        # change default appearance
-        plt.rcParams['font.family'] = ['Roboto', 'DejaVu Sans']
-        plt.rcParams['figure.titleweight'] = 'bold'
-        plt.rcParams['lines.linewidth'] = 2
+        sns.set(style='darkgrid')
+        sns.set_context('paper')
 
-        fig, ax = plt.subplots(figsize=self.figsize)
-        self.fig = fig
-        self.ax = ax
+        if hasattr(self, 'font_scale'):
+            sns.set(font_scale=self.font_scale)
+
+        plt.figure(figsize=self.figsize)
 
         # plot-type-specific config
         if plot_type == PlotType.BAR:
@@ -91,19 +89,20 @@ class PlotBuilder:
             y_data = self._make_line(data)
 
         if hasattr(self, 'title'):
-            plt.title(self.title, fontweight='bold')
+            plt.title(self.title)
         if hasattr(self, 'x_label'):
             plt.xlabel(self.x_label)
+        else:
+            plt.xlabel('')
         if hasattr(self, 'y_label'):
             plt.ylabel(self.y_label)
+        else:
+            plt.ylabel('')
         # NOTE: the axis scales and the y ticks need to be set after the data has been plotted
         if hasattr(self, 'x_scale'):
             plt.xscale(self.x_scale.as_plt_arg())
         if hasattr(self, 'y_scale'):
             plt.yscale(self.y_scale.as_plt_arg())
-            # TODO(weberlo): DO WE NEED THIS LINE?
-            if self.y_scale == PlotScale.LOG:
-                self.ax.get_xaxis().get_major_formatter().labelOnlyBase = False
         plt.minorticks_off()
         self._set_up_y_axis(y_data)
 
@@ -112,7 +111,6 @@ class PlotBuilder:
     def save(self, dirname, filename):
         outfile = prepare_out_file(dirname, filename)
         plt.savefig(outfile, dpi=500, bbox_inches='tight')
-        self.style.__exit__(None, None, None)
         plt.close()
 
     def _make_bar(self, data):
@@ -132,48 +130,42 @@ class PlotBuilder:
         if len(data) == 0:
             return
 
-        bar_types = data.keys()
-        tick_labels = list(data.values())[0].keys()
-        positions = np.arange(len(tick_labels))
-        offset = 0
-        bars = []
+        raw_data = data['raw']
+        metadata = data['meta']
 
         # flatten nested dictionaries to get raw values
         all_y_data = list(
                 itertools.chain.from_iterable(
                     map(lambda x:
-                        list(x.values()), data.values())))
+                        list(x.values()), raw_data.values())))
         all_y_data = self._process_y_data(all_y_data)
         all_data_mean = np.mean(list(filter(_is_valid_num, all_y_data)))
 
-        for i, framework_data in enumerate(data.values()):
-            framework_y_data = self._process_y_data(list(framework_data.values()))
-            bar = self.ax.bar(
-                    positions + offset,
-                    framework_y_data,
-                    self.bar_width,
-                    zorder=3)
-            offset += self.bar_width
-            self._label_bar_val(bar, framework_y_data, all_data_mean)
-            bars.append(bar)
-        if not bars:
-            return
+        df = to_dataframe(data)
 
-        font_prop = FontProperties()
-        font_prop.set_size('small')
-        self.ax.legend(tuple(bars), tuple(bar_types),
-                fancybox=False,
-                framealpha=1.0,
-                facecolor='white',
-                edgecolor='black',
-                loc='upper center',
-                bbox_to_anchor=(0.5, 1.0),
-                ncol=len(bars),
-                prop=font_prop)
-
-        # center x ticks in the middle of each multi-bar cluster and add labels
-        x_tick_positions = positions + self.bar_width*((len(data) - 1) / 2)
-        plt.xticks(x_tick_positions, tuple(tick_labels))
+        # TODO: Could remove `kind='bar'` to switch to scatter, use
+        # `g.axes[0][0].get_collections()`, spread the points in each bucket,
+        # then use  `g.axes[0][0].set_collections()` to update it.
+        #for collection in g.axes[0][0].collections:
+        #    self._label_scatter_val(collection, all_data_mean)
+        kwargs = {
+            'x': metadata[1],
+            'y': metadata[2],
+            'hue': metadata[0],
+            'data': df,
+            'kind': 'bar',
+            'legend_out': True
+        }
+        if hasattr(self, 'aspect_ratio'):
+            kwargs['aspect'] = self.aspect_ratio
+        if hasattr(self, 'figure_height'):
+            kwargs['height'] = self.figure_height
+        if hasattr(self, 'bar_colors'):
+            kwargs['palette'] = self.bar_colors
+        g = sns.catplot(**kwargs)
+        bar_containers = g.axes[0][0].containers
+        for container in bar_containers:
+            self._label_bar_val(container, all_data_mean)
 
         return self._post_bar_setup(all_y_data)
 
@@ -209,9 +201,9 @@ class PlotBuilder:
 
     def _post_bar_setup(self, y_data):
         # only use a grid on the y axis
-        self.ax.xaxis.grid(False)
+        self.ax().xaxis.grid(False)
         # disable x-axis ticks (but show labels) by setting the tick length to 0
-        self.ax.tick_params(axis='both', which='both',length=0)
+        self.ax().tick_params(axis='both', which='both',length=0)
 
         # TODO(weberlo): change the impl so we don't need to tack on values to
         # get a lower bound of 0.
@@ -220,7 +212,7 @@ class PlotBuilder:
         else:
             return y_data + [0]
 
-    def _label_bar_val(self, bar_container, y_data, all_data_mean):
+    def _label_bar_val(self, bar_container, all_data_mean):
         def _format_val(val):
             # g = use significant figures
             sig_fig_format = '{{:#.{}g}}'.format(self.sig_figs)
@@ -232,15 +224,46 @@ class PlotBuilder:
                 text = '{:#.1g}'.format(val)
             return text
 
-        for bar, val in zip(bar_container.get_children(), y_data):
+        for bar in bar_container.get_children():
+            # The height of the bar is in the data space, so it's equivalent to
+            # the value that was used to plot it.
+            bar_val = bar.get_height()
             # TODO(weberlo): 0.0 should be considered valid
-            if _is_valid_num(val) and val != 0.0:
+            if _is_valid_num(bar_val) and bar_val != 0.0:
                 if self.y_scale == PlotScale.LINEAR:
-                    label_height = val + all_data_mean * 0.03
+                    label_height = bar_val + all_data_mean * 0.03
                 else:
-                    label_height = val * 1.05
-                self.ax.text(bar.get_x() + bar.get_width()/2, label_height,
-                             _format_val(val),
+                    label_height = bar_val * 1.05
+                self.ax().text(bar.get_x() + bar.get_width()/2, label_height,
+                             _format_val(bar_val),
+                             ha='center', va='bottom',
+                             size='x-small')
+
+    def _label_scatter_val(self, collection, all_data_mean):
+        def _format_val(val):
+            # g = use significant figures
+            sig_fig_format = '{{:#.{}g}}'.format(self.sig_figs)
+            text = sig_fig_format.format(val)
+
+            if 'e+' in text and len(text) > 6:
+                # If scientific notation with a large positive exponent is required
+                # to represent it, use fewer sig figs
+                text = '{:#.1g}'.format(val)
+            return text
+
+        for point in collection.get_offsets():
+            # The height of the point is in the data space, so it's equivalent to
+            # the value that was used to plot it.
+            x = point[0]
+            y = point[1]
+            # TODO(weberlo): 0.0 should be considered valid
+            if _is_valid_num(y) and y != 0.0:
+                if self.y_scale == PlotScale.LINEAR:
+                    label_height = y + all_data_mean * 0.03
+                else:
+                    label_height = y * 1.05
+                self.ax().text(x, label_height,
+                             _format_val(y),
                              ha='center', va='bottom',
                              size='x-small')
 
@@ -261,6 +284,8 @@ class PlotBuilder:
                     best_step_start = step_start
                     best_step_stop = step_stop
                     min_diff = diff
+            if best_step is None:
+                raise RuntimeError('no suitable linear step could be found')
             return best_step, best_step_start, best_step_stop
 
         def _choose_log_base(y_min, y_max):
@@ -278,8 +303,8 @@ class PlotBuilder:
                     min_diff = diff
                     best_base_start = base_start
                     best_base_stop = base_stop
-            if best_base_start is None:
-                raise RuntimeError('no suitable log base could be found for visualization')
+            if best_base is None:
+                raise RuntimeError('no suitable log base could be found')
             return best_base, best_base_start, best_base_stop
 
         def _format_sub_one(value, tick_position):
@@ -305,18 +330,18 @@ class PlotBuilder:
 
         y_min = min(y_data)
         y_max = max(y_data)
-        formatter = _format_sub_one
+        #formatter = _format_sub_one
         if y_scale == PlotScale.LINEAR:
             step, start, stop = _choose_linear_step(y_min, y_max)
-            if step is not None:
-                if step >= 1.0:
-                    formatter = _format_int
-                self.ax.set_yticks([i for i in np.arange(start, stop+step, step)])
+            #if step is not None:
+            #    if step >= 1.0:
+            #        formatter = _format_int
+            #    self.ax().set_yticks([i for i in np.arange(start, stop+step, step)])
         elif y_scale == PlotScale.LOG:
             base, start, stop = _choose_log_base(y_min, y_max)
-            formatter = _format_int
-            if base is not None:
-                self.ax.set_yticks([int(base**i) for i in range(start, stop+1)])
+            #formatter = _format_int
+            #if base is not None:
+            #    self.ax().set_yticks([int(base**i) for i in range(start, stop+1)])
 
         if self.plot_type.is_bar_variant():
             y_top_pad_coeff = Y_TOP_PAD_COEFF[self.plot_type]
@@ -325,12 +350,15 @@ class PlotBuilder:
                 y_max = np.power(base, (np.log(y_max) / np.log(base)) * y_top_pad_coeff)
             else:
                 y_max *= y_top_pad_coeff
-            self.ax.set_ylim([y_min, y_max])
+            self.ax().set_ylim([y_min, y_max])
 
-        self.ax.yaxis.set_major_formatter(FuncFormatter(formatter))
+        #self.ax().yaxis.set_major_formatter(FuncFormatter(formatter))
 
-    def _filter_y_data(self, y_data):
-        pass
+    def fig(self):
+        return plt.gcf()
+
+    def ax(self):
+        return plt.gca()
 
     def set_title(self, title):
         self.title = title
@@ -352,8 +380,12 @@ class PlotBuilder:
         self.y_scale = scale
         return self
 
-    def set_bar_width(self, bar_width):
-        self.bar_width = bar_width
+    def set_aspect_ratio(self, aspect_ratio):
+        self.aspect_ratio = aspect_ratio
+        return self
+
+    def set_figure_height(self, figure_height):
+        self.figure_height = figure_height
         return self
 
     def set_figsize(self, figsize):
@@ -366,6 +398,14 @@ class PlotBuilder:
 
     def set_unit_type(self, unit_type):
         self.unit_type = unit_type
+        return self
+
+    def set_bar_colors(self, bar_colors):
+        self.bar_colors = bar_colors
+        return self
+
+    def set_font_scale(self, font_scale):
+        self.font_scale = font_scale
         return self
 
 
@@ -399,3 +439,47 @@ def generate_longitudinal_comparisons(sorted_data, output_dir,
 
 def _is_valid_num(val):
     return val is not None and not np.isnan(val)
+
+
+def to_dataframe(data):
+    outer_ordering = list(list(data['raw'].values())[0].keys())
+    def _cmp_func(a, b):
+        return outer_ordering.index(a[0]) - outer_ordering.index(b[0])
+
+    def _unzip(lst):
+        a_lst = []
+        b_lst = []
+        c_lst = []
+        for (a, b, c) in lst:
+            a_lst.append(a)
+            b_lst.append(b)
+            c_lst.append(c)
+        return (a_lst, b_lst, c_lst)
+
+    raw_data = data['raw']
+    metadata = data['meta']
+    df_data = []
+    for path, val in _traverse_dict(raw_data):
+        df_data.append((path[1], path[0], val))
+    df_data.sort(key=functools.cmp_to_key(_cmp_func))
+    a_lst, b_lst, c_lst = _unzip(df_data)
+    return pd.DataFrame({
+        metadata[1]: a_lst,
+        metadata[0]: b_lst,
+        metadata[2]: c_lst
+    })
+
+
+def _traverse_dict(dic, path=None):
+    if path is None:
+        path = []
+    for (key, val) in dic.items():
+        local_path = list(path)
+        local_path.append(key)
+        if isinstance(val, dict):
+            for j in _traverse_dict(val, local_path):
+                yield j
+        else:
+            yield local_path, val
+
+

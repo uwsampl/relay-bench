@@ -8,16 +8,25 @@ from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 
 OUR_NAME = 'InterNeuron'
 
-def generate_vision_comparisons(data, output_dir):
+def generate_vision_comparisons(raw_data, output_dir):
     filename = 'cnn-comp-gpu.png'
 
     # empty data: nothing to do
-    if not data.items():
+    if not raw_data.items():
         return
 
-    PlotBuilder().set_y_label(f'Mean Inference Time Slowdown Relative to {OUR_NAME}') \
-                 .set_y_scale(PlotScale.LOG) \
-                 .set_bar_width(0.15) \
+    data = {
+        'raw': raw_data,
+        'meta': ['Framework', 'Network', f'Mean Inference Time Slowdown\nRelative to {OUR_NAME}']
+    }
+
+                 #.set_bar_colors(['CO', 'C1', 'C2', 'C3', 'C4']) \
+    PlotBuilder().set_y_label(data['meta'][2]) \
+                 .set_title('Vision') \
+                 .set_aspect_ratio(1.55) \
+                 .set_figure_height(4) \
+                 .set_y_scale(PlotScale.LINEAR) \
+                 .set_sig_figs(2) \
                  .set_unit_type(UnitType.COMPARATIVE) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(output_dir, filename)
