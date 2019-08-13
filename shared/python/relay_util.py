@@ -142,9 +142,13 @@ def cnn_setup(network, dev, batch_size, opt, passes=''):
     net, params, image_shape = get_network(network, batch_size)
     if passes != '':
         relay_passes = convert_passes(passes.split('|'))
-        # always include simplify inference because we *must*
-        # eliminate batch normas
-        seq = transform.Sequential([transform.SimplifyInference()] + relay_passes)
+        # Always include simplify inference because we *must*
+        # eliminate batch normas.
+        # Note that opt_level is set to 3 on the sequential so that every explicitly specified
+        # *will* be applied (otherwise Sequential will ignore passes of a higher opt level
+        # than its own)
+        seq = transform.Sequential([transform.SimplifyInference()] + relay_passes,
+                                   opt_level=3)
         net = seq(net)
 
     mod = setup_relay_mod(net, image_shape, 'data', params, dev, opt)
