@@ -59,7 +59,7 @@ def treelstm_teardown(thunk):
     pass
 
 
-def main(config_dir, output_dir, dataset):
+def main(config_dir, output_dir, method, dataset):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
@@ -67,6 +67,10 @@ def main(config_dir, output_dir, dataset):
 
     if 'relay' not in config['frameworks']:
         write_status(output_dir, True, 'Relay not run')
+        sys.exit(0)
+
+    if method not in config['relay_methods']:
+        write_status(output_dir, True, '{} not run'.format(method))
         sys.exit(0)
 
     datasets = config['datasets']
@@ -86,7 +90,7 @@ def main(config_dir, output_dir, dataset):
         config['dry_run'], config['n_times_per_input'], config['n_inputs'],
         treelstm_trial, treelstm_setup, treelstm_teardown,
         ['device', 'method', 'dataset', 'idx'],
-        [config['devices'], config['relay_methods'],
+        [config['devices'], [method],
          [dataset], [i for i in range(max_idx)]],
         path_prefix=output_dir,
         append_to_csv=True)
@@ -100,5 +104,6 @@ if __name__ == '__main__':
     parser.add_argument("--config-dir", type=str, required=True)
     parser.add_argument("--output-dir", type=str, required=True)
     parser.add_argument("--dataset", type=str, required=True)
+    parser.add_argument("--method", type=str, required=True)
     args = parser.parse_args()
-    main(args.config_dir, args.output_dir, args.dataset)
+    main(args.config_dir, args.output_dir, args.method, args.dataset)
