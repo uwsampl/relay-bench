@@ -17,7 +17,7 @@ def generate_nlp_comparisons(raw_data, output_dir):
 
     data = {
         'raw': raw_data,
-        'meta': ['Framework', 'Network', f'Mean Inference Time Slowdown\nRelative to {OUR_NAME}']
+        'meta': ['Framework', 'Network', f'Mean Inference Time Speedup\nof {OUR_NAME}']
     }
 
     builder = PlotBuilder()\
@@ -64,14 +64,14 @@ def main(data_dir, output_dir):
 
     plot_data = OrderedDict([
         ('MxNet', {
-            'Gluon RNN': raw_data['gluon_rnns']['cpu']['MxNet']['rnn'] / raw_data['gluon_rnns']['cpu']['Aot']['rnn'],
+            'RNN': raw_data['gluon_rnns']['cpu']['MxNet']['rnn'] / raw_data['gluon_rnns']['cpu']['Aot']['rnn'],
             'GRU': raw_data['gluon_rnns']['cpu']['MxNet']['gru'] / raw_data['gluon_rnns']['cpu']['Aot']['gru'],
             'LSTM': raw_data['gluon_rnns']['cpu']['MxNet']['lstm'] / raw_data['gluon_rnns']['cpu']['Aot']['lstm'],
             'CharRNN': 0.0,
             'TreeLSTM': 0.0,
          }),
         ('PyTorch', {
-            'Gluon RNN': 0.0,
+            'RNN': 0.0,
             'GRU': 0.0,
             'LSTM': 0.0,
             'CharRNN': raw_data['char_rnn']['cpu']['Pytorch'] / raw_data['char_rnn']['cpu']['Aot'],

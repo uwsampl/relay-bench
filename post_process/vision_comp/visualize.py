@@ -17,10 +17,9 @@ def generate_vision_comparisons(raw_data, output_dir):
 
     data = {
         'raw': raw_data,
-        'meta': ['Framework', 'Network', f'Mean Inference Time Slowdown\nRelative to {OUR_NAME}']
+        'meta': ['Framework', 'Network', f'Mean Inference Time Speedup\nof {OUR_NAME}']
     }
 
-                 #.set_bar_colors(['CO', 'C1', 'C2', 'C3', 'C4']) \
     PlotBuilder().set_y_label(data['meta'][2]) \
                  .set_title('Vision') \
                  .set_aspect_ratio(1.55) \

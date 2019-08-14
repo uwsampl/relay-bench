@@ -3,17 +3,10 @@ import itertools
 import os
 from collections import OrderedDict
 
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import seaborn as sns
 import pandas as pd
 
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType, to_dataframe
 from common import traverse_fields
-
-sns.set(style='darkgrid')
-sns.set_context('paper')
 
 # Raspberry Pi 3
 PI_DF_DATA = pd.DataFrame({
@@ -74,12 +67,12 @@ RK_DICT_DATA = {
             ('Inception', 648),
             ]))
         ]),
-    'meta': ['Quantization Scheme', 'Network', 'Time']
+    'meta': ['Quantization Scheme', 'Network', 'Mean Inference Time (ms)']
 }
 
 def make_plot(title, data, output_dir, filename):
     PlotBuilder().set_title(title) \
-                 .set_y_label('Mean Inference Time (ms)') \
+                 .set_y_label(data['meta'][2]) \
                  .set_y_scale(PlotScale.LINEAR) \
                  .set_aspect_ratio(1.4) \
                  .set_figure_height(3) \

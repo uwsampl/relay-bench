@@ -48,13 +48,18 @@ export BENCHMARK_DEPS=/home/weberlo/relay-bench/shared
 #rm -r ~/dashboard-home/graph/$exp_name/*
 #cd "$script_dir/post_process/$exp_name"
 #./visualize.sh /share/asplos-data "/home/weberlo/dashboard-home/graph/$exp_name"
-#
+
 #exp_name=quant_comp
 #rm -r ~/dashboard-home/graph/$exp_name/*
 #cd "$script_dir/post_process/$exp_name"
 #./visualize.sh /share/asplos-data "/home/weberlo/dashboard-home/graph/$exp_name"
 
-exp_name=fpga_comp
+exp_name=pass_comp
 rm -r ~/dashboard-home/graph/$exp_name/*
 cd "$script_dir/post_process/$exp_name"
 ./visualize.sh /share/asplos-data "/home/weberlo/dashboard-home/graph/$exp_name"
+
+#exp_name=fpga_comp
+#rm -r ~/dashboard-home/graph/$exp_name/*
+#cd "$script_dir/post_process/$exp_name"
+#./visualize.sh /share/asplos-data "/home/weberlo/dashboard-home/graph/$exp_name"

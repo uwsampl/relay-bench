@@ -2,20 +2,30 @@ import argparse
 import os
 from collections import OrderedDict
 
+import pandas as pd
+
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 
-def generate_pass_comparisons(data, output_dir):
+def generate_pass_comparisons(raw_data, output_dir):
     filename = 'pass-comp-gpu.png'
 
     # empty data: nothing to do
-    if not data.items():
+    if not raw_data.items():
         return
 
-    PlotBuilder().set_y_label(f'Mean Inference Time Speedup Relative to Baseline') \
+    data = {
+        'raw': raw_data,
+        'meta': ['Pass Combo', 'Network', 'Mean Inference Time Speedup\nRelative to Baseline']
+    }
+
+    PlotBuilder().set_y_label(data['meta'][2]) \
                  .set_y_scale(PlotScale.LINEAR) \
-                 .set_bar_width(0.05) \
+                 .set_aspect_ratio(3.3) \
+                 .set_figure_height(3) \
+                 .set_font_scale(0.7) \
+                 .set_sig_figs(3) \
                  .set_unit_type(UnitType.COMPARATIVE) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(output_dir, filename)
@@ -40,14 +50,14 @@ def main(data_dir, output_dir):
     ]
 
     pass_spec_name_map = {
-        '3;': '+Fusion',
-        '3;FoldConstant': '+FoldConstant',
-        '3;EliminateCommonSubexpr|FoldConstant': '+EliminateCommonSubexpr',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant': '+CombineParallelConv2d',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant': '+FoldScaleAxis',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant': '+CanonicalizeCast',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant': '+CanonicalizeOps',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant': '+AlterOpLayout'
+        '3;': 'Op Fusion',
+        '3;FoldConstant': '... + Constant Folding',
+        '3;EliminateCommonSubexpr|FoldConstant': '... + Common Subexpr Elim',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant': '... + Parallel Conv Comb',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant': '... + Axis Scale Folding',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant': '... + Cast Canonicalization',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant': '... + Op Canonicalization',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant': '... + Op Layout Alteration'
     }
 
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
@@ -69,6 +79,7 @@ def main(data_dir, output_dir):
     try:
         generate_pass_comparisons(plot_data, output_dir)
     except Exception as e:
+        print(render_exception(e))
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return
 

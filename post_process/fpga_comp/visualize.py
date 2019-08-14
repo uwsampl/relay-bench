@@ -33,14 +33,14 @@ DICT_DATA = {
             ('DCGAN', 329.37),
             ('TreeLSTM', 131.142)
             ])),
-        ('Single-Batch FPGA', OrderedDict([
+        ('Single-Batch', OrderedDict([
             ('ResNet-18', 64.894),
             ('ResNet-34', 96.912),
             ('ResNet-50', 188.193),
             ('DCGAN', 29.27),
             ('TreeLSTM', 52.867)
             ])),
-        ('Multi-Batch FPGA', OrderedDict([
+        ('Multi-Batch', OrderedDict([
             ('ResNet-18', 61.326),
             ('ResNet-34', 84.754),
             ('ResNet-50', 165.056),
