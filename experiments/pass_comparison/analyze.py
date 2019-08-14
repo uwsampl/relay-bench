@@ -10,7 +10,7 @@ def main(data_dir, config_dir, output_dir):
         write_status(output_dir, False, msg)
         return
 
-    opt_level = 0
+    opt_level = 3
     devices = config['devices']
     networks = config['networks']
     num_reps = config['n_inputs']
@@ -26,12 +26,13 @@ def main(data_dir, config_dir, output_dir):
             ret[dev][pass_name] = {}
             for network in networks:
                 mean, success, msg = trials_average_time(data_dir, 'relay', 'pass_comparison', num_reps,
-                                                         ['network', 'device', 'batch_size', 'opt_level', 'pass_list'],
+                                                         ['network', 'device', 'batch_size', 'opt_level', 'use_passes', 'pass'],
                                                          {'batch_size': batch_size,
                                                           'network': network,
                                                           'device': dev,
                                                           'opt_level': opt_level,
-                                                          'pass_list': pass_list})
+                                                          'use_passes': True,
+                                                          'pass': pass_list})
                 if not success:
                     write_status(output_dir, False, msg)
                     return

@@ -9,7 +9,7 @@ VALID_PASSES = {
     'ForwardFoldScaleAxis',
     'FuseOps',
     'FoldConstant',
-    'CombineParallelConv2d',
+    'CombineParallelConv2D',
     'AlterOpLayout',
     'EliminateCommonSubexpr',
     'CanonicalizeCast',
