@@ -19,9 +19,9 @@ def main(config_dir, output_dir):
         'relay', 'pass_comparison',
         config['dry_run'], config['n_times_per_input'], config['n_inputs'],
         cnn_trial, cnn_setup, cnn_teardown,
-        ['network', 'device', 'batch_size', 'opt_level', 'pass'],
+        ['network', 'device', 'batch_size', 'opt_level', 'use_passes', 'pass'],
         [config['networks'], config['devices'],
-         config['batch_sizes'], [0], passes],
+         config['batch_sizes'], [3], [True], passes],
         path_prefix=output_dir)
 
     write_status(output_dir, success, msg)

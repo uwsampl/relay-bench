@@ -4,6 +4,20 @@ from tvm.relay import transform
 import numpy as np
 import aot
 
+ALL_PASSES = {
+    'FoldScaleAxis',
+    'BackwardFoldScaleAxis',
+    'ForwardFoldScaleAxis',
+    'FuseOps',
+    'FoldConstant',
+    'CombineParallelConv2D',
+    'AlterOpLayout',
+    'EliminateCommonSubexpr',
+    'PartialEvaluate',
+    'CanonicalizeCast',
+    'CanonicalizeOps'
+}
+
 def convert_passes(pass_names):
     def match_pass_name(name):
         if name == 'FoldScaleAxis':
@@ -124,9 +138,12 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
     return net, params, input_shape
 
 
-def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
+def setup_relay_mod(net, image_shape, input_name, params, dev, opt,
+                    required_pass=None, disabled_pass=None):
     device = tvm.cpu(0) if dev == 'cpu' else tvm.gpu(0)
-    with relay.build_config(opt_level=opt):
+    with relay.build_config(opt_level=opt,
+                            required_pass=required_pass,
+                            disabled_pass=disabled_pass):
         graph, lib, params = relay.build(net, 'llvm' if dev == 'cpu' else 'cuda', params=params)
 
     mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
@@ -138,22 +155,21 @@ def setup_relay_mod(net, image_shape, input_name, params, dev, opt):
 
 # note: passes should be a |-separated list of passes to apply before setting up the mod
 # (i.e., before any passes from opt levels are added). The reason for the | separarator is
-# that you can't write a comma-separated list to a CSV. General recommendation: if you want
-# to use individual passes, set opt to 0
-def cnn_setup(network, dev, batch_size, opt, passes=''):
+# that you can't write a comma-separated list to a CSV
+def cnn_setup(network, dev, batch_size, opt, use_passes=False, passes=''):
     net, params, image_shape = get_network(network, batch_size)
-    if passes != '':
-        relay_passes = convert_passes(passes.split('|'))
-        # Always include simplify inference because we *must*
-        # eliminate batch normas.
-        # Note that opt_level is set to 3 on the sequential so that every explicitly specified
-        # *will* be applied (otherwise Sequential will ignore passes of a higher opt level
-        # than its own)
-        seq = transform.Sequential([transform.SimplifyInference()] + relay_passes,
-                                   opt_level=3)
-        net = seq(net)
+    required_pass = None
+    disabled_pass = None
 
-    mod = setup_relay_mod(net, image_shape, 'data', params, dev, opt)
+    if use_passes:
+        required_pass = set(passes.split('|'))
+        # we always need simplify inference
+        required_pass.add('SimplifyInference')
+        disabled_pass = ALL_PASSES - required_pass
+
+    mod = setup_relay_mod(net, image_shape, 'data', params, dev, opt,
+                          required_pass=required_pass,
+                          disabled_pass=disabled_pass)
     return [mod]
 
 
