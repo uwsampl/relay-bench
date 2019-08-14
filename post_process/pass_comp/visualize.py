@@ -26,12 +26,6 @@ def main(data_dir, output_dir):
     all_data = sort_data(pass_comp_dir)
     raw_data = all_data[-1]['gpu']
 
-    our_fw = 'Relay'
-    other_fws = ['TensorFlow', 'Pytorch', 'MxNet',
-                 'NNVM', 'TF XLA']
-    fw_name_map = {fw: fw for fw in other_fws}
-    fw_name_map['Pytorch'] = 'PyTorch'
-
     baseline = 'Baseline'
 
     pass_lists = [
