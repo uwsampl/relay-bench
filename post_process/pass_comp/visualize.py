@@ -40,7 +40,7 @@ def main(data_dir, output_dir):
     ]
 
     pass_spec_name_map = {
-        '3;|FuseOps': '+FuseOps',
+        '3;FuseOps': '+FuseOps',
         '3;FoldConstant|FuseOps': '+FoldConstant',
         '3;EliminateCommonSubexpr|FoldConstant|FuseOps': '+EliminateCommonSubexpr',
         '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps': '+CombineParallelConv2d',
