@@ -16,18 +16,26 @@ VALID_PASSES = {
     'CanonicalizeOps'
 }
 
-def valid_pass_list_cond():
-    def check_pass_list(passes):
+def valid_pass_spec_cond():
+    def check_pass_specification(passes):
         if not isinstance(passes, tuple):
             return False
-        for pass_name in passes:
+        if len(passes) != 2:
+            return False
+        opt_level = passes[0]
+        pass_list = passes[1]
+
+        if not isinstance(opt_level, int) or (opt_level < 0 or opt_level > 3):
+            return False
+
+        for pass_name in pass_list:
             if not isinstance(pass_name, str):
                 return False
             if pass_name not in VALID_PASSES:
                 return False
         return True
 
-    return (check_pass_list, 'is a valid list of Relay passes')
+    return (check_pass_specification, 'is a valid pair of (opt_level, list of Relay passes)')
 
 def validate(config_dir):
     """
@@ -44,11 +52,18 @@ def validate(config_dir):
     if 'passes' in config:
         passes = []
         for pass_entry in config['passes']:
-            new_entry = ()
-            if isinstance(pass_entry, str) and pass_entry != '':
-                new_entry = (pass_entry,)
+            opt_level = 0
+            pass_list = ()
             if isinstance(pass_entry, list):
-                new_entry = tuple(pass_entry)
+                if len(pass_entry) > 0:
+                    opt_level = pass_entry[0]
+                if len(pass_entry) > 1:
+                    list_entry = pass_entry[1]
+                    if isinstance(list_entry, str) and list_entry != '':
+                        pass_list = (list_entry,)
+                    if isinstance(list_entry, list):
+                        pass_list = tuple(list_entry)
+            new_entry = (opt_level, pass_list)
             passes.append(new_entry)
         config['passes'] = passes
 
@@ -61,14 +76,14 @@ def validate(config_dir):
             'n_times_per_input': 10,
             'batch_sizes': {1},
             'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'},
-            'passes': {(pass_name,) for pass_name in VALID_PASSES}
+            'passes': {(3, pass_name) for pass_name in VALID_PASSES}
         },
         {
             'devices': {'cpu', 'gpu'},
             'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'}
         },
         {
-            'passes': valid_pass_list_cond(),
+            'passes': valid_pass_spec_cond(),
             'dry_run': non_negative_cond(),
             'n_inputs': non_negative_cond(),
             'n_times_per_input': non_negative_cond(),
