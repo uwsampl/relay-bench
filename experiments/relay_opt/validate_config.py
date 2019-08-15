@@ -19,12 +19,12 @@ def validate(config_dir):
             'n_inputs': 3,
             'n_times_per_input': 10,
             'batch_sizes': {1},
-            'opt_levels': {0,1,2,3},
+            'opt_levels': {0,1,2,3,4},
             'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'}
         },
         {
             'devices': {'cpu', 'gpu'},
-            'opt_levels': {0,1,2,3},
+            'opt_levels': {0,1,2,3,4},
             'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'}
         },
         {
