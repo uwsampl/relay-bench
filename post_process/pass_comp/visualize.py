@@ -26,28 +26,28 @@ def main(data_dir, output_dir):
     all_data = sort_data(pass_comp_dir)
     raw_data = all_data[-1]['gpu']
 
-    baseline = 'Baseline'
+    baseline = '0;'
 
-    pass_lists = [
-        'FuseOps',
-        'FoldConstant|FuseOps',
-        'EliminateCommonSubexpr|FoldConstant|FuseOps',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|FoldConstant|FuseOps',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|CanonicalizeCast|FoldConstant|FuseOps',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant|FuseOps',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps'
+    pass_specs = [
+        '3;',
+        '3;FoldConstant',
+        '3;EliminateCommonSubexpr|FoldConstant',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant'
     ]
 
-    pass_list_name_map = {
-        'FuseOps': '+Fusion',
-        'FoldConstant|FuseOps': '+FoldConstant',
-        'EliminateCommonSubexpr|FoldConstant|FuseOps': '+EliminateCommonSubexpr',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps': '+CombineParallelConv2D',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|FoldConstant|FuseOps': '+FoldScaleAxis',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|CanonicalizeCast|FoldConstant|FuseOps': '+CanonicalizeCast',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant|FuseOps': '+CanonicalizeOps',
-        'EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps': '+AlterOpLayout'
+    pass_spec_name_map = {
+        '3;': '+Fusion',
+        '3;FoldConstant': '+FoldConstant',
+        '3;EliminateCommonSubexpr|FoldConstant': '+EliminateCommonSubexpr',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant': '+CombineParallelConv2d',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant': '+FoldScaleAxis',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant': '+CanonicalizeCast',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant': '+CanonicalizeOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant': '+AlterOpLayout'
     }
 
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
@@ -59,10 +59,11 @@ def main(data_dir, output_dir):
     }
 
     plot_data = OrderedDict([
-        (pass_list_name_map[pass_list], {
-            network_name_map[network]: raw_data[baseline][network] / raw_data[pass_list][network]
+        (pass_spec_name_map[pass_spec], {
+            network_name_map[network]:
+            raw_data[baseline][network] / raw_data[pass_spec][network]
             for network in networks})
-        for pass_list in pass_lists
+        for pass_spec in pass_specs
     ])
 
     try:

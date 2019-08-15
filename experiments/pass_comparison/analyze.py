@@ -1,4 +1,5 @@
 import argparse
+import itertools
 
 from validate_config import validate
 from common import write_status, write_json
@@ -10,33 +11,31 @@ def main(data_dir, config_dir, output_dir):
         write_status(output_dir, False, msg)
         return
 
-    opt_level = 3
     devices = config['devices']
     networks = config['networks']
     num_reps = config['n_inputs']
     batch_size = list(config['batch_sizes'])[0]
-    passes = ['|'.join(pass_list) for pass_list in config['passes']]
+    passes = [';'.join([str(pass_spec[0]), '|'.join(pass_spec[1])])
+              for pass_spec in config['passes']]
 
-    # output averages on each network for each opt level and each device
+    # output averages on each network for each opt level,
+    # pass specification, and device
     ret = {}
     for dev in devices:
         ret[dev] = {}
-        for pass_list in passes:
-            pass_name = 'Baseline' if pass_list == '' else pass_list
-            ret[dev][pass_name] = {}
+        for pass_str in passes:
+            ret[dev][pass_str] = {}
             for network in networks:
                 mean, success, msg = trials_average_time(data_dir, 'relay', 'pass_comparison', num_reps,
-                                                         ['network', 'device', 'batch_size', 'opt_level', 'use_passes', 'pass'],
+                                                         ['network', 'device', 'batch_size', 'pass'],
                                                          {'batch_size': batch_size,
                                                           'network': network,
                                                           'device': dev,
-                                                          'opt_level': opt_level,
-                                                          'use_passes': True,
-                                                          'pass': pass_list})
+                                                          'pass': pass_str})
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                ret[dev][pass_name][network] = mean
+                ret[dev][pass_str][network] = mean
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')
