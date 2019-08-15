@@ -164,9 +164,7 @@ def cnn_setup(network, dev, batch_size, opt, use_passes=False, passes=''):
     if use_passes:
         required_pass = set(passes.split('|'))
         # we always need simplify inference
-        # and fusion (at least level 0)
         required_pass.add('SimplifyInference')
-        required_pass.add('FuseOps')
         disabled_pass = ALL_PASSES - required_pass
 
     mod = setup_relay_mod(net, image_shape, 'data', params, dev, opt,

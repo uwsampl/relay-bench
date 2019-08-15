@@ -9,6 +9,12 @@ def passes_setup(network, dev, batch_size, pass_spec):
     members = pass_spec.split(';')
     opt_level = int(members[0])
     pass_list = members[1]
+
+    # baseline: don't specify any passes
+    if opt_level == 0 and pass_list == '':
+        return cnn_setup(network, dev, batch_size, opt_level,
+                         use_passes=False)
+
     return cnn_setup(network, dev, batch_size, opt_level,
                      use_passes=True, passes=pass_list)
 

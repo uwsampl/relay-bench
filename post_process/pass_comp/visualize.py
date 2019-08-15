@@ -29,25 +29,25 @@ def main(data_dir, output_dir):
     baseline = '0;'
 
     pass_specs = [
-        '3;',
-        '3;FoldConstant',
-        '3;EliminateCommonSubexpr|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant'
+        '3;FuseOps',
+        '3;FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps'
     ]
 
     pass_spec_name_map = {
-        '3;': '+Fusion',
-        '3;FoldConstant': '+FoldConstant',
-        '3;EliminateCommonSubexpr|FoldConstant': '+EliminateCommonSubexpr',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant': '+CombineParallelConv2d',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant': '+FoldScaleAxis',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant': '+CanonicalizeCast',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant': '+CanonicalizeOps',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant': '+AlterOpLayout'
+        '3;|FuseOps': '+FuseOps',
+        '3;FoldConstant|FuseOps': '+FoldConstant',
+        '3;EliminateCommonSubexpr|FoldConstant|FuseOps': '+EliminateCommonSubexpr',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps': '+CombineParallelConv2d',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant|FuseOps': '+FoldScaleAxis',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant|FuseOps': '+CanonicalizeCast',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant|FuseOps': '+CanonicalizeOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps': '+AlterOpLayout'
     }
 
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
