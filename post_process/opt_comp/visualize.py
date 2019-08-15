@@ -27,7 +27,7 @@ def main(data_dir, output_dir):
     raw_data = all_data[-1]['gpu']
 
     baseline = 'O0'
-    opts = ['O1', 'O2', 'O3']
+    opts = ['O1', 'O2', 'O3', 'O4']
 
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
     network_name_map = {
