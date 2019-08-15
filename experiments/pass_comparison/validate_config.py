@@ -13,7 +13,8 @@ VALID_PASSES = {
     'AlterOpLayout',
     'EliminateCommonSubexpr',
     'CanonicalizeCast',
-    'CanonicalizeOps'
+    'CanonicalizeOps',
+    'PartialEvaluate'
 }
 
 def valid_pass_spec_cond():

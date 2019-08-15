@@ -8,9 +8,7 @@ from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 
-def generate_pass_comparisons(raw_data, output_dir):
-    filename = 'pass-comp-gpu.png'
-
+def generate_pass_comparisons(raw_data, output_dir, filename):
     # empty data: nothing to do
     if not raw_data.items():
         return
@@ -34,30 +32,30 @@ def generate_pass_comparisons(raw_data, output_dir):
 def main(data_dir, output_dir):
     pass_comp_dir = os.path.join(data_dir, 'pass_comparison')
     all_data = sort_data(pass_comp_dir)
-    raw_data = all_data[-1]['gpu']
+    raw_data = all_data[-1]
 
     baseline = '0;'
 
     pass_specs = [
-        '3;',
-        '3;FoldConstant',
-        '3;EliminateCommonSubexpr|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant'
+        '3;FuseOps',
+        '3;FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant|FuseOps',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps'
     ]
 
     pass_spec_name_map = {
-        '3;': 'Op Fusion',
-        '3;FoldConstant': '... + Constant Folding',
-        '3;EliminateCommonSubexpr|FoldConstant': '... + Common Subexpr Elim',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant': '... + Parallel Conv Comb',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant': '... + Axis Scale Folding',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant': '... + Cast Canonicalization',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant': '... + Op Canonicalization',
-        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant': '... + Op Layout Alteration'
+        '3;FuseOps': 'Op Fusion',
+        '3;FoldConstant|FuseOps': '... + Constant Folding',
+        '3;EliminateCommonSubexpr|FoldConstant|FuseOps': '... + Common Subexpr Elim',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldConstant|FuseOps': '... + Parallel Conv Comb',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|FoldConstant|FuseOps': '... + Axis Scale Folding',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|FoldConstant|FuseOps': '... + Cast Canonicalization',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|FoldConstant|FuseOps': '... + Op Canonicalization',
+        '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps': '... + Op Layout Alteration'
     }
 
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
@@ -68,16 +66,17 @@ def main(data_dir, output_dir):
         'vgg-16': 'VGG-16'
     }
 
-    plot_data = OrderedDict([
-        (pass_spec_name_map[pass_spec], {
-            network_name_map[network]:
-            raw_data[baseline][network] / raw_data[pass_spec][network]
-            for network in networks})
-        for pass_spec in pass_specs
-    ])
-
     try:
-        generate_pass_comparisons(plot_data, output_dir)
+        for (dev, raw_dev_data) in raw_data.items():
+            print(dev, raw_dev_data)
+            plot_data = OrderedDict([
+                (pass_spec_name_map[pass_spec], {
+                    network_name_map[network]:
+                    raw_dev_data[baseline][network] / raw_dev_data[pass_spec][network]
+                    for network in networks})
+                for pass_spec in pass_specs
+            ])
+            generate_pass_comparisons(plot_data, output_dir, f'pass-comp-{dev}.png')
     except Exception as e:
         print(render_exception(e))
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
