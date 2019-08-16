@@ -27,7 +27,7 @@ def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fie
 
     for i in range(num_batches):
         start = time.time()
-        for j in range(batch_size):
+        for j in range(int(batch_size)):
             out = trial(*trial_args)
         end = time.time()
         if i >= dry_run:
