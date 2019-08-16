@@ -14,17 +14,26 @@ def write_row(writer, fieldnames, fields):
 
 
 def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fieldnames):
-    for i in range(dry_run + n_times):
-        if i == dry_run:
-            tic = time.time()
-        start = time.time()
+    num_batches = 10
+    batch_size = 1
+    if n_times % num_batches == 0 and n_times > num_batches:
+        batch_size = n_times / num_batches
+    else:
+        num_batches = n_times
+
+    for i in range(dry_run):
         out = trial(*trial_args)
+    tic = time.time()
+
+    for i in range(num_batches):
+        start = time.time()
+        for j in range(batch_size):
+            out = trial(*trial_args)
         end = time.time()
         if i >= dry_run:
-            write_row(writer, fieldnames, setup_args + [num, i, end - start])
+            write_row(writer, fieldnames, setup_args + [num, i, (end - start) / batch_size])
 
     final = time.time()
-
     return (final - tic) / n_times
 
 
