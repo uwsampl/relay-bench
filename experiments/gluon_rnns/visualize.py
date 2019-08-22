@@ -6,18 +6,19 @@ from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
-def generate_gluon_rnn_comparison(title, filename, data, output_prefix=''):
-    means = [measurement for (_, measurement) in data.items()]
-    if not means:
+def generate_gluon_rnn_comparison(title, filename, raw_data, output_prefix=''):
+    if len(raw_data) == 0:
         return
+
+    data = {
+        'raw': raw_data,
+        'meta': ['Executor', 'Network', 'Mean Inference Time (ms)'],
+    }
 
     comparison_dir = os.path.join(output_prefix, 'comparison')
     PlotBuilder().set_title(title) \
-                 .set_x_label('Network') \
-                 .set_y_label('Time (ms)') \
+                 .set_y_label(data['meta'][1]) \
                  .set_y_scale(PlotScale.LOG) \
-                 .set_bar_width(0.15) \
-                 .set_figsize((13, 6)) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(comparison_dir, filename)
 

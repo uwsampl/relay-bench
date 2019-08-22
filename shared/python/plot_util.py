@@ -19,7 +19,7 @@ import pandas as pd
 
 from common import prepare_out_file, gather_stats, traverse_fields
 
-NUM_SIG_FIGS = 4
+NUM_SIG_FIGS = 3
 
 class UnitType(enum.Enum):
     SECONDS = 0
@@ -107,7 +107,7 @@ class PlotBuilder:
 
     def filter_y_val(self, val):
         if not _is_valid_num(val):
-            logging.warning('found invalid value "{val}" in data. Plot results may suffer')
+            logging.warning(f'found invalid value "{val}" in data. Plot results may suffer')
             return None
 
         if self.unit_type == UnitType.SECONDS:

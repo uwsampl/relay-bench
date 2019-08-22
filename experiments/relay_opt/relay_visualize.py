@@ -15,15 +15,15 @@ MODEL_TO_TEXT = {
     'mobilenet': 'MobileNet'
 }
 
-def generate_relay_opt_comparisons(title, filename, data, networks, output_prefix=''):
+def generate_relay_opt_comparisons(title, filename, raw_data, networks, output_prefix=''):
     comparison_dir = os.path.join(output_prefix, 'comparison')
 
     # empty data: nothing to do
-    if not data.items():
+    if not raw_data.items():
         return
 
     # make model names presentable
-    for (opt_level, models) in data.items():
+    for (opt_level, models) in raw_data.items():
         # NOTE: need to convert the keys to a list, since we're mutating them
         # during traversal.
         for model in list(models.keys()):
@@ -31,11 +31,16 @@ def generate_relay_opt_comparisons(title, filename, data, networks, output_prefi
             del models[model]
             models[MODEL_TO_TEXT[model]] = val
 
+    data = {
+        'raw': raw_data,
+        'meta': ['Opt Level', 'Network', 'Mean Inference Time (ms)'],
+    }
+
     PlotBuilder().set_title(title) \
                  .set_y_label('Time (ms)') \
                  .set_y_scale(PlotScale.LOG) \
-                 .set_bar_width(0.15) \
-                 .set_figsize((13, 6)) \
+                 .set_figure_height(3) \
+                 .set_aspect_ratio(3.3) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(comparison_dir, filename)
 
