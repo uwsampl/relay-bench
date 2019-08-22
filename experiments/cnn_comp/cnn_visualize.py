@@ -13,15 +13,15 @@ MODEL_TO_TEXT = {
     'mobilenet': 'MobileNet'
 }
 
-def generate_cnn_comparisons(title, filename, data, networks, output_prefix=''):
+def generate_cnn_comparisons(title, filename, raw_data, networks, output_prefix=''):
     comparison_dir = os.path.join(output_prefix, 'comparison')
 
     # empty data: nothing to do
-    if not data.items():
+    if not raw_data.items():
         return
 
     # make model names presentable
-    for (framework, models) in data.items():
+    for (framework, models) in raw_data.items():
         # NOTE: need to convert the keys to a list, since we're mutating them
         # during traversal.
         for model in list(models.keys()):
@@ -29,11 +29,17 @@ def generate_cnn_comparisons(title, filename, data, networks, output_prefix=''):
             del models[model]
             models[MODEL_TO_TEXT[model]] = val
 
+    data = {
+        'raw': raw_data,
+        'meta': ['Framework', 'Network', 'Mean Inference Time (ms)']
+    }
+
     PlotBuilder().set_title(title) \
-                 .set_y_label('Time (ms)') \
+                 .set_y_label(data['meta'][2]) \
                  .set_y_scale(PlotScale.LOG) \
-                 .set_bar_width(0.15) \
-                 .set_figsize((13, 6)) \
+                 .set_figure_height(3.0) \
+                 .set_aspect_ratio(3.3) \
+                 .set_sig_figs(3) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(comparison_dir, filename)
 
@@ -55,8 +61,8 @@ def main(data_dir, config_dir, output_dir):
                       if time_difference(most_recent, entry).days < 14]
 
     try:
-        generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
-        generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
+        #generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
+        #generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
         for dev in devs:
             generate_cnn_comparisons('CNN Comparison on {}'.format(dev.upper()),
                                      'cnns-{}.png'.format(dev),

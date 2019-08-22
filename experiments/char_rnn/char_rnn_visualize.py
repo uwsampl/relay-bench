@@ -6,15 +6,16 @@ from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
 from plot_util import PlotScale, PlotType, PlotBuilder, generate_longitudinal_comparisons
 
-def generate_char_rnn_comparison(title, filename, data, output_prefix=''):
-    means = [measurement for (_, measurement) in data.items()]
-    if not means:
-        return
+def generate_char_rnn_comparison(title, filename, raw_data, output_prefix=''):
+    data = {
+        'raw': raw_data,
+        'meta': ['Executor', 'Mean Inference Time (ms)']
+    }
 
     comparison_dir = os.path.join(output_prefix, 'comparison')
     PlotBuilder().set_title(title) \
-                 .set_x_label('Framework') \
-                 .set_y_label('Time (ms)') \
+                 .set_x_label(data['meta'][0]) \
+                 .set_y_label(data['meta'][1]) \
                  .set_y_scale(PlotScale.LOG) \
                  .make(PlotType.BAR, data) \
                  .save(comparison_dir, filename)

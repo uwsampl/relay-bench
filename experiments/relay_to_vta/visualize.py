@@ -38,8 +38,12 @@ def generate_arm_vta_comparisons(data, output_prefix):
                     plot_data[target][device][model] = mean_time
 
     for (target, target_plot_data) in plot_data.items():
+        target_plot_data = {
+                'raw': target_plot_data,
+                'meta': ['Hardware Design', 'Network', 'Mean Inference Time (ms)']
+        }
         filename = 'arm-vta-{}.png'.format(target)
-        PlotBuilder().set_y_label('Inference Time (ms)') \
+        PlotBuilder().set_y_label(target_plot_data['meta'][2]) \
                      .set_y_scale(PlotScale.LINEAR) \
                      .make(PlotType.MULTI_BAR, target_plot_data) \
                      .save(comparison_dir, filename)

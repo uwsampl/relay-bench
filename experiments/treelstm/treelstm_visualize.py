@@ -7,10 +7,16 @@ from common import (write_status, prepare_out_file, time_difference,
 from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
 
 
-def generate_treelstm_comparison(title, filename, data, output_prefix=''):
+def generate_treelstm_comparison(title, filename, raw_data, output_prefix=''):
     comparison_dir = os.path.join(output_prefix, 'comparison')
+
+    data = {
+        'raw': raw_data,
+        'meta': ['Framework', 'Mean Inference Time (ms)']
+    }
+
     PlotBuilder().set_title(title) \
-                 .set_y_label('Time (ms)') \
+                 .set_y_label(data['meta'][1]) \
                  .set_y_scale(PlotScale.LOG) \
                  .make(PlotType.BAR, data) \
                  .save(comparison_dir, filename)
