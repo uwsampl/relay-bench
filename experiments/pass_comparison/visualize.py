@@ -1,12 +1,13 @@
 import argparse
 import os
+from collections import OrderedDict
 
 import numpy as np
 
 from validate_config import validate
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
-from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
+from plot_util import PlotBuilder, PlotScale, PlotType, UnitType, generate_longitudinal_comparisons
 
 MODEL_TO_TEXT = {
     'nature-dqn': 'Nature DQN',
@@ -32,7 +33,7 @@ def generate_relay_opt_comparisons(title, filename, raw_data, networks, output_p
             models[MODEL_TO_TEXT[model]] = val
 
     data = {
-        'raw': raw_data,
+        'raw': OrderedDict(sorted(raw_data.items())),
         'meta': ['Pass Combo', 'Network', 'Mean Inference Time (ms)']
     }
 
@@ -41,6 +42,7 @@ def generate_relay_opt_comparisons(title, filename, raw_data, networks, output_p
                  .set_y_scale(PlotScale.LOG) \
                  .set_figure_height(3) \
                  .set_aspect_ratio(3.3) \
+                 .set_unit_type(UnitType.SECONDS) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(comparison_dir, filename)
 

@@ -125,8 +125,11 @@ class PlotBuilder:
 
     def label_bar_val(self, bar_container, all_data_mean):
         def _format_val(val):
+            sig_figs = self.sig_figs
+            if val < 1.0:
+                sig_figs -= 1
             # g = use significant figures
-            sig_fig_format = '{{:#.{}g}}'.format(self.sig_figs)
+            sig_fig_format = '{{:#.{}g}}'.format(sig_figs)
             text = sig_fig_format.format(val)
 
             if 'e+' in text and len(text) > 6:
