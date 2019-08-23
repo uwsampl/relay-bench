@@ -136,3 +136,7 @@ experiments/training_loop/beacon
 *.csv
 *.png
 *.zip
+
+# leftover files from copying setups
+.last_setup
+status.json

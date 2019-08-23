@@ -14,6 +14,14 @@ def generate_ping_list(user_ids):
     return ', '.join(['<@{}>'.format(user_id) for user_id in user_ids])
 
 
+def failed_experiment_info(exp, failure_stage, status, notify):
+    return (exp, failure_stage,
+            textwrap.shorten(
+                status['message'],
+                width=280),
+            notify)
+
+
 def main(home_dir):
     if not check_file_exists(home_dir, 'config.json'):
         print('Dashboard config (config.json) is missing in {}'.format(home_dir))
@@ -49,11 +57,9 @@ def main(home_dir):
 
         precheck_status = read_json(subdir, 'precheck.json')
         if not precheck_status['success']:
-            failed_experiments.append((exp_name, 'precheck',
-                                       textwrap.shorten(
-                                           precheck_status['message'],
-                                           width=280),
-                                       []))
+            failed_experiments.append(
+                failed_experiment_info(exp_name, 'precheck',
+                                       precheck_status, []))
             continue
 
         exp_title = exp_name if 'title' not in exp_conf else exp_conf['title']
@@ -63,14 +69,23 @@ def main(home_dir):
             continue
 
         failure = False
+        if check_file_exists(subdir, 'setup.json'):
+            setup_status = read_json(subdir, 'setup.json')
+            if not setup_status['success']:
+                failed_experiments.append(
+                    failed_experiment_info(exp_name, 'setup',
+                                           setup_status, notify))
+                failure = True
+
+        if failure:
+            continue
+
         for stage in ['run', 'analysis', 'summary']:
             stage_status = read_json(subdir, stage + '.json')
             if not stage_status['success']:
-                failed_experiments.append((exp_title, stage,
-                                           textwrap.shorten(
-                                               stage_status['message'],
-                                               width=280),
-                                           notify))
+                failed_experiments.append(
+                    failed_experiment_info(exp_name, stage,
+                                           stage_status, notify))
                 failure = True
                 break
 
@@ -161,8 +176,9 @@ def main(home_dir):
             }
             attachments.append(attachment)
 
-        message['attachments'] = attachments
-        r = requests.post(webhook, json=message)
+        if attachments:
+            message['attachments'] = attachments
+            r = requests.post(webhook, json=message)
 
 
 if __name__ == '__main__':

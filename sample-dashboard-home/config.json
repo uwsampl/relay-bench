@@ -1,6 +1,7 @@
 {
     "tmp_data_dir": "~/test-dashboard-data",
     "backup_dir": "~/test-dashboard-backup",
+    "setup_dir": "~/test-dashboard-setup",
     "webhook_url": "slack webhook URL here",
     "slack_description": "Something you want to show up above the slack integration message",
     "deadlines": {

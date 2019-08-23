@@ -3,8 +3,10 @@ import argparse
 import datetime
 import json
 import os
+import random
 import sys
 import subprocess
+import time
 
 from common import (check_file_exists, idemp_mkdir, prepare_out_file,
                     read_json, write_json, read_config)
@@ -55,19 +57,24 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
     1. a dict containing a 'status' field
     (boolean, true if all is preconfigured correctly) and a 'message' containing an
     explanation as a string if one is necessary
-    2. whether the experiment is active (boolean), False if experiment is invalid
-    3. Tuple of (tvm repo, tvm branch) if the config specifies a differnent one
+    2. A dict with the following dashboard-relevant config fields, None if there's an error:
+      {
+        'active': (boolean, whether the experiment is active)
+        'priority': (int, experiment's priority in the ordering)
+        'tvm_remote': (string, TVM remote repo to pull from, 'origin' if not specified)
+        'tvm_branch': (string, TVM branch to check out, 'master' if not specified)
+      }
     """
     conf_subdir = os.path.join(configs_dir, exp_name)
     if not os.path.exists(conf_subdir):
         return ({'success': False,
                  'message': 'Config directory for experiment {} is missing'.format(exp_name)},
-                False, None)
+                None)
     conf_file = os.path.join(conf_subdir, 'config.json')
     if not os.path.isfile(conf_file):
         return ({'success': False,
                  'message': 'config.json for experiment {} is missing'.format(exp_name)},
-                False, None)
+                None)
 
     exp_conf = None
     try:
@@ -75,39 +82,113 @@ def experiment_precheck(experiments_dir, configs_dir, exp_name):
     except Exception as e:
         return ({'success': False,
                  'message': 'Exception when parsing config.json for experiment {}'.format(exp_name)},
-                False, None)
+                None)
 
     if 'active' not in exp_conf:
         return ({'success': False,
                  'message': 'config.json for experiment {} has no active field'.format(exp_name)},
-                False, None)
+                 None)
+
+    exp_info = {
+        'active': False,
+        'priority': 0,
+        'rerun_setup': False,
+        'tvm_remote': 'origin',
+        'tvm_branch': 'master'
+    }
+    update_fields = ['active', 'tvm_remote', 'tvm_branch', 'priority']
+    for field in update_fields:
+        if field in exp_conf:
+            exp_info[field] = exp_conf[field]
 
     # no need to check experiment subdirectory if the experiment itself is not active
     if not exp_conf['active']:
-        return ({'success': True, 'message': 'Inactive'}, False, None)
+        return ({'success': True, 'message': 'Inactive'}, exp_info)
 
     exp_subdir = os.path.join(experiments_dir, exp_name)
     if not os.path.exists(exp_subdir):
         return ({'success': False,
-                 'message': 'Experiment subdirectory {} missing'.format(exp_name)}, False)
+                 'message': 'Experiment subdirectory {} missing'.format(exp_name)}, None)
     required_scripts = ['run.sh', 'analyze.sh', 'visualize.sh', 'summarize.sh']
     for script in required_scripts:
         path = os.path.join(exp_subdir, script)
         if not os.path.isfile(path):
             return ({'success': False,
                      'message': 'Required file {} is missing from {}'.format(script, exp_subdir)},
-                    False)
+                    None)
         if not os.access(path, os.X_OK):
             return ({'success': False,
                      'message': 'Required file {} in {} is not executable'.format(script,
                                                                                  exp_subdir)},
-                    False)
+                    None)
 
-    tvm_info = ('origin', 'master')
-    if 'tvm_branch' in exp_conf:
-        remote = exp_conf['tvm_remote'] if 'tvm_remote' in exp_conf else 'origin'
-        tvm_info = (remote, exp_conf['tvm_branch'])
-    return ({'success': True, 'message': ''}, True, tvm_info)
+    return ({'success': True, 'message': ''}, exp_info)
+
+
+def has_setup(experiments_dir, exp_name):
+    setup_path = os.path.join(experiments_dir, exp_name, 'setup.sh')
+    return os.path.isfile(setup_path) and os.access(setup_path, os.X_OK)
+
+
+def most_recent_experiment_update(experiments_dir, exp_name):
+    exp_dir = os.path.join(experiments_dir, exp_name)
+    git_list = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', 'HEAD'], cwd=exp_dir)
+    files = git_list.decode('UTF-8').strip().split('\n')
+    most_recent = None
+    for f in files:
+        raw_date = subprocess.check_output(['git', 'log', '-1', '--format=\"%ad\"', '--', f], cwd=exp_dir)
+        date_str = raw_date.decode('UTF-8').strip(' \"\n')
+        parsed = datetime.datetime.strptime(date_str, '%a %b %d %H:%M:%S %Y %z')
+        if most_recent is None or most_recent < parsed:
+            most_recent = parsed
+    return most_recent
+
+
+def last_setup_time(setup_dir, exp_name):
+    marker_file = os.path.join(setup_dir, exp_name, '.last_setup')
+    if os.path.isfile(marker_file):
+        t = os.path.getmtime(marker_file)
+        return time.localtime(t)
+    return None
+
+
+def should_setup(experiments_dir, setup_dir, exp_name):
+    last_setup = last_setup_time(setup_dir, exp_name)
+    if last_setup is None:
+        return True
+
+    most_recent = most_recent_experiment_update(experiments_dir, exp_name).timetuple()
+    return most_recent > last_setup
+
+
+def setup_experiment(experiments_dir, configs_dir, setup_dir, status_dir, exp_name):
+    exp_dir = os.path.join(experiments_dir, exp_name)
+
+    exp_conf = os.path.join(configs_dir, exp_name)
+    exp_setup_dir = os.path.join(setup_dir, exp_name)
+    exp_status_dir = os.path.join(status_dir, exp_name)
+
+    # remove the existing setup dir before running the script again
+    subprocess.call(['rm', '-rf', exp_setup_dir])
+    idemp_mkdir(exp_setup_dir)
+
+    subprocess.call([os.path.join(exp_dir, 'setup.sh'), exp_conf, exp_setup_dir], cwd=exp_dir)
+
+    status = validate_status(exp_setup_dir)
+    write_json(exp_status_dir, 'setup.json', status)
+
+    # if setup succeeded, touch a marker file so we know what time to check for changes
+    if status['success']:
+        subprocess.call(['touch', '.last_setup'], cwd=exp_setup_dir)
+
+    return status['success']
+
+
+def copy_setup(experiments_dir, setup_dir, exp_name):
+    exp_dir = os.path.join(experiments_dir, exp_name)
+    exp_setup_dir = os.path.join(setup_dir, exp_name)
+    subprocess.call(['cp', '-r', os.path.join(exp_setup_dir, '.'), 'setup/'],
+                    cwd=exp_dir)
 
 
 def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_name):
@@ -221,8 +302,9 @@ def main(home_dir, experiments_dir):
     time_of_run = datetime.datetime.now()
     time_str = time_of_run.strftime('%m-%d-%Y-%H%M')
 
+    exp_confs = {}
+
     master_hash = get_tvm_hash()
-    tvm_info = {}
     tvm_hashes = {}
 
     if not check_file_exists(home_dir, 'config.json'):
@@ -232,9 +314,11 @@ def main(home_dir, experiments_dir):
 
     tmp_data_dir = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str)
     data_archive = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str + '_data.tar.gz')
+    setup_dir = dash_config['setup_dir']
     backup_archive = os.path.join(dash_config['backup_dir'], 'dashboard_' + time_str + '.tar.gz')
     idemp_mkdir(tmp_data_dir)
     idemp_mkdir(os.path.dirname(backup_archive))
+    idemp_mkdir(setup_dir)
 
     config_dir = os.path.join(home_dir, 'config')
     status_dir = os.path.join(home_dir, 'status')
@@ -264,25 +348,52 @@ def main(home_dir, experiments_dir):
         if conf_subdir == config_dir:
             continue
         exp_name = os.path.basename(conf_subdir)
-        precheck, active, branch_info = experiment_precheck(experiments_dir,
-                                                            config_dir,
-                                                            exp_name)
+        precheck, exp_info = experiment_precheck(experiments_dir,
+                                                 config_dir,
+                                                 exp_name)
         # write precheck result to status dir
         write_json(os.path.join(status_dir, exp_name), 'precheck.json', precheck)
         exp_status[exp_name] = 'active'
-        tvm_info[exp_name] = branch_info
+        exp_confs[exp_name] = exp_info
         if not precheck['success']:
             exp_status[exp_name] = 'failed'
             continue
-        if not active:
+        if not exp_info['active']:
             exp_status[exp_name] = 'inactive'
 
-    # (run first because if anything goes wrong later, we can use the raw data)
+    active_exps = [exp for exp, status in exp_status.items() if status == 'active']
+
+    # handle setup for all experiments that have it
+    for exp in active_exps:
+        if has_setup(experiments_dir, exp):
+            # run setup if the most recent updated file is more recent
+            # than the last setup run or if the flag to rerun is set
+            if should_setup(experiments_dir, setup_dir, exp) or exp_confs[exp]['rerun_setup']:
+                success = setup_experiment(experiments_dir, config_dir, setup_dir, status_dir, exp)
+                if not success:
+                    exp_status[exp_name] = 'failed'
+                    continue
+            # copy over the setup files regardless of whether we ran it this time
+            copy_setup(experiments_dir, setup_dir, exp)
+
     # for each active experiment, run and generate data
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
+
+    randomize_exps = True
+    if 'randomize' in dash_config:
+        randomize_exps = dash_config['randomize']
+
+    if randomize_exps:
+        random.shuffle(active_exps)
+    else:
+        # if experiment order is not random, sort by experiment priority,
+        # with name as a tie-breaker. Since we want higher priority exps to
+        # be first, we use -priority as the first element of the key
+        active_exps.sort(key=lambda exp: (-exp_confs[exp]['priority'], exp))
+
     for exp in active_exps:
         # handle TVM branching if the experiment needs a different TVM
-        (remote, branch) = tvm_info[exp]
+        (remote, branch) = (exp_confs[exp]['tvm_remote'], exp_confs[exp]['tvm_branch'])
         used_branch = False
         tvm_hash = master_hash
 
@@ -312,7 +423,7 @@ def main(home_dir, experiments_dir):
     subprocess.call(['tar', '-zcf', data_archive, tmp_data_dir])
     subprocess.call(['rm', '-rf', tmp_data_dir])
 
-    # for each experiment for which analysis succeeded, run visualization and summarizaion
+    # for each experiment for which analysis succeeded, run visualization and summarization
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
         visualize_experiment(experiments_dir, config_dir, data_dir, graph_dir, status_dir, exp)
