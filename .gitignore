@@ -128,6 +128,7 @@ experiments/treelstm/pt_tlstm/lib/stanford-tagger/*
 experiments/treelstm/pt_tlstm/lib/stanford-parser/*
 experiments/treelstm/pt_tlstm/lib/stanford-postagger-2015-01-30/*
 experiments/treelstm/pt_tlstm/lib/stanford-postagger**
+experiments/treelstm/setup/*
 
 # pulled-in resources for training loop
 experiments/training_loop/beacon
