@@ -7,7 +7,74 @@ source $BENCHMARK_DEPS/bash/common.sh
 include_shared_python_deps
 add_to_pythonpath $(pwd)
 
-cp -r pt_tlstm "$setup_dir"
-cd "$setup_dir/pt_tlstm"
-wrap_script_status "$setup_dir" "fetch_and_preprocess.sh"
+function check_data_exists {
+    declare -a dirs=("checkpoints"
+                     "data"
+                     "data/sick/dev"
+                     "data/sick/test"
+                     "data/sick/train")
+
+    declare -a files=("data/glove/glove.840B.300d.pth"
+                      "data/glove/glove.840B.300d.txt"
+                      "data/glove/glove.840B.300d.vocab"
+                      "data/sick/sick_dev.pth"
+                      "data/sick/sick_embed.pth"
+                      "data/sick/sick_test.pth"
+                      "data/sick/sick_train.pth"
+                      "data/sick/SICK_test_annotated.txt"
+                      "data/sick/SICK_train.txt"
+                      "data/sick/SICK_trial.txt"
+                      "data/sick/sick.vocab"
+                      "data/sick/vocab-cased.txt"
+                      "data/sick/vocab.txt")
+
+    declare -a data_files=("a.cparents"
+                           "a.parents"
+                           "a.rels"
+                           "a.toks"
+                           "a.txt"
+                           "b.cparents"
+                           "b.parents"
+                           "b.rels"
+                           "b.toks"
+                           "b.txt"
+                           "id.txt"
+                           "sim.txt")
+
+    for dir in "${dirs[@]}"
+    do
+        if ! [ -d "pt_tlstm/$dir" ]; then
+            data_exists=false
+            return
+        fi
+    done
+
+    for file in "${files[@]}"
+    do
+        if ! [ -f "pt_tlstm/$file" ]; then
+            data_exists=false
+            return
+        fi
+    done
+
+    for data_file in "${data_files[@]}"
+    do
+        if ! [ -f "pt_tlstm/data/sick/dev/$data_file" ] || ! [ -f "pt_tlstm/data/sick/test/$data_file" ] || ! [ -f "pt_tlstm/data/sick/train/$data_file" ]; then
+            data_exists=false
+            return
+        fi
+    done
+
+    data_exists=true
+    return
+}
+
+
+# fetch data and preprocess if it is not there
+check_data_exists
+if ! $data_exists; then
+    cp -r pt_tlstm "$setup_dir"
+    cd "$setup_dir/pt_tlstm"
+    wrap_script_status "$setup_dir" "fetch_and_preprocess.sh"
+fi
 emit_status_file true "success" "$setup_dir"
