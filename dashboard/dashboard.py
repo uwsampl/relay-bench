@@ -312,6 +312,10 @@ def main(home_dir, experiments_dir):
         sys.exit(1)
     dash_config = read_json(home_dir, 'config.json')
 
+    # must expand all tildes in the config to avoid future errors
+    for path_field in ['tmp_data_dir', 'setup_dir', 'backup_dir']:
+        dash_config[path_field] = os.path.expanduser(dash_config[path_field])
+
     tmp_data_dir = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str)
     data_archive = os.path.join(dash_config['tmp_data_dir'], 'benchmarks_' + time_str + '_data.tar.gz')
     setup_dir = dash_config['setup_dir']
