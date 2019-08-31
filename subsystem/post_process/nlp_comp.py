@@ -1,14 +1,14 @@
 import argparse
 import os
+import sys
 from collections import OrderedDict
 
 from common import (write_status, prepare_out_file, time_difference,
-                    sort_data, render_exception)
+                    read_config, sort_data, render_exception)
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
+from check_prerequisites import check_prerequisites
 
-OUR_NAME = 'InterNeuron'
-
-def generate_nlp_comparisons(raw_data, output_dir):
+def generate_nlp_comparisons(our_name, raw_data, output_dir):
     filename = 'nlp-comp-cpu.png'
 
     # empty data: nothing to do
@@ -17,7 +17,7 @@ def generate_nlp_comparisons(raw_data, output_dir):
 
     data = {
         'raw': raw_data,
-        'meta': ['Framework', 'Network', f'Mean Inference Time Speedup\nof {OUR_NAME}']
+        'meta': ['Framework', 'Network', f'Mean Inference Time Speedup\nof {our_name}']
     }
 
     builder = PlotBuilder()\
@@ -53,8 +53,36 @@ def generate_nlp_comparisons(raw_data, output_dir):
     builder.save(output_dir, filename)
 
 
-def main(data_dir, output_dir):
-    EXPERIMENT_PREREQS = {'treelstm', 'char_rnn', 'gluon_rnns'}
+def main(config_dir, home_dir, output_dir):
+    conf = read_config(config_dir)
+    our_name = 'Relay'
+    if 'our_name' in conf:
+        our_name = conf['our_name']
+
+    prereqs, msg = check_prerequisites(home_dir, {
+        'treelstm': {
+            'devices': ['cpu'],
+            'frameworks': ['relay', 'pt'],
+            'relay_methods': ['aot'],
+        },
+        'char_rnn': {
+            'devices': ['cpu'],
+            'frameworks': ['relay', 'pt'],
+            'relay_methods': ['aot'],
+            'relay_configs': ['loop']
+        },
+        'gluon_rnns': {
+            'devices': ['cpu'],
+            'frameworks': ['relay', 'mxnet'],
+            'networks': ['rnn', 'lstm', 'gru'],
+            'relay_method': ['aot']
+        }
+    })
+    if not prereqs:
+        write_status(output_dir, False, msg)
+        sys.exit(1)
+
+    data_dir = os.path.join(home_dir, 'results', 'experiments', 'data')
 
     raw_data = {}
     for exp in EXPERIMENT_PREREQS:
@@ -80,17 +108,18 @@ def main(data_dir, output_dir):
     ])
 
     try:
-        generate_nlp_comparisons(plot_data, output_dir)
+        generate_nlp_comparisons(our_name, plot_data, output_dir)
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        return
+        sys.exit(1)
 
     write_status(output_dir, True, 'success')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", type=str, required=True)
+    parser.add_argument("--config-dir", type=str, required=True)
+    parser.add_argument("--home-dir", type=str, required=True)
     parser.add_argument("--output-dir", type=str, required=True)
     args = parser.parse_args()
-    main(args.data_dir, args.output_dir)
+    main(args.config_dir, args.home_dir, args.output_dir)

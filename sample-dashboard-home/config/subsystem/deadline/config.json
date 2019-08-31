@@ -1,0 +1,10 @@
+{
+    "active": true,
+    "webhook_url": "slack webhook URL here",
+    "deadlines": {
+        "Total Solar Eclipse": {
+            "date": "2024-04-08 12:00:00",
+            "ping": ["Slack IDs to ping"]
+         }
+    }
+}

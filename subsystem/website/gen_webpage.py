@@ -8,7 +8,8 @@ import json
 import os
 import shutil
 
-from PIL import Image
+from common import (read_config, read_json, write_status,
+                    idemp_mkdir, check_file_exists, render_exception)
 
 PAGE_PREFIX_TEMPLATE = '''
 <hmtl>
@@ -70,37 +71,43 @@ window.onload = function(e) {
 
 LORD_JERRY_PATH='jerry.jpg'
 
-def main(out_dir, graph_dir, dash_home_dir):
-    with open(os.path.join(dash_home_dir, 'config.json')) as json_file:
-        main_config = json.load(json_file)
-    exp_config = get_exp_config(dash_home_dir)
+def main(config_dir, home_dir, out_dir):
+    config = read_config(config_dir)
+    exp_titles = get_exp_titles(home_dir)
 
-    set_up_out_dir(out_dir, graph_dir, main_config)
+    deadline_config = None
+    deadline_conf_dir = os.path.join(home_dir, 'config', 'subsystem', 'deadline')
+    if check_file_exists(deadline_conf_dir, 'config.json'):
+        deadline_config = read_config(deadline_conf_dir)
+
+    set_up_out_dir(out_dir, home_dir)
     # Switch to the output directory, so we don't need to keep track of
     # separate paths for loading images while the script is running and loading
     # images when viewing the generated webpage.
     os.chdir(out_dir)
 
-    page_prefix = init_page_prefix_template(main_config)
-    page_body = gen_page_body(exp_config)
-    page_suffix = init_page_suffix_template(main_config)
+    page_prefix = init_page_prefix_template(deadline_config)
+    page_body = gen_page_body(home_dir, exp_titles)
+    page_suffix = init_page_suffix_template(deadline_config)
     with open(os.path.join(out_dir, 'index.html'), 'w') as f:
         f.write(page_prefix)
         f.write(page_body)
         f.write(page_suffix)
+    write_status(out_dir, True, 'success')
 
 
-def gen_page_body(exp_config):
+def gen_page_body(dash_home_dir, exp_titles):
     page_body = ''
-    for (curr_dir, _, files) in os.walk('./graph'):
+    exp_graph_dir = os.path.join(dash_home_dir,
+                                 'results', 'experiments', 'graph')
+    for (curr_dir, _, files) in os.walk(exp_graph_dir):
         # Remove the './graph' prefix from the directory path we actually show.
         shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
         depth = len(shown_dir.split(os.sep))
         section_heading_size = max(2, min(depth, 6))
-        if depth == 1 and len(shown_dir) != 0:
-            heading_text = exp_config[shown_dir]['title']
-        else:
-            heading_text = shown_dir
+        heading_text = shown_dir
+        if depth == 1 and len(shown_dir) != 0 and shown_dir in exp_titles:
+            heading_text = exp_titles[shown_dir]
         page_body += f'<h{section_heading_size} style="background-color: white;">{heading_text}</h{section_heading_size}>\n'
         for filename in files:
             if not filename.endswith('.png'):
@@ -111,58 +118,72 @@ def gen_page_body(exp_config):
     return page_body
 
 
-def init_page_prefix_template(config):
+def init_page_prefix_template(deadline_config):
     # Create a countdown header for every deadline in the config.
     deadline_html = ''
-    if 'deadlines' in config:
-        for deadline_name in config['deadlines']:
-            deadline_html += '<div align="center"><h2 style="background-color: white; color: red;">%s: <span id="%s"></span></h1></div>\n' % (deadline_name, deadline_name)
-    if 'jerry_path' in config:
-        background_html = f'<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url({LORD_JERRY_PATH}); background-position: center;">'
-    else:
-        background_html = ''
+    if deadline_config is not None:
+        if 'deadlines' in deadline_config:
+            for deadline_name in deadline_config['deadlines']:
+                deadline_html += '<div align="center"><h2 style="background-color: white; color: red;">%s: <span id="%s"></span></h1></div>\n' % (deadline_name, deadline_name)
+
+    background_html = f'<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url({LORD_JERRY_PATH}); background-position: center;">'
 
     return PAGE_PREFIX_TEMPLATE % (background_html, deadline_html)
 
 
-def init_page_suffix_template(config):
+def init_page_suffix_template(deadline_config):
     # Install a countdown for every deadline in the config.
     deadline_html = ''
-    if 'deadlines' in config:
-        deadlines = config['deadlines']
+    if deadline_config is not None and 'deadlines' in deadline_config:
+        deadlines = deadline_config['deadlines']
         for deadline_name in deadlines:
             deadline_html += '  install_countdown("%s", new Date("%s").getTime());\n' % (
                 deadline_name, deadlines[deadline_name]['date'])
     return PAGE_SUFFIX_TEMPLATE % deadline_html
 
 
-def set_up_out_dir(out_dir, graph_dir, config):
-    if not os.path.exists(out_dir):
-        os.makedirs(out_dir)
+def set_up_out_dir(out_dir, home_dir):
+    graph_dir = os.path.join(home_dir, 'results', 'experiments', 'graph')
+
+    idemp_mkdir(out_dir)
+
     web_graph_dir = os.path.join(out_dir, 'graph')
     shutil.rmtree(web_graph_dir, ignore_errors=True)
     shutil.copytree(graph_dir, web_graph_dir)
-    if 'jerry_path' in config:
-        shutil.copy(os.path.expanduser(config['jerry_path']), os.path.join(out_dir, LORD_JERRY_PATH))
+    shutil.copy(os.path.abspath('jerry.jpg'),
+                os.path.join(out_dir, LORD_JERRY_PATH))
 
 
-def get_exp_config(dash_home_dir):
-    exp_config = {}
-    exp_config_dir = os.path.join(dash_home_dir, 'config')
-    for exp_name in os.listdir(exp_config_dir):
-        with open(os.path.join(exp_config_dir, exp_name, 'config.json'), 'r') as f:
-            exp_config[exp_name] = json.load(f)
-    return exp_config
+def get_exp_titles(dash_home_dir):
+    exp_titles = {}
+    exp_status_dir = os.path.join(dash_home_dir, 'results', 'experiments', 'status')
+    exp_conf_dir = os.path.join(dash_home_dir, 'config', 'experiments')
+
+    visit_exps = []
+    # check the precheck status so we know whether the config
+    # was set up properly in the first place
+    for exp_name in os.listdir(exp_status_dir):
+        precheck = read_json(os.path.join(exp_status_dir, exp_name),
+                             'precheck.json')
+        if precheck['success']:
+            visit_exps.append(exp_name)
+
+    for exp_name in visit_exps:
+        exp_config = read_config(os.path.join(exp_conf_dir, exp_name))
+        if 'title' in exp_config:
+            exp_titles[exp_name] = exp_config['title']
+
+    return exp_titles
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--graph-dir', type=str, required=True,
+    parser.add_argument('--config-dir', type=str, required=True,
                         help='Directory where graphs are found, should be absolute')
-    parser.add_argument('--out-dir', type=str, required=True,
-                        help='Directory where output should be created, should be absolute')
-    parser.add_argument('--dash-home-dir', type=str, default='',
+    parser.add_argument('--home-dir', type=str, required=True,
                         help='Dashboard home directory')
+    parser.add_argument('--output-dir', type=str, required=True,
+                        help='Directory where output should be created, should be absolute')
     args = parser.parse_args()
 
-    main(args.out_dir, args.graph_dir, args.dash_home_dir)
+    main(args.config_dir, args.home_dir, args.output_dir)

@@ -1,0 +1,5 @@
+{
+    "active": true,
+    "webhook_url": "slack webhook URL here",
+    "slack_description": "Something you want to show up above the slack integration message"
+}
