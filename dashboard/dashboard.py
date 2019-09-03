@@ -1,4 +1,6 @@
-'''Implementation of core dashboard infrastructure'''
+"""
+Implementation of core dashboard infrastructure
+"""
 import argparse
 import datetime
 import json
