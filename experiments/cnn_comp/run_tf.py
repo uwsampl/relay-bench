@@ -6,7 +6,7 @@ import tensorflow as tf
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 from tf_models import (mobilenet, resnet, vgg, dqn, dcgan)
 
@@ -77,6 +77,8 @@ def main(config_dir, output_dir, device):
     if device not in config['devices']:
         write_status(output_dir, True, 'TF not run on {}'.format(device))
         sys.exit(0)
+
+    configure_seed(config)
 
     enable_xla = [False]
     if config['use_xla']:

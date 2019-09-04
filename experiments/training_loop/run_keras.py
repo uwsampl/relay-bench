@@ -3,7 +3,7 @@ import sys
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 import keras
 from keras.datasets import mnist
@@ -62,6 +62,8 @@ def main(config_dir, output_dir):
     if 'keras' not in config['frameworks']:
         write_status(output_dir, True, 'Keras not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'keras', 'training_loop',

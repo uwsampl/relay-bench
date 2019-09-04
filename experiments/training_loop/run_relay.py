@@ -3,7 +3,7 @@ import sys
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 import beacon
 from beacon.tensor import tensor, Tensor
@@ -88,6 +88,8 @@ def main(config_dir, output_dir):
     if 'relay' not in config['frameworks']:
         write_status(output_dir, True, 'Relay not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'relay', 'training_loop',

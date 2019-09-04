@@ -15,7 +15,7 @@ from mx_models import mxnet_zoo
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 def get_network(name, batch_size, dtype='float32', ir='nnvm'):
     """Get the symbol definition and random weight of a network
@@ -140,6 +140,8 @@ def main(config_dir, output_dir):
     if 'nnvm' not in config['frameworks']:
         write_status(output_dir, True, 'NNVM not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     opt_levels = [config['nnvm_opt']]
 

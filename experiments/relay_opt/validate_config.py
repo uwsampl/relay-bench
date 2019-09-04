@@ -1,6 +1,6 @@
 """Checks that experiment config is valid and pre-populates default values."""
 from common import read_config
-from config_util import check_config, non_negative_cond
+from config_util import check_config, bool_cond, non_negative_cond
 
 def validate(config_dir):
     """
@@ -20,7 +20,9 @@ def validate(config_dir):
             'n_times_per_input': 10,
             'batch_sizes': {1},
             'opt_levels': {0,1,2,3,4},
-            'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'}
+            'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'},
+            'set_seed': False,
+            'seed': 0
         },
         {
             'devices': {'cpu', 'gpu'},
@@ -32,6 +34,8 @@ def validate(config_dir):
             'dry_run': non_negative_cond(),
             'n_inputs': non_negative_cond(),
             'n_times_per_input': non_negative_cond(),
-            'batch_sizes': non_negative_cond()
+            'batch_sizes': non_negative_cond(),
+            'set_seed': bool_cond(),
+            'seed': non_negative_cond()
         }
     )

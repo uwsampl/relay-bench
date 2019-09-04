@@ -1,7 +1,7 @@
 """Checks that experiment config is valid and pre-populates default values."""
 from common import read_config
 
-from config_util import check_config, non_negative_cond
+from config_util import check_config, bool_cond, non_negative_cond
 
 DATASET_MAX = {
     'dev': 500,
@@ -49,7 +49,9 @@ def validate(config_dir):
             'n_times_per_input': 100,
             'devices': {'cpu'},
             'frameworks': {'pt', 'relay'},
-            'relay_methods': {'intp', 'aot'}
+            'relay_methods': {'intp', 'aot'},
+            'set_seed': False,
+            'seed': 0
         },
         {
             'devices': {'cpu'},
@@ -60,7 +62,9 @@ def validate(config_dir):
             'dry_run': non_negative_cond(),
             'n_inputs': non_negative_cond(),
             'n_times_per_input': non_negative_cond(),
-            'datasets': valid_dataset_cond()
+            'datasets': valid_dataset_cond(),
+            'set_seed': bool_cond(),
+            'seed': non_negative_cond()
         }
     )
 

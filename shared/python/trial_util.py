@@ -1,19 +1,41 @@
-import os
-import time
-import numpy as np
-from itertools import product
 import csv
+from itertools import product
+import os
+import random
+import time
+
+import numpy as np
 
 from common import render_exception
 
-def write_row(writer, fieldnames, fields):
+
+def set_seed(seed):
+    # cover our bases: some benchmarks use either python's random or np.random
+    np.random.seed(seed)
+    random.seed(seed)
+
+
+def configure_seed(config):
+    """
+    Convenience for experiment scripts: Takes an experiment config
+    and sets the seed if specified.
+
+    Assumes that the config has a boolean field called 'set_seed'
+    and an integer field called 'seed' for determining whether to
+    set the seed and the value to use.
+    """
+    if config['set_seed']:
+        set_seed(config['seed'])
+
+
+def _write_row(writer, fieldnames, fields):
     record = {}
     for i in range(len(fieldnames)):
         record[fieldnames[i]] = fields[i]
     writer.writerow(record)
 
 
-def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fieldnames):
+def _score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fieldnames):
     for i in range(dry_run + n_times):
         if i == dry_run:
             tic = time.time()
@@ -21,7 +43,7 @@ def score_loop(num, trial, trial_args, setup_args, n_times, dry_run, writer, fie
         out = trial(*trial_args)
         end = time.time()
         if i >= dry_run:
-            write_row(writer, fieldnames, setup_args + [num, i, end - start])
+            _write_row(writer, fieldnames, setup_args + [num, i, end - start])
 
     final = time.time()
 
@@ -51,7 +73,9 @@ def run_trials(method, task_name,
                     score = 0.0
                     try:
                         trial_args = trial_setup(*args)
-                        score = score_loop(t, trial, trial_args, list(args), times_per_input, dry_run, writer, fieldnames)
+                        score = _score_loop(t, trial, trial_args, list(args),
+                                            times_per_input, dry_run,
+                                            writer, fieldnames)
                         trial_teardown(*trial_args)
                     except Exception as e:
                         # can provide more detailed summary if
@@ -69,7 +93,7 @@ def run_trials(method, task_name,
     except Exception as e:
         return (False, 'Encountered exception:\n' + render_exception(e))
 
-def array2str_round(x, decimal=6):
+def _array2str_round(x, decimal=6):
     """ print an array of float number to pretty string with round
 
     Parameters

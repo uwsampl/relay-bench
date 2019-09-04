@@ -12,7 +12,7 @@ from mx_models import mxnet_zoo
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import configure_seed, run_trials
 
 def get_network(name, ctx):
     image_shape = (1, 3, 224, 224)
@@ -78,6 +78,8 @@ def main(config_dir, output_dir):
     if 'mxnet' not in config['frameworks']:
         write_status(output_dir, True, 'MxNet not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'mxnet', 'cnn_comp',

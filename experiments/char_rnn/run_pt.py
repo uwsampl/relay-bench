@@ -3,7 +3,7 @@ import sys
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 from language_data import N_LETTERS
 from pt_rnn import RNN, samples
@@ -30,6 +30,8 @@ def main(config_dir, output_dir):
     if 'pt' not in config['frameworks']:
         write_status(output_dir, True, 'PT not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'pt', 'char_rnn',

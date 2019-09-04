@@ -2,7 +2,7 @@
 from common import read_config
 import string
 
-from config_util import check_config, non_negative_cond, string_cond
+from config_util import check_config, bool_cond, non_negative_cond, string_cond
 
 def validate(config_dir):
     """
@@ -23,7 +23,9 @@ def validate(config_dir):
             'frameworks': {'keras', 'relay'},
             'batch_sizes': [1],
             'num_classes': [10],
-            'epochs': [20]
+            'epochs': [20],
+            'set_seed': False,
+            'seed': 0
         },
         {
             'devices': {'cpu'},
@@ -35,7 +37,9 @@ def validate(config_dir):
             'epochs': non_negative_cond(),
             'dry_run': non_negative_cond(),
             'n_inputs': non_negative_cond(),
-            'n_times_per_input': non_negative_cond()
+            'n_times_per_input': non_negative_cond(),
+            'set_seed': bool_cond(),
+            'seed': non_negative_cond()
         }
     )
 

@@ -2,7 +2,7 @@
 from common import read_config
 import string
 
-from config_util import check_config, non_negative_cond, string_cond
+from config_util import check_config, bool_cond, non_negative_cond, string_cond
 
 def validate(config_dir):
     """
@@ -22,7 +22,9 @@ def validate(config_dir):
             'devices': {'cpu'},
             'frameworks': {'mxnet', 'relay'},
             'relay_methods': {'intp', 'aot'},
-            'networks': {'rnn', 'lstm', 'gru'}
+            'networks': {'rnn', 'lstm', 'gru'},
+            'set_seed': False,
+            'seed': 0
         },
         {
             'devices': {'cpu'},
@@ -33,7 +35,9 @@ def validate(config_dir):
         {
             'dry_run': non_negative_cond(),
             'n_inputs': non_negative_cond(),
-            'n_times_per_input': non_negative_cond()
+            'n_times_per_input': non_negative_cond(),
+            'set_seed': bool_cond(),
+            'seed': non_negative_cond()
         }
     )
 

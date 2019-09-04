@@ -8,7 +8,7 @@ import torchvision.models as models
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 from pt_models.mobilenetv2 import MOBILENET_PARAMS
 from pt_models.mobilenetv2.MobileNetV2 import MobileNetV2 as mobilenet
@@ -84,6 +84,8 @@ def main(config_dir, output_dir):
     if 'pt' not in config['frameworks']:
         write_status(output_dir, True, 'PT not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'pt', 'cnn_comp',

@@ -2,7 +2,7 @@ import argparse
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 from relay_util import cnn_setup, cnn_trial, cnn_teardown
 
 def passes_setup(network, dev, batch_size, pass_spec):
@@ -24,6 +24,8 @@ def main(config_dir, output_dir):
     if config is None:
         write_status(output_dir, False, msg)
         return
+
+    configure_seed(config)
 
     # We must preprocess the passes to work with passes_setup.
     # I.e., we must serialize it so it can be written to CSV,

@@ -3,7 +3,7 @@ import sys
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 
 import numpy as np
 from collections import namedtuple
@@ -43,6 +43,8 @@ def main(config_dir, output_dir):
     if 'mxnet' not in config['frameworks']:
         write_status(output_dir, True, 'MxNet not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'mxnet', 'gluon_rnns',

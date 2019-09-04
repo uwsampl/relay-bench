@@ -2,7 +2,7 @@ import argparse
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 from relay_util import cnn_setup, cnn_trial, cnn_teardown
 
 def main(config_dir, output_dir):
@@ -10,6 +10,8 @@ def main(config_dir, output_dir):
     if config is None:
         write_status(output_dir, False, msg)
         return
+
+    configure_seed(config)
 
     success, msg = run_trials(
         'relay', 'opt_comparison',

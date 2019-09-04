@@ -3,7 +3,7 @@ import sys
 
 from validate_config import validate
 from common import write_status
-from trial_util import run_trials
+from trial_util import run_trials, configure_seed
 from relay_util import cnn_setup, cnn_trial, cnn_teardown
 
 def main(config_dir, output_dir):
@@ -16,6 +16,8 @@ def main(config_dir, output_dir):
     if 'relay' not in config['frameworks']:
         write_status(output_dir, True, 'Relay not run')
         sys.exit(0)
+
+    configure_seed(config)
 
     opt_levels = [config['relay_opt']]
 

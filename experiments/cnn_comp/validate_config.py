@@ -24,7 +24,9 @@ def validate(config_dir):
             'nnvm_opt': 3,
             'use_xla': True,
             'frameworks': {'tf', 'pt', 'relay', 'nnvm', 'mxnet'},
-            'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'}
+            'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'},
+            'set_seed': False,
+            'seed': 0
         },
         {
             'devices':  {'cpu', 'gpu'},
@@ -38,6 +40,8 @@ def validate(config_dir):
             'batch_sizes': non_negative_cond(),
             'relay_opt': non_negative_cond(),
             'nnvm_opt': non_negative_cond(),
-            'use_xla': bool_cond()
+            'use_xla': bool_cond(),
+            'set_seed': bool_cond(),
+            'seed': non_negative_cond()
         }
     )
