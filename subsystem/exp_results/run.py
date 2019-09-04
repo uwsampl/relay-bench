@@ -51,7 +51,6 @@ def main(config_dir, home_dir, output_dir):
         if subdir == exp_status_dir:
             continue
         exp_name = os.path.basename(subdir)
-        exp_conf = read_config(os.path.join(exp_config_dir, exp_name))
 
         precheck_status = read_json(subdir, 'precheck.json')
         if not precheck_status['success']:
@@ -59,6 +58,8 @@ def main(config_dir, home_dir, output_dir):
                 failed_experiment_field(exp_name, 'precheck',
                                         precheck_status, []))
             continue
+
+        exp_conf = read_config(os.path.join(exp_config_dir, exp_name))
 
         exp_title = exp_name if 'title' not in exp_conf else exp_conf['title']
         notify = exp_conf['notify']
