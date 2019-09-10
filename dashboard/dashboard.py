@@ -12,6 +12,7 @@ import time
 
 from common import (check_file_exists, idemp_mkdir, prepare_out_file,
                     read_json, write_json, read_config)
+from dashboard_info import DashboardInfo
 
 def validate_status(dirname):
     if not check_file_exists(dirname, 'status.json'):
@@ -48,10 +49,10 @@ def get_tvm_hash():
 
 
 def attempt_parse_config(config_dir, target):
-    '''
+    """
     Returns the parsed config for the target (experiment or subsystem) if it exists.
     Returns None if the config is missing or could not be parsed.
-    '''
+    """
     conf_subdir = os.path.join(config_dir, target)
     if not check_file_exists(conf_subdir, 'config.json'):
         return None
@@ -63,11 +64,11 @@ def attempt_parse_config(config_dir, target):
 
 
 def check_present_and_executable(subdir, filenames):
-    '''
+    """
     Checks that all the files in the list are present in the subdirectory
     and are executable. Returns a list of any files in the list that are
     not present or not executable.
-    '''
+    """
     invalid = []
     for filename in filenames:
         path = os.path.join(subdir, filename)
@@ -130,9 +131,9 @@ def target_precheck(root_dir, configs_dir, target_name,
     return ({'success': True, 'message': ''}, target_info)
 
 
-def experiment_precheck(experiments_dir, configs_dir, exp_name):
+def experiment_precheck(info, experiments_dir, exp_name):
     return target_precheck(
-        experiments_dir, configs_dir, exp_name,
+        experiments_dir, info.exp_configs, exp_name,
         {
             'active': False,
             'priority': 0,
@@ -179,21 +180,19 @@ def should_setup(experiments_dir, setup_dir, exp_name):
     return most_recent > last_setup
 
 
-def setup_experiment(experiments_dir, configs_dir, setup_dir, status_dir, exp_name):
+def setup_experiment(info, experiments_dir, setup_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
-
-    exp_conf = os.path.join(configs_dir, exp_name)
     exp_setup_dir = os.path.join(setup_dir, exp_name)
-    exp_status_dir = os.path.join(status_dir, exp_name)
 
     # remove the existing setup dir before running the script again
     subprocess.call(['rm', '-rf', exp_setup_dir])
     idemp_mkdir(exp_setup_dir)
 
-    subprocess.call([os.path.join(exp_dir, 'setup.sh'), exp_conf, exp_setup_dir], cwd=exp_dir)
+    subprocess.call([os.path.join(exp_dir, 'setup.sh'), info.exp_config_dir(exp_name),
+                     exp_setup_dir], cwd=exp_dir)
 
     status = validate_status(exp_setup_dir)
-    write_json(exp_status_dir, 'setup.json', status)
+    info.report_exp_status(exp_name, 'setup', status)
 
     # if setup succeeded, touch a marker file so we know what time to check for changes
     if status['success']:
@@ -209,13 +208,12 @@ def copy_setup(experiments_dir, setup_dir, exp_name):
                     cwd=exp_dir)
 
 
-def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_name):
+def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
-    exp_conf = os.path.join(configs_dir, exp_name)
+    exp_conf = info.exp_config_dir(exp_name)
 
     # set up a temporary data directory for that experiment
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
-    exp_status_dir = os.path.join(status_dir, exp_name)
     idemp_mkdir(exp_data_dir)
 
     # run the run.sh file on the configs directory and the destination directory
@@ -225,25 +223,24 @@ def run_experiment(experiments_dir, configs_dir, tmp_data_dir, status_dir, exp_n
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
     # not literally copying because validate may have produced a status that generated an error
-    write_json(exp_status_dir, 'run.json', status)
+    info.report_exp_status(exp_name, 'run', status)
     return status['success']
 
 
-def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
-                       data_dir, status_dir, date_str, tvm_hash, exp_name):
+def analyze_experiment(info, experiments_dir, tmp_data_dir,
+                       date_str, tvm_hash, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
 
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
-    exp_config_dir = os.path.join(configs_dir, exp_name)
     tmp_analysis_dir = os.path.join(exp_data_dir, 'analysis')
     idemp_mkdir(tmp_analysis_dir)
 
-    analyzed_data_dir = os.path.join(data_dir, exp_name)
+    analyzed_data_dir = info.exp_data_dir(exp_name)
     if not os.path.exists(analyzed_data_dir):
         idemp_mkdir(analyzed_data_dir)
 
     subprocess.call([os.path.join(exp_dir, 'analyze.sh'),
-                     exp_config_dir, exp_data_dir, tmp_analysis_dir],
+                     info.exp_config_dir(exp_name), exp_data_dir, tmp_analysis_dir],
                     cwd=exp_dir)
 
     status = validate_status(tmp_analysis_dir)
@@ -259,23 +256,21 @@ def analyze_experiment(experiments_dir, configs_dir, tmp_data_dir,
             data['tvm_hash'] = tvm_hash
             write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), data)
 
-    write_json(os.path.join(status_dir, exp_name), 'analysis.json', status)
+    info.report_exp_status(exp_name, 'analysis', status)
     return status['success']
 
 
-def visualize_experiment(experiments_dir, configs_dir, data_dir,
-                         graph_dir, status_dir, exp_name):
+def visualize_experiment(info, experiments_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
 
-    exp_graph_dir = os.path.join(graph_dir, exp_name)
-    exp_config_dir = os.path.join(configs_dir, exp_name)
-    exp_data_dir = os.path.join(data_dir, exp_name)
+    exp_graph_dir = info.exp_graph_dir(exp_name)
     subprocess.call([os.path.join(exp_dir, 'visualize.sh'),
-                     exp_config_dir, exp_data_dir, exp_graph_dir],
+                     info.exp_config_dir(exp_name),
+                     info.exp_data_dir(exp_name), exp_graph_dir],
                     cwd=exp_dir)
 
     status = validate_status(exp_graph_dir)
-    write_json(os.path.join(status_dir, exp_name), 'visualization.json', status)
+    info.report_exp_status(exp_name, 'visualization', status)
 
 
 def summary_valid(exp_summary_dir):
@@ -291,15 +286,13 @@ def summary_valid(exp_summary_dir):
     return 'title' in summary and 'value' in summary
 
 
-def summarize_experiment(experiments_dir, configs_dir, data_dir,
-                         summary_dir, status_dir, exp_name):
+def summarize_experiment(info, experiments_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
 
-    exp_summary_dir = os.path.join(summary_dir, exp_name)
-    exp_config_dir = os.path.join(configs_dir, exp_name)
-    exp_data_dir = os.path.join(data_dir, exp_name)
+    exp_summary_dir = info.exp_summary_dir(exp_name)
     subprocess.call([os.path.join(exp_dir, 'summarize.sh'),
-                     exp_config_dir, exp_data_dir, exp_summary_dir],
+                     info.exp_config_dir(exp_name), info.exp_data_dir(exp_name),
+                     exp_summary_dir],
                     cwd=exp_dir)
 
     status = validate_status(exp_summary_dir)
@@ -308,12 +301,10 @@ def summarize_experiment(experiments_dir, configs_dir, data_dir,
             'success': False,
             'message': 'summary.json produced by {} is invalid'.format(exp_name)
         }
-    write_json(os.path.join(status_dir, exp_name), 'summary.json', status)
+    info.report_exp_status(exp_name, 'summary', status)
 
 
-def run_all_experiments(experiments_dir, config_dir,
-                        status_dir, setup_dir, data_dir,
-                        graph_dir, summary_dir,
+def run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
                         time_str, randomize=True):
     """
@@ -327,15 +318,9 @@ def run_all_experiments(experiments_dir, config_dir,
 
     # do the walk of experiment configs, take account of which experiments are
     # either inactive or invalid
-    for conf_subdir, _, _ in os.walk(config_dir):
-        if conf_subdir == config_dir:
-            continue
-        exp_name = os.path.basename(conf_subdir)
-        precheck, exp_info = experiment_precheck(experiments_dir,
-                                                 config_dir,
-                                                 exp_name)
-        # write precheck result to status dir
-        write_json(os.path.join(status_dir, exp_name), 'precheck.json', precheck)
+    for exp_name in info.all_present_experiments():
+        precheck, exp_info = experiment_precheck(info, experiments_dir, exp_name)
+        info.report_exp_status(exp_name, 'precheck', precheck)
         exp_status[exp_name] = 'active'
         exp_confs[exp_name] = exp_info
         if not precheck['success']:
@@ -352,7 +337,7 @@ def run_all_experiments(experiments_dir, config_dir,
             # run setup if the most recent updated file is more recent
             # than the last setup run or if the flag to rerun is set
             if should_setup(experiments_dir, setup_dir, exp) or exp_confs[exp]['rerun_setup']:
-                success = setup_experiment(experiments_dir, config_dir, setup_dir, status_dir, exp)
+                success = setup_experiment(info, experiments_dir, setup_dir, exp)
                 if not success:
                     exp_status[exp_name] = 'failed'
                     continue
@@ -383,7 +368,7 @@ def run_all_experiments(experiments_dir, config_dir,
 
         tvm_hashes[exp] = tvm_hash
 
-        success = run_experiment(experiments_dir, config_dir, tmp_data_dir, status_dir, exp)
+        success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
         if not success:
             exp_status[exp] = 'failed'
 
@@ -393,8 +378,8 @@ def run_all_experiments(experiments_dir, config_dir,
     # for each active experiment not yet eliminated, run analysis
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
-        success = analyze_experiment(experiments_dir, config_dir, tmp_data_dir, data_dir,
-                                     status_dir, time_str, tvm_hashes[exp], exp)
+        success = analyze_experiment(info, experiments_dir, tmp_data_dir,
+                                     time_str, tvm_hashes[exp], exp)
         if not success:
             exp_status[exp] = 'failed'
 
@@ -405,13 +390,13 @@ def run_all_experiments(experiments_dir, config_dir,
     # for each experiment for which analysis succeeded, run visualization and summarization
     active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
-        visualize_experiment(experiments_dir, config_dir, data_dir, graph_dir, status_dir, exp)
-        summarize_experiment(experiments_dir, config_dir, data_dir, summary_dir, status_dir, exp)
+        visualize_experiment(info, experiments_dir, exp)
+        summarize_experiment(info, experiments_dir, exp)
 
 
-def subsystem_precheck(subsystem_dir, configs_dir, subsys_name):
+def subsystem_precheck(info, subsystem_dir, subsys_name):
     return target_precheck(
-        subsystem_dir, configs_dir, subsys_name,
+        subsystem_dir, info.subsys_configs, subsys_name,
         {
             'active': False,
             'priority': 0
@@ -419,29 +404,25 @@ def subsystem_precheck(subsystem_dir, configs_dir, subsys_name):
         ['run.sh'])
 
 
-def run_subsystem(subsystem_dir, config_dir, dashboard_home_dir,
-                  output_dir, status_dir, subsys_name):
+def run_subsystem(info, subsystem_dir, subsys_name):
     subsys_dir = os.path.join(subsystem_dir, subsys_name)
-    subsys_conf = os.path.join(config_dir, subsys_name)
-    subsys_status_dir = os.path.join(status_dir, subsys_name)
-    subsys_output_dir = os.path.join(output_dir, subsys_name)
+    subsys_output_dir = info.subsys_output_dir(subsys_name)
     idemp_mkdir(subsys_output_dir)
 
     # run the run.sh file on the configs directory and the output directory
     subprocess.call([os.path.join(subsys_dir, 'run.sh'),
-                     subsys_conf, dashboard_home_dir, subsys_output_dir],
+                     info.subsys_config_dir(subsys_name),
+                     info.home_dir, subsys_output_dir],
                     cwd=subsys_dir)
 
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(subsys_output_dir)
     # not literally copying because validate may have produced a status that generated an error
-    write_json(subsys_status_dir, 'run.json', status)
+    info.report_subsys_status(subsys_name, 'run', status)
     return status['success']
 
 
-def run_all_subsystems(subsystem_dir, config_dir, dashboard_home_dir,
-                       status_dir, output_dir,
-                       time_str):
+def run_all_subsystems(info, subsystem_dir, time_str):
     """
     Handles logic for setting up and running all subsystems.
     """
@@ -449,13 +430,9 @@ def run_all_subsystems(subsystem_dir, config_dir, dashboard_home_dir,
     subsys_confs = {}
 
     # do the walk of subsys configs, take account of which are inactive or invalid
-    for subsys_subdir, _, _ in os.walk(config_dir):
-        if subsys_subdir == config_dir:
-            continue
-        subsys_name = os.path.basename(subsys_subdir)
-        precheck, subsys_info = subsystem_precheck(subsystem_dir, config_dir, subsys_name)
-        # write precheck result to status dir
-        write_json(os.path.join(status_dir, subsys_name), 'precheck.json', precheck)
+    for subsys_name in info.all_present_subsystems():
+        precheck, subsys_info = subsystem_precheck(info, subsystem_dir, subsys_name)
+        info.report_subsys_status(subsys_name, 'precheck', precheck)
         subsys_status[subsys_name] = 'active'
         subsys_confs[subsys_name] = subsys_info
         if not precheck['success']:
@@ -470,8 +447,7 @@ def run_all_subsystems(subsystem_dir, config_dir, dashboard_home_dir,
     active_subsys.sort(key=lambda subsys: (-subsys_confs[subsys]['priority'], subsys))
 
     for subsys in active_subsys:
-        success = run_subsystem(subsystem_dir, config_dir, dashboard_home_dir,
-                                output_dir, status_dir, subsys)
+        success = run_subsystem(info, subsystem_dir, subsys)
 
 
 def main(home_dir, experiments_dir, subsystem_dir):
@@ -500,31 +476,18 @@ def main(home_dir, experiments_dir, subsystem_dir):
     idemp_mkdir(os.path.dirname(backup_archive))
     idemp_mkdir(setup_dir)
 
-    config_dir = os.path.join(home_dir, 'config')
-    exp_config_dir = os.path.join(config_dir, 'experiments')
-    subsys_config_dir = os.path.join(config_dir, 'subsystem')
-
-    results_dir = os.path.join(home_dir, 'results')
-    exp_results_dir = os.path.join(results_dir, 'experiments')
-    subsys_results_dir = os.path.join(results_dir, 'subsystem')
-
-    exp_status_dir = os.path.join(exp_results_dir, 'status')
-    data_dir = os.path.join(exp_results_dir, 'data')
-    graph_dir = os.path.join(exp_results_dir, 'graph')
-    summary_dir = os.path.join(exp_results_dir, 'summary')
-
-    subsys_status_dir = os.path.join(subsys_results_dir, 'status')
-    subsys_output_dir = os.path.join(subsys_results_dir, 'output')
+    info = DashboardInfo(home_dir)
 
     # make a backup of the previous dashboard files if they exist
     if os.path.exists(home_dir):
         subprocess.call(['tar', '-zcf', backup_archive, home_dir])
 
     # directories whose contents should not change between runs of the dashboard
-    persistent_dirs = {data_dir, exp_config_dir, subsys_config_dir, subsys_output_dir}
-    all_dashboard_dirs = [exp_config_dir, subsys_config_dir,
-                          exp_status_dir, data_dir, graph_dir, summary_dir,
-                          subsys_status_dir, subsys_output_dir]
+    persistent_dirs = {info.exp_data,
+                       info.exp_configs,
+                       info.subsys_configs,
+                       info.subsys_output}
+    all_dashboard_dirs = info.all_experiment_dirs() + info.all_subsystem_dirs()
 
     # instantiate necessary dashboard dirs and clean any that should be empty
     for dashboard_dir in all_dashboard_dirs:
@@ -539,15 +502,11 @@ def main(home_dir, experiments_dir, subsystem_dir):
     if 'randomize' in dash_config:
         randomize_exps = dash_config['randomize']
 
-    run_all_experiments(experiments_dir, exp_config_dir,
-                        exp_status_dir, setup_dir, data_dir,
-                        graph_dir, summary_dir,
+    run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
                         time_str, randomize=randomize_exps)
 
-    run_all_subsystems(subsystem_dir, subsys_config_dir,
-                       home_dir, subsys_status_dir,
-                       subsys_output_dir, time_str)
+    run_all_subsystems(info, subsystem_dir, time_str)
 
 
 if __name__ == '__main__':

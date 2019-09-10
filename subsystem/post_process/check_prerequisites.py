@@ -29,20 +29,13 @@ def match_values(expected, actual):
     return False
 
 
-def check_prerequisites(home_dir, required_confs):
-    config_dir = os.path.join(home_dir, 'config', 'experiments')
-    status_dir = os.path.join(home_dir, 'results', 'experiments', 'status')
-
+def check_prerequisites(info, required_confs):
     for (exp_name, conf_entries) in required_confs.items():
-        exp_status_dir = os.path.join(status_dir, exp_name)
-        precheck_status = read_json(exp_status_dir, 'precheck.json')
-        if not precheck_status['success']:
+        stage_statuses = info.exp_stage_statuses(exp_name)
+        if not stage_statuses['precheck']['success']:
             return False, 'Config invalid for {}'.format(exp_name)
 
-        exp_conf_dir = os.path.join(config_dir, exp_name)
-        if not check_file_exists(exp_conf_dir, 'config.json'):
-            return False, 'Missing config for {}'.format(exp_name)
-        exp_conf = read_config(exp_conf_dir)
+        exp_conf = info.read_exp_config(exp_name)
         if not exp_conf['active']:
             return False, 'Required experiment {} not active'.format(exp_name)
         for (entry, value) in conf_entries.items():
@@ -53,13 +46,8 @@ def check_prerequisites(home_dir, required_confs):
 
         # config is valid but need to make sure the data
         # was actually produced
-        analysis_success = False
-        if check_file_exists(exp_status_dir, 'analysis.json'):
-            analysis_status = read_json(exp_status_dir, 'analysis.json')
-            if not analysis_status['success']:
-                analysis_success = False
-
-            if not analysis_success:
-                return False, '{} failed to produce analyzed data'.format(exp_name)
+        if not ('analysis' in stage_statuses
+                and stage_statuses['analysis']['success']):
+            return False, '{} failed to produce analyzed data'.format(exp_name)
 
     return True, 'success'

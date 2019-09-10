@@ -4,6 +4,7 @@ from collections import OrderedDict
 
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
+from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 from check_prerequisites import check_prerequisites
 
@@ -34,6 +35,7 @@ def parse_pass_combo(combo):
 
 
 def main(config_dir, home_dir, output_dir):
+    info = DashboardInfo(home_dir)
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
     pass_spec_name_map = {
         '3;FuseOps': 'Op Fusion',
@@ -46,7 +48,7 @@ def main(config_dir, home_dir, output_dir):
         '3;EliminateCommonSubexpr|CombineParallelConv2D|FoldScaleAxis|CanonicalizeCast|CanonicalizeOps|AlterOpLayout|FoldConstant|FuseOps': '... + Op Layout Alteration'
     }
 
-    prereqs, msg = check_prerequisites(home_dir, {
+    prereqs, msg = check_prerequisites(info, {
         'pass_comparison': {
             'networks': networks,
             'passes': [
@@ -55,9 +57,7 @@ def main(config_dir, home_dir, output_dir):
         }
     })
 
-    data_dir = os.path.join(home_dir, 'results', 'experiments', 'data')
-    pass_comp_dir = os.path.join(data_dir, 'pass_comparison')
-    all_data = sort_data(pass_comp_dir)
+    all_data = sort_data(info.exp_data_dir('pass_comparison'))
     raw_data = all_data[-1]
 
     baseline = '0;'

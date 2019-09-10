@@ -8,8 +8,9 @@ import json
 import os
 import shutil
 
-from common import (read_config, read_json, write_status,
-                    idemp_mkdir, check_file_exists, render_exception)
+from common import (read_config, write_status, idemp_mkdir, 
+                    render_exception)
+from dashboard_info import DashboardInfo
 
 PAGE_PREFIX_TEMPLATE = '''
 <hmtl>
@@ -73,21 +74,21 @@ LORD_JERRY_PATH='jerry.jpg'
 
 def main(config_dir, home_dir, out_dir):
     config = read_config(config_dir)
-    exp_titles = get_exp_titles(home_dir)
+    info = DashboardInfo(home_dir)
+    exp_titles = get_exp_titles(info)
 
     deadline_config = None
-    deadline_conf_dir = os.path.join(home_dir, 'config', 'subsystem', 'deadline')
-    if check_file_exists(deadline_conf_dir, 'config.json'):
-        deadline_config = read_config(deadline_conf_dir)
+    if info.subsys_config_valid('deadline'):
+        deadline_config = info.read_subsys_config('deadline')
 
-    set_up_out_dir(out_dir, home_dir)
+    set_up_out_dir(info, out_dir)
     # Switch to the output directory, so we don't need to keep track of
     # separate paths for loading images while the script is running and loading
     # images when viewing the generated webpage.
     os.chdir(out_dir)
 
     page_prefix = init_page_prefix_template(deadline_config)
-    page_body = gen_page_body(home_dir, exp_titles)
+    page_body = gen_page_body(info, exp_titles)
     page_suffix = init_page_suffix_template(deadline_config)
     with open(os.path.join(out_dir, 'index.html'), 'w') as f:
         f.write(page_prefix)
@@ -96,11 +97,9 @@ def main(config_dir, home_dir, out_dir):
     write_status(out_dir, True, 'success')
 
 
-def gen_page_body(dash_home_dir, exp_titles):
+def gen_page_body(info, exp_titles):
     page_body = ''
-    exp_graph_dir = os.path.join(dash_home_dir,
-                                 'results', 'experiments', 'graph')
-    for (curr_dir, _, files) in os.walk(exp_graph_dir):
+    for (curr_dir, _, files) in os.walk(info.exp_graphs):
         # Remove the './graph' prefix from the directory path we actually show.
         shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
         depth = len(shown_dir.split(os.sep))
@@ -121,10 +120,9 @@ def gen_page_body(dash_home_dir, exp_titles):
 def init_page_prefix_template(deadline_config):
     # Create a countdown header for every deadline in the config.
     deadline_html = ''
-    if deadline_config is not None:
-        if 'deadlines' in deadline_config:
-            for deadline_name in deadline_config['deadlines']:
-                deadline_html += '<div align="center"><h2 style="background-color: white; color: red;">%s: <span id="%s"></span></h1></div>\n' % (deadline_name, deadline_name)
+    if deadline_config is not None and 'deadlines' in deadline_config:
+        for deadline_name in deadline_config['deadlines']:
+            deadline_html += '<div align="center"><h2 style="background-color: white; color: red;">%s: <span id="%s"></span></h1></div>\n' % (deadline_name, deadline_name)
 
     background_html = f'<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url({LORD_JERRY_PATH}); background-position: center;">'
 
@@ -142,37 +140,23 @@ def init_page_suffix_template(deadline_config):
     return PAGE_SUFFIX_TEMPLATE % deadline_html
 
 
-def set_up_out_dir(out_dir, home_dir):
-    graph_dir = os.path.join(home_dir, 'results', 'experiments', 'graph')
-
+def set_up_out_dir(info, out_dir):
     idemp_mkdir(out_dir)
 
     web_graph_dir = os.path.join(out_dir, 'graph')
     shutil.rmtree(web_graph_dir, ignore_errors=True)
-    shutil.copytree(graph_dir, web_graph_dir)
+    shutil.copytree(info.exp_graphs, web_graph_dir)
     shutil.copy(os.path.abspath('jerry.jpg'),
                 os.path.join(out_dir, LORD_JERRY_PATH))
 
 
-def get_exp_titles(dash_home_dir):
+def get_exp_titles(info):
     exp_titles = {}
-    exp_status_dir = os.path.join(dash_home_dir, 'results', 'experiments', 'status')
-    exp_conf_dir = os.path.join(dash_home_dir, 'config', 'experiments')
-
-    visit_exps = []
-    # check the precheck status so we know whether the config
-    # was set up properly in the first place
-    for exp_name in os.listdir(exp_status_dir):
-        precheck = read_json(os.path.join(exp_status_dir, exp_name),
-                             'precheck.json')
-        if precheck['success']:
-            visit_exps.append(exp_name)
-
-    for exp_name in visit_exps:
-        exp_config = read_config(os.path.join(exp_conf_dir, exp_name))
-        if 'title' in exp_config:
-            exp_titles[exp_name] = exp_config['title']
-
+    for exp_name in info.all_present_experiments():
+        if info.exp_config_valid(exp_name):
+            conf = info.read_exp_config(exp_name)
+            if 'title' in conf:
+                exp_titles[exp_name] = conf['title']
     return exp_titles
 
 

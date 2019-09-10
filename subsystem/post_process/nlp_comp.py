@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 from common import (write_status, prepare_out_file, time_difference,
                     read_config, sort_data, render_exception)
+from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 from check_prerequisites import check_prerequisites
 
@@ -54,12 +55,13 @@ def generate_nlp_comparisons(our_name, raw_data, output_dir):
 
 
 def main(config_dir, home_dir, output_dir):
+    info = DashboardInfo(home_dir)
     conf = read_config(config_dir)
     our_name = 'Relay'
     if 'our_name' in conf:
         our_name = conf['our_name']
 
-    prereqs, msg = check_prerequisites(home_dir, {
+    prereqs, msg = check_prerequisites(info, {
         'treelstm': {
             'devices': ['cpu'],
             'frameworks': ['relay', 'pt'],
@@ -82,12 +84,9 @@ def main(config_dir, home_dir, output_dir):
         write_status(output_dir, False, msg)
         sys.exit(1)
 
-    data_dir = os.path.join(home_dir, 'results', 'experiments', 'data')
-
     raw_data = {}
     for exp in EXPERIMENT_PREREQS:
-        exp_data_dir = os.path.join(data_dir, exp)
-        all_data = sort_data(exp_data_dir)
+        all_data = sort_data(info.exp_data_dir(exp))
         raw_data[exp] = all_data[-1]
 
     plot_data = OrderedDict([

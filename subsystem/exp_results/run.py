@@ -5,18 +5,18 @@ import os
 import sys
 import textwrap
 
-from common import (check_file_exists, read_config,
-                    read_json, write_status)
+from common import read_config, write_status
+from dashboard_info import DashboardInfo
 from slack_util import (generate_ping_list,
                         build_field, build_attachment, build_message,
                         post_message)
 
-def failed_experiment_field(exp, failure_stage, status, notify):
+def failed_experiment_field(exp, stage_statuses, stage, notify=None):
     message = 'Failed at stage {}:\n{}'.format(
-        failure_stage,
-        textwrap.shorten(status['message'], width=280))
+        stage,
+        textwrap.shorten(stage_statuses[stage]['message'], width=280))
 
-    if notify:
+    if notify is not None:
         message += '\nATTN: {}'.format(generate_ping_list(notify))
 
     return build_field(title=exp, value=message)
@@ -33,33 +33,21 @@ def main(config_dir, home_dir, output_dir):
     if 'description' in config:
         description = config['description']
 
-    # dashboard should have already run so all experiment
-    # directories should exist and be in order
-    exp_config_dir = os.path.join(home_dir, 'config', 'experiments')
-    exp_status_dir = os.path.join(home_dir, 'results', 'experiments', 'status')
-    exp_summary_dir = os.path.join(home_dir, 'results', 'experiments', 'summary')
+    info = DashboardInfo(home_dir)
 
-    inactive_experiments = []
-    # failed experiments: list of slack fields
-    failed_experiments = []
-    # successful experiments: list of slack fields
-    successful_experiments = []
-    # experiments on which visualization failed (just names)
-    failed_graphs = []
+    inactive_experiments = []     # list of titles
+    failed_experiments = []       # list of slack fields
+    successful_experiments = []   # list of slack fields
+    failed_graphs = []            # list of titles
 
-    for subdir, _, _ in os.walk(exp_status_dir):
-        if subdir == exp_status_dir:
-            continue
-        exp_name = os.path.basename(subdir)
-
-        precheck_status = read_json(subdir, 'precheck.json')
-        if not precheck_status['success']:
+    for exp_name in info.all_present_experiments():
+        stage_statuses = info.exp_stage_statuses(exp_name)
+        if not stage_statuses['precheck']['success']:
             failed_experiments.append(
-                failed_experiment_field(exp_name, 'precheck',
-                                        precheck_status, []))
+                failed_experiment_field(exp_name, stage_statuses, 'precheck'))
             continue
 
-        exp_conf = read_config(os.path.join(exp_config_dir, exp_name))
+        exp_conf = info.read_exp_config(exp_name)
 
         exp_title = exp_name if 'title' not in exp_conf else exp_conf['title']
         notify = exp_conf['notify']
@@ -68,23 +56,15 @@ def main(config_dir, home_dir, output_dir):
             continue
 
         failure = False
-        if check_file_exists(subdir, 'setup.json'):
-            setup_status = read_json(subdir, 'setup.json')
-            if not setup_status['success']:
+        for stage in ['setup', 'run', 'analysis', 'summary']:
+            if stage not in stage_statuses:
+                # setup is the only stage that's optional
+                assert stage == 'setup'
+                continue
+            if not stage_statuses[stage]['success']:
                 failed_experiments.append(
-                    failed_experiment_field(exp_name, 'setup',
-                                            setup_status, notify))
-                failure = True
-
-        if failure:
-            continue
-
-        for stage in ['run', 'analysis', 'summary']:
-            stage_status = read_json(subdir, stage + '.json')
-            if not stage_status['success']:
-                failed_experiments.append(
-                    failed_experiment_field(exp_name, stage,
-                                            stage_status, notify))
+                    failed_experiment_field(exp_name, stage_statuses,
+                                            stage, notify))
                 failure = True
                 break
 
@@ -94,12 +74,10 @@ def main(config_dir, home_dir, output_dir):
         # failure to visualize is not as big a deal as failing to
         # run or analyze the experiment, so we only report it but
         # don't fail to report the summary
-        visualization_status = read_json(subdir, 'visualization.json')
-        if not visualization_status['success']:
+        if not stage_statuses['visualization']['success']:
             failed_graphs.append(exp_title)
 
-        summary = read_json(os.path.join(exp_summary_dir, exp_name),
-                            'summary.json')
+        summary = info.read_exp_summary(exp_name)
         successful_experiments.append(
             build_field(summary['title'], summary['value']))
 

@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 from common import (write_status, prepare_out_file, time_difference,
                     sort_data, render_exception)
+from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 from check_prerequisties import check_prerequisites
 
@@ -31,8 +32,9 @@ def generate_opt_comparisons(raw_data, output_dir):
 
 
 def main(config_dir, home_dir, output_dir):
+    info = DashboardInfo(home_dir)
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
-    prereqs, msg = check_prerequisites(home_dir, {
+    prereqs, msg = check_prerequisites(info, {
         'relay_opt': {
             'devices': ['gpu'],
             'opt_levels': [0,1,2,3,4],
@@ -43,9 +45,7 @@ def main(config_dir, home_dir, output_dir):
         write_status(output_dir, False, msg)
         sys.exit(1)
 
-    data_dir = os.path.join(home_dir, 'results', 'experiments', 'data')
-    opt_comp_dir = os.path.join(data_dir, 'relay_opt')
-    all_data = sort_data(opt_comp_dir)
+    all_data = sort_data(info.exp_data_dir('relay_opt'))
     raw_data = all_data[-1]['gpu']
 
     baseline = 'O0'
