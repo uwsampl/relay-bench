@@ -15,4 +15,4 @@ def main(data_dir, config_dir, output_dir):
 
 
 if __name__ == '__main__':
-    invoke_main('data_dir', 'config_dir', 'output_dir')
+    invoke_main(main, 'data_dir', 'config_dir', 'output_dir')
