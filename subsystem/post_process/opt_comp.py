@@ -1,10 +1,9 @@
-import argparse
 import os
 import sys
 from collections import OrderedDict
 
 from common import (write_status, prepare_out_file, time_difference,
-                    sort_data, render_exception)
+                    invoke_main, sort_data, render_exception)
 from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
 from check_prerequisties import check_prerequisites
@@ -75,9 +74,4 @@ def main(config_dir, home_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--home-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args.config_dir, args.home_dir, args.output_dir)
+    invoke_main(main, 'config_dir', 'home_dir', 'output_dir')

@@ -1,6 +1,7 @@
 """
 Common Python utilities for interacting with the dashboard infra.
 """
+import argparse
 import datetime
 import json
 import logging
@@ -137,6 +138,22 @@ def traverse_fields(entry, omit_timestamp=True):
 
     return [level_fields] + final_tail
 
+
+def invoke_main(main_func, *arg_names):
+    """
+    Generates an argument parser for arg_names and calls
+    main_func with the arguments it parses. Arguments
+    are assumed to be string-typed. The argument names should
+    be Python-valid names.
+    """
+    parser = argparse.ArgumentParser()
+    for arg_name in arg_names:
+        name = arg_name
+        arg_type = str
+        parser.add_argument('--{}'.format(name.replace('_', '-')),
+                            required=True, type=str)
+    args = parser.parse_args()
+    main_func(*[getattr(args, name) for name in arg_names])
 
 
 def render_exception(e):

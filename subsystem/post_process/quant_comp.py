@@ -1,10 +1,9 @@
-import argparse
 import itertools
 import os
 from collections import OrderedDict
 
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
-from common import traverse_fields
+from common import invoke_main, traverse_fields
 
 # Raspberry Pi 3
 PI_DATA = {
@@ -68,8 +67,4 @@ def main(data_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args.data_dir, args.output_dir)
+    invoke_main(main, 'data_dir', 'output_dir')

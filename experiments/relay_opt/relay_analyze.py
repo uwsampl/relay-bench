@@ -1,7 +1,5 @@
-import argparse
-
 from validate_config import validate
-from common import write_status, write_json
+from common import invoke_main, write_status, write_json
 from analysis_util import trials_average_time
 
 def main(data_dir, config_dir, output_dir):
@@ -40,9 +38,4 @@ def main(data_dir, config_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", type=str, required=True)
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args.data_dir, args.config_dir, args.output_dir)
+    invoke_main(main, 'data_dir', 'config_dir', 'output_dir')

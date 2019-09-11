@@ -1,8 +1,7 @@
-import argparse
 import sys
 
 from validate_config import validate
-from common import write_status
+from common import invoke_main, write_status
 from trial_util import run_trials, configure_seed
 
 from language_data import N_LETTERS
@@ -57,8 +56,4 @@ def main(config_dir, output_dir):
         sys.exit(1)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args.config_dir, args.output_dir)
+    invoke_main(main, 'config_dir', 'output_dir')

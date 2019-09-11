@@ -3,13 +3,12 @@
 The "graph" and "raw_data" folders in the output directory must already exist
 and be populated before running this script.
 """
-import argparse
 import json
 import os
 import shutil
 
-from common import (read_config, write_status, idemp_mkdir, 
-                    render_exception)
+from common import (read_config, write_status, idemp_mkdir,
+                    invoke_main, render_exception)
 from dashboard_info import DashboardInfo
 
 PAGE_PREFIX_TEMPLATE = '''
@@ -161,13 +160,4 @@ def get_exp_titles(info):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--config-dir', type=str, required=True,
-                        help='Directory where graphs are found, should be absolute')
-    parser.add_argument('--home-dir', type=str, required=True,
-                        help='Dashboard home directory')
-    parser.add_argument('--output-dir', type=str, required=True,
-                        help='Directory where output should be created, should be absolute')
-    args = parser.parse_args()
-
-    main(args.config_dir, args.home_dir, args.output_dir)
+    invoke_main(main, 'config_dir', 'home_dir', 'output_dir')

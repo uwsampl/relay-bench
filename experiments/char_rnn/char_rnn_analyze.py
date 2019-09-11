@@ -1,9 +1,7 @@
-import argparse
-
 import numpy as np
 
 from validate_config import validate
-from common import write_status, write_json, render_exception
+from common import write_status, write_json, render_exception, invoke_main
 from analysis_util import trials_average_time, mean_of_means
 
 def main(data_dir, config_dir, output_dir):
@@ -72,9 +70,4 @@ def main(data_dir, config_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", type=str, required=True)
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args.data_dir, args.config_dir, args.output_dir)
+    invoke_main(main, 'data_dir', 'config_dir', 'output_dir')

@@ -21,7 +21,6 @@
 This experiment runs ResNet-18 inference on the VTA accelerator design to
 perform a single ImageNet classification task.
 """
-import argparse
 import itertools
 import json
 import os
@@ -40,7 +39,7 @@ from vta.testing import simulator
 from vta.top import graph_pack
 
 from validate_config import validate
-from common import check_file_exists, read_json, write_json, write_status
+from common import invoke_main, check_file_exists, read_json, write_json, write_status
 
 # The `START_PACK` and `STOP_PACK` labels indicate where to start and end the
 # graph packing relay pass---in other words, where to start and finish
@@ -261,8 +260,4 @@ def main(config_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config-dir', type=str, required=True)
-    parser.add_argument('--output-dir', type=str, required=True)
-    args = parser.parse_args()
-    main(args.config_dir, args.output_dir)
+    invoke_main(main, 'config_dir', 'output_dir')

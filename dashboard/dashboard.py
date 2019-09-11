@@ -10,8 +10,8 @@ import sys
 import subprocess
 import time
 
-from common import (check_file_exists, idemp_mkdir, prepare_out_file,
-                    read_json, write_json, read_config)
+from common import (check_file_exists, idemp_mkdir, invoke_main,
+                    prepare_out_file, read_json, write_json, read_config)
 from dashboard_info import DashboardInfo
 
 def validate_status(dirname):
@@ -510,9 +510,4 @@ def main(home_dir, experiments_dir, subsystem_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Read dashboard config')
-    parser.add_argument('--home-dir', type=str, required=True)
-    parser.add_argument('--experiments-dir', type=str, required=True)
-    parser.add_argument('--subsystem-dir', type=str, required=True)
-    args = parser.parse_args()
-    main(args.home_dir, args.experiments_dir, args.subsystem_dir)
+    invoke_main(main, 'home_dir', 'experiments_dir', 'subsystem_dir')

@@ -1,4 +1,3 @@
-import argparse
 import os
 import mxnet as mx
 import numpy as np
@@ -11,7 +10,7 @@ from mxnet.gluon.model_zoo import vision
 from mx_models import mxnet_zoo
 
 from validate_config import validate
-from common import write_status
+from common import invoke_main, write_status
 from trial_util import configure_seed, run_trials
 
 def get_network(name, ctx):
@@ -95,8 +94,4 @@ def main(config_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    args = parser.parse_args()
-    main(args.config_dir, args.output_dir)
+    invoke_main(main, 'config_dir', 'output_dir')

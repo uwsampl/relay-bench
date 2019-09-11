@@ -1,11 +1,10 @@
-import argparse
 import os
 import numpy as np
 import sys
 import tensorflow as tf
 
 from validate_config import validate
-from common import write_status
+from common import invoke_main, write_status
 from trial_util import run_trials, configure_seed
 
 from tf_models import (mobilenet, resnet, vgg, dqn, dcgan)
@@ -99,9 +98,4 @@ def main(config_dir, output_dir, device):
         sys.exit(1)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    parser.add_argument("--device", type=str, required=True)
-    args = parser.parse_args()
-    main(args.config_dir, args.output_dir, args.device)
+    invoke_main(main, 'config_dir', 'output_dir', 'device')

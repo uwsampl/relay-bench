@@ -1,11 +1,12 @@
-'''Reads experiment summaries and posts them to Slack.'''
-import argparse
+"""
+Reports deadlines to Slack.
+"""
 import datetime
 import json
 import os
 import sys
 
-from common import read_config, write_status
+from common import invoke_main, read_config, write_status
 from slack_util import (generate_ping_list,
                         build_field, build_attachment, build_message,
                         post_message)
@@ -75,12 +76,4 @@ def main(config_dir, home_dir, output_dir):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config-dir', type=str, required=True,
-                        help='Directory containing a config file')
-    parser.add_argument('--home-dir', type=str, required=True,
-                        help='Dashboard home directory')
-    parser.add_argument('--output-dir', type=str, required=True,
-                        help='Directory for any output')
-    args = parser.parse_args()
-    main(args.config_dir, args.home_dir, args.output_dir)
+    invoke_main(main, 'config_dir', 'home_dir', 'output_dir')

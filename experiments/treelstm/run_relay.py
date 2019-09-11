@@ -1,4 +1,3 @@
-import argparse
 import sys
 
 import torch
@@ -8,7 +7,7 @@ from tvm import relay
 import aot
 
 from validate_config import validate
-from common import write_status
+from common import invoke_main, write_status
 from trial_util import run_trials
 
 from run_pt import initialize_treelstm
@@ -100,10 +99,4 @@ def main(config_dir, output_dir, method, dataset):
     write_status(output_dir, True, 'success')
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-dir", type=str, required=True)
-    parser.add_argument("--output-dir", type=str, required=True)
-    parser.add_argument("--dataset", type=str, required=True)
-    parser.add_argument("--method", type=str, required=True)
-    args = parser.parse_args()
-    main(args.config_dir, args.output_dir, args.method, args.dataset)
+    invoke_main(main, 'config_dir', 'output_dir', 'method', 'dataset')
