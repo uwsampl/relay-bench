@@ -65,7 +65,7 @@ def main(config_dir, home_dir, output_dir):
                 continue
             if not stage_statuses[stage]['success']:
                 failed_experiments.append(
-                    failed_experiment_field(exp_name, stage_statuses,
+                    failed_experiment_field(exp_title, stage_statuses,
                                             stage, notify))
                 failure = True
                 break
