@@ -204,7 +204,7 @@ def setup_experiment(info, experiments_dir, setup_dir, exp_name):
 def copy_setup(experiments_dir, setup_dir, exp_name):
     exp_dir = os.path.join(experiments_dir, exp_name)
     exp_setup_dir = os.path.join(setup_dir, exp_name)
-    subprocess.call(['cp', '-r', os.path.join(exp_setup_dir, '.'), 'setup/'],
+    subprocess.call(['/bin/cp', '-rf', os.path.join(exp_setup_dir, '.'), 'setup/'],
                     cwd=exp_dir)
 
 
@@ -339,7 +339,7 @@ def run_all_experiments(info, experiments_dir, setup_dir,
             if should_setup(experiments_dir, setup_dir, exp) or exp_confs[exp]['rerun_setup']:
                 success = setup_experiment(info, experiments_dir, setup_dir, exp)
                 if not success:
-                    exp_status[exp_name] = 'failed'
+                    exp_status[exp] = 'failed'
                     continue
             # copy over the setup files regardless of whether we ran it this time
             copy_setup(experiments_dir, setup_dir, exp)
@@ -491,12 +491,9 @@ def main(home_dir, experiments_dir, subsystem_dir):
 
     # instantiate necessary dashboard dirs and clean any that should be empty
     for dashboard_dir in all_dashboard_dirs:
+        if dashboard_dir not in persistent_dirs:
+            subprocess.call(['rm', '-rf', dashboard_dir])
         idemp_mkdir(dashboard_dir)
-        if dashboard_dir in persistent_dirs:
-            continue
-        for subdir, _, _ in os.walk(dashboard_dir):
-            if subdir != dashboard_dir:
-                subprocess.call(['rm', '-rf', subdir])
 
     randomize_exps = True
     if 'randomize' in dash_config:
