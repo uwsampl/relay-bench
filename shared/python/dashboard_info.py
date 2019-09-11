@@ -111,7 +111,7 @@ class DashboardInfo:
     def all_subsystem_dirs(self):
         return [
             self.subsys_configs,
-            self.subsys_output, self.exp_statuses
+            self.subsys_output, self.subsys_statuses
         ]
 
 
