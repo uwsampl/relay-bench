@@ -122,6 +122,9 @@ source.cc
 *.onnx
 *.DS_Store
 
+# gluon rnn data
+experiments/gluon_rnns/setup/*
+
 # treelstm data
 experiments/treelstm/pt_tlstm/data/*
 experiments/treelstm/pt_tlstm/lib/stanford-tagger/*
