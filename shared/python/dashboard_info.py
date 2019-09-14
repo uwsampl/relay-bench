@@ -140,7 +140,7 @@ class DashboardInfo:
 
 
     def subsys_active(self, subsys_name):
-        return self.subsys_config_valid(exp_name) and self.read_subsys_config(subsys_name)['active']
+        return self.subsys_config_valid(subsys_name) and self.read_subsys_config(subsys_name)['active']
 
 
     def exp_stage_statuses(self, exp_name):
