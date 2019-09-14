@@ -87,7 +87,7 @@ def main(config_dir, home_dir, out_dir):
     os.chdir(out_dir)
 
     page_prefix = init_page_prefix_template(deadline_config)
-    page_body = gen_page_body(info, exp_titles)
+    page_body = gen_page_body(exp_titles)
     page_suffix = init_page_suffix_template(deadline_config)
     with open(os.path.join(out_dir, 'index.html'), 'w') as f:
         f.write(page_prefix)
@@ -96,9 +96,9 @@ def main(config_dir, home_dir, out_dir):
     write_status(out_dir, True, 'success')
 
 
-def gen_page_body(info, exp_titles):
+def gen_page_body(exp_titles):
     page_body = ''
-    for (curr_dir, _, files) in os.walk(info.exp_graphs):
+    for (curr_dir, _, files) in os.walk('./graph'):
         # Remove the './graph' prefix from the directory path we actually show.
         shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
         depth = len(shown_dir.split(os.sep))
@@ -147,7 +147,6 @@ def set_up_out_dir(info, out_dir):
     shutil.copytree(info.exp_graphs, web_graph_dir)
     shutil.copy(os.path.abspath('jerry.jpg'),
                 os.path.join(out_dir, LORD_JERRY_PATH))
-
 
 def get_exp_titles(info):
     exp_titles = {}
