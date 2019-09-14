@@ -64,7 +64,7 @@ def main(config_dir, home_dir, output_dir):
         'treelstm': {
             'devices': ['cpu'],
             'frameworks': ['relay', 'pt'],
-            'relay_methods': ['aot'],
+            'relay_methods': ['aot']
         },
         'char_rnn': {
             'devices': ['cpu'],
@@ -76,7 +76,7 @@ def main(config_dir, home_dir, output_dir):
             'devices': ['cpu'],
             'frameworks': ['relay', 'mxnet'],
             'networks': ['rnn', 'lstm', 'gru'],
-            'relay_method': ['aot']
+            'relay_methods': ['aot']
         }
     })
     if not prereqs:
