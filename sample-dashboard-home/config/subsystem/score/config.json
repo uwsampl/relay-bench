@@ -1,0 +1,4 @@
+{
+    "active": true,
+    "metrics": ["rnn_2x", "beat_nnvm"]
+}

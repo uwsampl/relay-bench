@@ -1,6 +1,6 @@
 """
-Checks whether the required experiments for a post-process
-script exist and have run.
+Checks whether the required experiments have run and are
+configured appropriately
 """
 import os
 
@@ -30,6 +30,14 @@ def match_values(expected, actual):
 
 
 def check_prerequisites(info, required_confs):
+    """
+    Takes a DashboardInfo object and a dictionary of
+    exp_names -> {config field : required values}.
+
+    Returns true if all the experiments in the required_confs
+    dictionary are active, ran properly, and their configs
+    contain all the fields and required values
+    """
     for (exp_name, conf_entries) in required_confs.items():
         stage_statuses = info.exp_stage_statuses(exp_name)
         if not stage_statuses['precheck']['success']:
@@ -40,7 +48,7 @@ def check_prerequisites(info, required_confs):
             return False, 'Required experiment {} not active'.format(exp_name)
         for (entry, value) in conf_entries.items():
             if entry not in exp_conf:
-                return False, 'Config for exeriment {} is missing field {}'.format(exp_name, entry)
+                return False, 'Config for experiment {} is missing field {}'.format(exp_name, entry)
             if not match_values(value, exp_conf[entry]):
                 return False, 'Config for {} does not match requirements for entry {}'.format(exp_name, entry)
 
