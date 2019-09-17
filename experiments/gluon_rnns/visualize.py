@@ -16,7 +16,7 @@ def generate_gluon_rnn_comparison(title, filename, raw_data, output_prefix=''):
 
     comparison_dir = os.path.join(output_prefix, 'comparison')
     PlotBuilder().set_title(title) \
-                 .set_y_label(data['meta'][1]) \
+                 .set_y_label(data['meta'][2]) \
                  .set_y_scale(PlotScale.LOG) \
                  .make(PlotType.MULTI_BAR, data) \
                  .save(comparison_dir, filename)
