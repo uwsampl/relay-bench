@@ -59,6 +59,11 @@ def write_summary(output_dir, title, value):
     })
 
 
+def get_timestamp():
+    time = datetime.datetime.now()
+    return time.strftime('%m-%d-%Y-%H%M')
+
+
 def parse_timestamp(data):
     return datetime.datetime.strptime(data['timestamp'], '%m-%d-%Y-%H%M')
 

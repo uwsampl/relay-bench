@@ -1,16 +1,14 @@
 """
 Implementation of core dashboard infrastructure
 """
-import argparse
 import datetime
-import json
 import os
 import random
 import sys
 import subprocess
 import time
 
-from common import (check_file_exists, idemp_mkdir, invoke_main,
+from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
                     prepare_out_file, read_json, write_json, read_config)
 from dashboard_info import DashboardInfo
 
@@ -456,8 +454,7 @@ def main(home_dir, experiments_dir, subsystem_dir):
     Experiments directory: Where experiment implementations are
     Both should be given as absolute directories
     """
-    time_of_run = datetime.datetime.now()
-    time_str = time_of_run.strftime('%m-%d-%Y-%H%M')
+    time_str = get_timestamp()
 
     if not check_file_exists(home_dir, 'config.json'):
         print('Dashboard config (config.json) is missing in {}'.format(home_dir))
