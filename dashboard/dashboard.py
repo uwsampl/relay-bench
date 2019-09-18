@@ -407,6 +407,11 @@ def run_subsystem(info, subsystem_dir, subsys_name):
     subsys_output_dir = info.subsys_output_dir(subsys_name)
     idemp_mkdir(subsys_output_dir)
 
+    # remove the old status if one is hanging around
+    # (subsystem output dirs remain around between runs)
+    if check_file_exists(subsys_output_dir, 'status.json'):
+        subprocess.call(['rm', '-f', os.path.join(subsys_output_dir, 'status.json')])
+
     # run the run.sh file on the configs directory and the output directory
     subprocess.call([os.path.join(subsys_dir, 'run.sh'),
                      info.subsys_config_dir(subsys_name),
