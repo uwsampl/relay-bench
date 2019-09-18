@@ -6,7 +6,7 @@ from common import (write_status, prepare_out_file, time_difference,
                     invoke_main, sort_data, render_exception)
 from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, PlotScale, PlotType, UnitType
-from check_prerequisties import check_prerequisites
+from check_prerequisites import check_prerequisites
 
 def generate_opt_comparisons(raw_data, output_dir):
     filename = 'opt-comp-gpu.png'
