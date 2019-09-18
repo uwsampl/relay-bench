@@ -1,4 +1,15 @@
 {
     "active": true,
-    "metrics": ["rnn_2x", "beat_nnvm"]
+    "score_confs": {
+        "nnvm_score": {
+            "title": "NNVM Score",
+            "description": "Number of networks where Relay beats RNN",
+            "margin": 0
+        },
+        "rnn_score": {
+            "title": "RNN Speedup Score",
+            "description": "Number of RNNs where Relay has above a set speedup over other frameworks",
+            "speedup": 2
+        }
+    }
 }

@@ -75,6 +75,7 @@ def main(config_dir, home_dir, out_dir):
     config = read_config(config_dir)
     info = DashboardInfo(home_dir)
     exp_titles = get_exp_titles(info)
+    score_titles = get_score_titles(info)
 
     deadline_config = None
     if info.subsys_config_valid('deadline'):
@@ -87,7 +88,7 @@ def main(config_dir, home_dir, out_dir):
     os.chdir(out_dir)
 
     page_prefix = init_page_prefix_template(deadline_config)
-    page_body = gen_page_body(exp_titles)
+    page_body = gen_page_body(exp_titles, score_titles)
     page_suffix = init_page_suffix_template(deadline_config)
     with open(os.path.join(out_dir, 'index.html'), 'w') as f:
         f.write(page_prefix)
@@ -96,16 +97,26 @@ def main(config_dir, home_dir, out_dir):
     write_status(out_dir, True, 'success')
 
 
-def gen_page_body(exp_titles):
+def score_successful(info):
+    return (info.subsys_active('score')
+            and info.subsys_stage_status('score', 'run')['success'])
+
+
+def gen_page_body(exp_titles, score_titles):
     page_body = ''
     for (curr_dir, _, files) in os.walk('./graph'):
         # Remove the './graph' prefix from the directory path we actually show.
         shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
         depth = len(shown_dir.split(os.sep))
         section_heading_size = max(2, min(depth, 6))
+
         heading_text = shown_dir
-        if depth == 1 and len(shown_dir) != 0 and shown_dir in exp_titles:
+        leaf_dir = depth == 1 and len(shown_dir) != 0
+        if leaf_dir and shown_dir in exp_titles:
             heading_text = exp_titles[shown_dir]
+        if leaf_dir and shown_dir in score_titles:
+            heading_text = score_titles[shown_dir]
+
         page_body += f'<h{section_heading_size} style="background-color: white;">{heading_text}</h{section_heading_size}>\n'
         for filename in files:
             if not filename.endswith('.png'):
@@ -113,6 +124,7 @@ def gen_page_body(exp_titles):
             img_heading_size = min(section_heading_size + 1, 6)
             img_path = os.path.join(curr_dir, filename)
             page_body += f'<img src="{img_path}" style="height:400px;padding:10px;">\n'
+
     return page_body
 
 
@@ -145,8 +157,15 @@ def set_up_out_dir(info, out_dir):
     web_graph_dir = os.path.join(out_dir, 'graph')
     shutil.rmtree(web_graph_dir, ignore_errors=True)
     shutil.copytree(info.exp_graphs, web_graph_dir)
+    if score_successful(info):
+        score_graphs = os.path.join(info.subsys_output_dir('score'), 'graphs')
+        for subdir in os.listdir(score_graphs):
+            if not os.path.isdir(subdir):
+                continue
+            shutil.copytree(subdir, os.path.join(web_graph_dir, subdir))
     shutil.copy(os.path.abspath('jerry.jpg'),
                 os.path.join(out_dir, LORD_JERRY_PATH))
+
 
 def get_exp_titles(info):
     exp_titles = {}
@@ -156,6 +175,21 @@ def get_exp_titles(info):
             if 'title' in conf:
                 exp_titles[exp_name] = conf['title']
     return exp_titles
+
+
+def get_score_titles(info):
+    ret = {}
+    if score_successful(info):
+        score_conf = info.read_subsys_config('score')
+        if 'score_confs' not in score_conf:
+            return ret
+
+        metric_confs = score_conf['score_confs']
+
+        for metric_name, metric_conf in metric_confs.items():
+            if 'title' in metric_conf:
+                ret[metric_name] = metric_conf['title']
+    return ret
 
 
 if __name__ == '__main__':
