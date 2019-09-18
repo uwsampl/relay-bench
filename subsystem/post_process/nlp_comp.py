@@ -84,7 +84,7 @@ def main(config_dir, home_dir, output_dir):
         sys.exit(1)
 
     raw_data = {}
-    for exp in EXPERIMENT_PREREQS:
+    for exp in ['treelstm', 'char_rnn', 'gluon_rnns']:
         all_data = sort_data(info.exp_data_dir(exp))
         raw_data[exp] = all_data[-1]
 
