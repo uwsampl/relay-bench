@@ -114,14 +114,18 @@ def gather_stats(sorted_data, fields):
     return (stats, times)
 
 
-def traverse_fields(entry, omit_timestamp=True):
+def traverse_fields(entry, omit_timestamp=True, omit_tvm_hash=True):
     '''
     Returns a list of sets of nested fields (one set per level of nesting)
     of a JSON data entry produced by a benchmark analysis script.
-    Ignores the dashboard-appended 'timestamp' field at the top level by default.
+    Ignores the dashboard-appended 'timestamp' and 'tvm_hash' fields at the top level by default.
     '''
+    def omit_cond(field):
+        return ((omit_timestamp and field == 'timestamp')
+                or (omit_tvm_hash and field == 'tvm_hash'))
+
     level_fields = {field for field in entry.keys()
-                    if not (omit_timestamp and field == 'timestamp')}
+                    if not omit_cond(field)}
     values_to_check = [value for value in entry.values()
                        if isinstance(value, dict)]
 
