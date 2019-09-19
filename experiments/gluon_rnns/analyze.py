@@ -1,6 +1,6 @@
 from validate_config import validate
 from common import invoke_main, write_status, write_json, render_exception
-from analysis_util import trials_average_time, mean_of_means
+from analysis_util import trials_stat_summary, add_detailed_summary
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
@@ -41,13 +41,14 @@ def main(data_dir, config_dir, output_dir):
                 field_values[extra_field] = value
             for network in networks:
                 field_values['network'] = network
-                mean, success, msg = trials_average_time(data_dir, framework, 'gluon_rnns', num_reps,
-                                                         fieldnames, field_values)
+                summary, success, msg = trials_stat_summary(data_dir, framework, 'gluon_rnns', num_reps,
+                                                            fieldnames, field_values)
                 if not success:
                     write_status(output_dir, False, msg)
                     return
 
-                ret[dev][listing][network] = mean
+                ret[dev][listing][network] = summary['mean']
+                add_detailed_summary(ret, summary, dev, listing, network)
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')

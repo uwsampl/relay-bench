@@ -2,7 +2,7 @@ import numpy as np
 
 from validate_config import validate
 from common import write_status, write_json, render_exception, invoke_main
-from analysis_util import trials_average_time, mean_of_means
+from analysis_util import trials_stat_summary, add_detailed_summary
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
@@ -57,12 +57,13 @@ def main(data_dir, config_dir, output_dir):
             language_means = []
             for language in languages:
                 field_values['language'] = language
-                mean, success, msg = trials_average_time(data_dir, framework, 'char_rnn', num_reps,
-                                                         fieldnames, field_values)
+                summary, success, msg = trials_stat_summary(data_dir, framework, 'char_rnn', num_reps,
+                                                            fieldnames, field_values)
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                language_means.append(mean)
+                add_detailed_summary(ret, summary, dev, listing, language)
+                language_means.append(summary['mean'])
             ret[dev][listing] = np.mean(language_means)
 
     write_json(output_dir, 'data.json', ret)

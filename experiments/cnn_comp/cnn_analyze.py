@@ -1,6 +1,6 @@
 from validate_config import validate
 from common import invoke_main, write_status, write_json
-from analysis_util import trials_average_time
+from analysis_util import trials_stat_summary, add_detailed_summary
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
@@ -56,12 +56,13 @@ def main(data_dir, config_dir, output_dir):
                 for extra_field, value in field_settings.items():
                     field_values[extra_field] = value
 
-                mean, success, msg = trials_average_time(data_dir, framework, 'cnn_comp', num_reps,
-                                                         fields, field_values)
+                summary, success, msg = trials_stat_summary(data_dir, framework, 'cnn_comp', num_reps,
+                                                            fields, field_values)
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                ret[dev][listing][network] = mean
+                ret[dev][listing][network] = summary['mean']
+                add_detailed_summary(ret, summary, dev, listing, network)
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')

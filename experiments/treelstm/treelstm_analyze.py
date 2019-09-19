@@ -2,7 +2,7 @@ import numpy as np
 
 from validate_config import validate
 from common import invoke_main, write_status, write_json, render_exception
-from analysis_util import trials_average_time, mean_of_means
+from analysis_util import trials_stat_summary, add_detailed_summary
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
@@ -49,12 +49,13 @@ def main(data_dir, config_dir, output_dir):
             dataset_means = []
             for (dataset, _) in datasets:
                 field_values['dataset'] = dataset
-                mean, success, msg = trials_average_time(data_dir, framework, 'treelstm', num_reps,
-                                                         fieldnames, field_values)
+                summary, success, msg = trials_stat_summary(data_dir, framework, 'treelstm', num_reps,
+                                                            fieldnames, field_values)
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                dataset_means.append(mean)
+                dataset_means.append(summary['mean'])
+                add_detailed_summary(ret, summary, dev, listing, dataset)
             ret[dev][listing] = np.mean(dataset_means)
 
     write_json(output_dir, 'data.json', ret)

@@ -2,7 +2,7 @@ import itertools
 
 from validate_config import validate
 from common import invoke_main, write_status, write_json
-from analysis_util import trials_average_time
+from analysis_util import trials_stat_summary, add_detailed_summary
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
@@ -25,16 +25,17 @@ def main(data_dir, config_dir, output_dir):
         for pass_str in passes:
             ret[dev][pass_str] = {}
             for network in networks:
-                mean, success, msg = trials_average_time(data_dir, 'relay', 'pass_comparison', num_reps,
-                                                         ['network', 'device', 'batch_size', 'pass'],
-                                                         {'batch_size': batch_size,
-                                                          'network': network,
-                                                          'device': dev,
-                                                          'pass': pass_str})
+                summary, success, msg = trials_stat_summary(data_dir, 'relay', 'pass_comparison', num_reps,
+                                                            ['network', 'device', 'batch_size', 'pass'],
+                                                            {'batch_size': batch_size,
+                                                             'network': network,
+                                                             'device': dev,
+                                                             'pass': pass_str})
                 if not success:
                     write_status(output_dir, False, msg)
                     return
-                ret[dev][pass_str][network] = mean
+                ret[dev][pass_str][network] = summary['mean']
+                add_detailed_summary(ret, summary, dev, pass_str, network)
 
     write_json(output_dir, 'data.json', ret)
     write_status(output_dir, True, 'success')

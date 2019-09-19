@@ -2,7 +2,6 @@ import os
 
 from validate_config import validate
 from common import invoke_main, write_status, read_json, write_json
-from analysis_util import trials_average_time
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
