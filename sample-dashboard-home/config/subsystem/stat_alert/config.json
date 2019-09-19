@@ -1,0 +1,4 @@
+{
+    "active": true,
+    "notify": ["list of slack IDs who should be notified"]
+}
