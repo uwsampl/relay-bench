@@ -1,7 +1,6 @@
 import os
 import mxnet as mx
 import numpy as np
-import sys
 from collections import namedtuple
 
 from mxnet import gluon
@@ -72,11 +71,11 @@ def main(config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        sys.exit(1)
+        return 1
 
     if 'mxnet' not in config['frameworks']:
         write_status(output_dir, True, 'MxNet not run')
-        sys.exit(0)
+        return 0
 
     configure_seed(config)
 
@@ -90,7 +89,7 @@ def main(config_dir, output_dir):
 
     write_status(output_dir, success, msg)
     if not success:
-        sys.exit(1)
+        return 1
 
 
 if __name__ == '__main__':

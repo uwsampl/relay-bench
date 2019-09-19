@@ -52,7 +52,7 @@ def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     # read in data, output graphs of most recent data, and output longitudinal graphs
     all_data = sort_data(data_dir)
@@ -63,7 +63,7 @@ def main(data_dir, config_dir, output_dir):
         generate_arm_vta_comparisons(most_recent, output_dir)
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        return
+        return 1
 
     write_status(output_dir, True, 'success')
 

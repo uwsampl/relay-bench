@@ -6,7 +6,7 @@ def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     opt_levels = sorted(list(config['opt_levels']))
     devices = config['devices']

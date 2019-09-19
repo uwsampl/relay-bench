@@ -234,7 +234,7 @@ def main(config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     try:
         result = {}
@@ -253,7 +253,7 @@ def main(config_dir, output_dir):
             result[model][target][device] = run_single(model, target, device, config)
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        return
+        return 1
 
     write_json(output_dir, 'data.json', result)
     write_status(output_dir, True, 'success')

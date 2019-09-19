@@ -5,7 +5,6 @@ and, if present, posts to slack
 import argparse
 import json
 import os
-import sys
 import textwrap
 
 from common import (invoke_main, read_config, write_status,
@@ -24,7 +23,7 @@ def main(config_dir, home_dir, output_dir):
     config = read_config(config_dir)
     if 'webhook_url' not in config:
         write_status(output_dir, False, 'No webhook URL given')
-        sys.exit(1)
+        return 1
 
     webhook = config['webhook_url']
 
@@ -76,7 +75,7 @@ def main(config_dir, home_dir, output_dir):
 
     if not attachments:
         write_status(output_dir, True, 'Nothing to report')
-        sys.exit(0)
+        return 0
 
     success, msg = post_message(
         webhook,

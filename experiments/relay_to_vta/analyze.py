@@ -7,7 +7,7 @@ def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     # No further analysis is required beyond the raw stats reported by the VTA
     # simulator, so we just propagate the data to the next stage of the

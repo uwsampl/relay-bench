@@ -1,5 +1,3 @@
-import sys
-
 import torch
 import tvm
 from tvm import relay
@@ -62,15 +60,15 @@ def main(config_dir, output_dir, method, dataset):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        sys.exit(1)
+        return 1
 
     if 'relay' not in config['frameworks']:
         write_status(output_dir, True, 'Relay not run')
-        sys.exit(0)
+        return 0
 
     if method not in config['relay_methods']:
         write_status(output_dir, True, '{} not run'.format(method))
-        sys.exit(0)
+        return 0
 
     datasets = config['datasets']
     max_idx = -1
@@ -82,7 +80,7 @@ def main(config_dir, output_dir, method, dataset):
     # dataset is not included in the config, so skip
     if max_idx == -1:
         write_status(output_dir, True, 'Dataset {} not run'.format(dataset))
-        sys.exit(0)
+        return 0
 
     success, msg = run_trials(
         'relay', 'treelstm',
@@ -95,8 +93,9 @@ def main(config_dir, output_dir, method, dataset):
         append_to_csv=True)
     if not success:
         write_status(output_dir, success, msg)
-        sys.exit(1)
+        return 1
     write_status(output_dir, True, 'success')
+
 
 if __name__ == '__main__':
     invoke_main(main, 'config_dir', 'output_dir', 'method', 'dataset')

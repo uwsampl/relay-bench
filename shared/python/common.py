@@ -158,6 +158,10 @@ def invoke_main(main_func, *arg_names):
     main_func with the arguments it parses. Arguments
     are assumed to be string-typed. The argument names should
     be Python-valid names.
+
+    If main_func returns a value, this function assumes it to
+    be a return code. If not, this function will exit with code
+    0 after invoking main
     """
     parser = argparse.ArgumentParser()
     for arg_name in arg_names:
@@ -166,7 +170,10 @@ def invoke_main(main_func, *arg_names):
         parser.add_argument('--{}'.format(name.replace('_', '-')),
                             required=True, type=str)
     args = parser.parse_args()
-    main_func(*[getattr(args, name) for name in arg_names])
+    ret = main_func(*[getattr(args, name) for name in arg_names])
+    if ret is None:
+        sys.exit(0)
+    sys.exit(ret)
 
 
 def render_exception(e):

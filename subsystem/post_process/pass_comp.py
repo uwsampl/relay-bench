@@ -83,7 +83,7 @@ def main(config_dir, home_dir, output_dir):
             generate_pass_comparisons(plot_data, output_dir, f'pass-comp-{dev}.png')
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        sys.exit(1)
+        return 1
 
     write_status(output_dir, True, 'success')
 

@@ -1,5 +1,4 @@
 import os
-import sys
 from collections import OrderedDict
 
 from common import (write_status, write_json, prepare_out_file,
@@ -53,7 +52,7 @@ def main(config_dir, home_dir, output_dir):
 
     if not metrics:
         write_status(output_dir, True, 'No scores to report')
-        sys.exit(0)
+        return 0
 
     score_data = {}
     score_reports = {}
@@ -62,7 +61,7 @@ def main(config_dir, home_dir, output_dir):
         valid, msg = check_prerequisites(info, score_metric.prereq())
         if not valid:
             write_status(output_dir, False, msg)
-            sys.exit(1)
+            return 1
 
         score_data_dir = os.path.join(data_dir, metric)
         score_graph_dir = os.path.join(graph_dir, metric)
@@ -78,7 +77,7 @@ def main(config_dir, home_dir, output_dir):
             write_status(output_dir, False,
                          'Encountered exception while scoring {}:\n{}'.format(metric,
                                                                               render_exception(e)))
-            sys.exit(1)
+            return 1
 
     report = {
         'title': 'Metric Scores',

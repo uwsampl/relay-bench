@@ -25,7 +25,7 @@ def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     devs = config['devices']
 
@@ -45,7 +45,7 @@ def main(data_dir, config_dir, output_dir):
                                          most_recent[dev], output_dir)
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        return
+        return 1
 
     write_status(output_dir, True, 'success')
 

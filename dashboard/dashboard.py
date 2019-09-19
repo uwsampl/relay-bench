@@ -4,7 +4,6 @@ Implementation of core dashboard infrastructure
 import datetime
 import os
 import random
-import sys
 import subprocess
 import time
 
@@ -463,7 +462,7 @@ def main(home_dir, experiments_dir, subsystem_dir):
 
     if not check_file_exists(home_dir, 'config.json'):
         print('Dashboard config (config.json) is missing in {}'.format(home_dir))
-        sys.exit(1)
+        return 1
     dash_config = read_json(home_dir, 'config.json')
 
     # must expand all tildes in the config to avoid future errors

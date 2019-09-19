@@ -1,5 +1,4 @@
 import os
-import sys
 
 import torch
 
@@ -55,11 +54,11 @@ def main(config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        sys.exit(1)
+        return 1
 
     if 'pt' not in config['frameworks']:
         write_status(output_dir, True, 'PT not run')
-        sys.exit(0)
+        return 0
 
     datasets = config['datasets']
     for dataset, max_idx in datasets:
@@ -73,7 +72,7 @@ def main(config_dir, output_dir):
             append_to_csv=True)
         if not success:
             write_status(output_dir, success, msg)
-            sys.exit(1)
+            return 1
     write_status(output_dir, True, 'success')
 
 if __name__ == '__main__':

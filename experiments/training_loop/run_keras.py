@@ -1,5 +1,3 @@
-import sys
-
 from validate_config import validate
 from common import invoke_main, write_status
 from trial_util import run_trials, configure_seed
@@ -56,11 +54,11 @@ def main(config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        sys.exit(1)
+        return 1
 
     if 'keras' not in config['frameworks']:
         write_status(output_dir, True, 'Keras not run')
-        sys.exit(0)
+        return 0
 
     configure_seed(config)
 
@@ -75,7 +73,7 @@ def main(config_dir, output_dir):
 
     write_status(output_dir, success, msg)
     if not success:
-        sys.exit(1)
+        return 1
 
 if __name__ == '__main__':
     invoke_main(main, 'config_dir', 'output_dir')

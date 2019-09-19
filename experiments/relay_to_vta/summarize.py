@@ -11,7 +11,7 @@ def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     all_data = sort_data(data_dir)
     most_recent = all_data[-1]

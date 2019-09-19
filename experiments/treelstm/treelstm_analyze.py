@@ -8,7 +8,7 @@ def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)
     if config is None:
         write_status(output_dir, False, msg)
-        return
+        return 1
 
     frameworks = config['frameworks']
     methods = config['relay_methods']
@@ -53,7 +53,7 @@ def main(data_dir, config_dir, output_dir):
                                                             fieldnames, field_values)
                 if not success:
                     write_status(output_dir, False, msg)
-                    return
+                    return 1
                 dataset_means.append(summary['mean'])
                 add_detailed_summary(ret, summary, dev, listing, dataset)
             ret[dev][listing] = np.mean(dataset_means)

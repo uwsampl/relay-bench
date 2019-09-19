@@ -4,7 +4,6 @@ Reports deadlines to Slack.
 import datetime
 import json
 import os
-import sys
 
 from common import invoke_main, read_config, write_status
 from slack_util import (generate_ping_list,
@@ -16,18 +15,18 @@ def main(config_dir, home_dir, output_dir):
     config = read_config(config_dir)
     if 'webhook_url' not in config:
         write_status(output_dir, False, 'No webhook URL given')
-        sys.exit(1)
+        return 1
 
     webhook = config['webhook_url']
 
     if 'deadlines' not in config:
         write_status(output_dir, True, 'No deadlines to report')
-        sys.exit(1)
+        return 1
 
     deadlines = config['deadlines']
     if not isinstance(deadlines, dict):
         write_status(output_dir, False, 'Invalid deadlines structure')
-        sys.exit(0)
+        return 0
 
     attachments = []
     present = datetime.datetime.now()
@@ -35,7 +34,7 @@ def main(config_dir, home_dir, output_dir):
         if 'date' not in info:
             write_status(output_dir, False,
                          'Date missing in entry {} under {}'.format(info, name))
-            sys.exit(1)
+            return 1
 
         date = None
         try:
@@ -43,7 +42,7 @@ def main(config_dir, home_dir, output_dir):
         except Exception as e:
             write_status(output_dir, False,
                          'Could not parse date {}'.format(info['date']))
-            sys.exit(1)
+            return 1
 
         diff = date - present
         days_left = diff.days
@@ -65,7 +64,7 @@ def main(config_dir, home_dir, output_dir):
 
     if not attachments:
         write_status(output_dir, True, 'All deadlines elapsed')
-        sys.exit(0)
+        return 0
 
     success, report = post_message(
         webhook,

@@ -1,5 +1,4 @@
 import os
-import sys
 from collections import OrderedDict
 
 from common import (invoke_main, write_status, prepare_out_file, time_difference,
@@ -81,7 +80,7 @@ def main(config_dir, home_dir, output_dir):
     })
     if not prereqs:
         write_status(output_dir, False, msg)
-        sys.exit(1)
+        return 1
 
     raw_data = {}
     for exp in ['treelstm', 'char_rnn', 'gluon_rnns']:
@@ -109,7 +108,7 @@ def main(config_dir, home_dir, output_dir):
         generate_nlp_comparisons(our_name, plot_data, output_dir)
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
-        sys.exit(1)
+        return 1
 
     write_status(output_dir, True, 'success')
 
