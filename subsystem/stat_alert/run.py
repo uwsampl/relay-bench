@@ -4,10 +4,12 @@ experiment is more than a standard deviation off from
 its historic mean and producing a report.
 """
 import itertools
+import os
+import subprocess
 
 import numpy as np
 
-from common import (write_status, write_json,
+from common import (write_status, write_json, check_file_exists,
                     get_timestamp, invoke_main, read_config,
                     sort_data, traverse_fields, gather_stats)
 from slack_util import generate_ping_list
@@ -34,6 +36,12 @@ def format_report(info, exp_alert, pings):
 def main(config_dir, home_dir, output_dir):
     info = DashboardInfo(home_dir)
     conf = read_config(config_dir)
+
+    # delete old report so it doesn't hang around if we exit
+    # without a new one
+    if check_file_exists(output_dir, 'report.json'):
+        subprocess.call(['rm', '-f',
+                         os.path.join(output_dir, 'report.json')])
 
     pings = conf['notify'] if 'notify' in conf else []
 
