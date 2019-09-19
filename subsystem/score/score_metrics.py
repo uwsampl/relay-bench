@@ -113,6 +113,7 @@ class NNVMScore(ScoreMetric):
         dest_dir = os.path.join(graph_dir, 'comparison')
         PlotBuilder().set_title('NNVM Score') \
                      .set_y_label('Number of Benchmarks') \
+                     .set_y_scale(PlotScale.LINEAR) \
                      .make(PlotType.BAR, data) \
                      .save(dest_dir, 'nnvm_score.png')
 
@@ -183,6 +184,7 @@ class RNNScore(ScoreMetric):
         dest_dir = os.path.join(graph_dir, 'comparison')
         PlotBuilder().set_title('RNN Speedup') \
                      .set_y_label('Number of Benchmarks') \
+                     .set_y_scale(PlotScale.LINEAR) \
                      .make(PlotType.BAR, data) \
                      .save(dest_dir, 'rnn_score.png')
 
