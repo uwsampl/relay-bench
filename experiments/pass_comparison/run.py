@@ -1,7 +1,6 @@
 from validate_config import validate
-from common import invoke_main, write_status
-from trial_util import run_trials, configure_seed
 from relay_util import cnn_setup, cnn_trial, cnn_teardown
+from exp_templates import run_template
 
 def passes_setup(network, dev, batch_size, pass_spec):
     members = pass_spec.split(';')
@@ -17,14 +16,7 @@ def passes_setup(network, dev, batch_size, pass_spec):
                      use_passes=True, passes=pass_list)
 
 
-def main(config_dir, output_dir):
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return 1
-
-    configure_seed(config)
-
+def gen_trial_params(config):
     # We must preprocess the passes to work with passes_setup.
     # I.e., we must serialize it so it can be written to CSV,
     # so we separate the pass list by |'s and the opt_level with
@@ -32,17 +24,13 @@ def main(config_dir, output_dir):
     passes = [';'.join([str(pass_spec[0]), '|'.join(pass_spec[1])])
               for pass_spec in config['passes']]
 
-    success, msg = run_trials(
-        'relay', 'pass_comparison',
-        config['dry_run'], config['n_times_per_input'], config['n_inputs'],
-        cnn_trial, passes_setup, cnn_teardown,
-        ['network', 'device', 'batch_size', 'pass_spec'],
-        [config['networks'], config['devices'],
-         config['batch_sizes'], passes],
-        path_prefix=output_dir)
-
-    write_status(output_dir, success, msg)
+    return ['relay', 'pass_comparison',
+            config['dry_run'], config['n_times_per_input'], config['n_inputs'],
+            cnn_trial, passes_setup, cnn_teardown,
+            ['network', 'device', 'batch_size', 'pass_spec'],
+            [config['networks'], config['devices'], config['batch_sizes'], passes]]
 
 
 if __name__ == '__main__':
-    invoke_main(main, 'config_dir', 'output_dir')
+    run_template(validate_config=validate,
+                 gen_trial_params=gen_trial_params)

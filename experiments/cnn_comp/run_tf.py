@@ -98,4 +98,5 @@ def main(config_dir, output_dir, device):
         return 1
 
 if __name__ == '__main__':
+    # can't use the template, as we take an extra argument
     invoke_main(main, 'config_dir', 'output_dir', 'device')

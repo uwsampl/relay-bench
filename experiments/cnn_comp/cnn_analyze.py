@@ -1,18 +1,8 @@
 from validate_config import validate
-from common import invoke_main, write_status, write_json
-from analysis_util import trials_stat_summary, add_detailed_summary
+from exp_templates import analysis_template
 
-def main(data_dir, config_dir, output_dir):
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return 1
-
+def generate_listing_settings(config):
     frameworks = config['frameworks']
-    devices = config['devices']
-    networks = config['networks']
-    num_reps = config['n_inputs']
-    batch_size = list(config['batch_sizes'])[0]
 
     nice_name = {
         'relay': 'Relay',
@@ -21,8 +11,6 @@ def main(data_dir, config_dir, output_dir):
         'mxnet': 'MxNet',
         'nnvm': 'NNVM'
     }
-
-    default_fields = ['network', 'device', 'batch_size']
 
     extra_fields = {
         'relay': {'opt_level': config['relay_opt']},
@@ -40,33 +28,27 @@ def main(data_dir, config_dir, output_dir):
     if 'tf' in frameworks and config['use_xla']:
         listing_settings['TF XLA'] = ('tf', {'enable_xla': True})
 
-    # output averages on each network for each framework and each device
-    ret = {}
-    for dev in devices:
-        ret[dev] = {}
-        for listing, (framework, field_settings) in listing_settings.items():
-            ret[dev][listing] = {}
-            for network in networks:
-                fields = default_fields + [key for key in field_settings.keys()]
-                field_values = {
-                    'network': network,
-                    'device': dev,
-                    'batch_size': batch_size
-                }
-                for extra_field, value in field_settings.items():
-                    field_values[extra_field] = value
+    return listing_settings
 
-                summary, success, msg = trials_stat_summary(data_dir, framework, 'cnn_comp', num_reps,
-                                                            fields, field_values)
-                if not success:
-                    write_status(output_dir, False, msg)
-                    return
-                ret[dev][listing][network] = summary['mean']
-                add_detailed_summary(ret, summary, dev, listing, network)
 
-    write_json(output_dir, 'data.json', ret)
-    write_status(output_dir, True, 'success')
+def generate_data_query(config, dev, network, settings):
+    fw = settings[0]
+    special_fields = settings[1]
+
+    num_reps = config['n_inputs']
+    batch_size = list(config['batch_sizes'])[0]
+
+    fields = (['network', 'device', 'batch_size', *list(special_fields.keys())])
+    field_values = {
+        'network': network,
+        'device': dev,
+        'batch_size': batch_size,
+        **special_fields
+    }
+
+    return [fw, 'cnn_comp', num_reps, fields, field_values]
 
 
 if __name__ == '__main__':
-    invoke_main(main, 'data_dir', 'config_dir', 'output_dir')
+    analysis_template(validate, generate_listing_settings,
+                      generate_data_query, use_networks=True)

@@ -12,8 +12,7 @@ from mxnet.gluon.model_zoo import vision
 from mx_models import mxnet_zoo
 
 from validate_config import validate
-from common import invoke_main, write_status
-from trial_util import run_trials, configure_seed
+from exp_templates import (common_trial_params, common_early_exit, run_template)
 
 def get_network(name, batch_size, dtype='float32', ir='nnvm'):
     """Get the symbol definition and random weight of a network
@@ -129,33 +128,11 @@ def cnn_teardown(mod):
     pass
 
 
-def main(config_dir, output_dir):
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return 1
-
-    if 'nnvm' not in config['frameworks']:
-        write_status(output_dir, True, 'NNVM not run')
-        return 0
-
-    configure_seed(config)
-
-    opt_levels = [config['nnvm_opt']]
-
-    success, msg = run_trials(
-        'nnvm', 'cnn_comp',
-        config['dry_run'], config['n_times_per_input'], config['n_inputs'],
-        cnn_trial, cnn_setup, cnn_teardown,
-        ['network', 'device', 'batch_size', 'opt_level'],
-        [config['networks'], config['devices'],
-         config['batch_sizes'], opt_levels],
-        path_prefix=output_dir)
-
-    write_status(output_dir, success, msg)
-    if not success:
-        return 1
-
-
 if __name__ == '__main__':
-    invoke_main(main, 'config_dir', 'output_dir')
+    run_template(validate_config=validate,
+                 check_early_exit=common_early_exit({'frameworks': 'nnvm'}),
+                 gen_trial_params=common_trial_params(
+                     'nnvm', 'cnn_comp',
+                     cnn_trial, cnn_setup, cnn_teardown,
+                     ['network', 'device', 'batch_size', 'opt_level'],
+                     ['networks', 'devices', 'batch_sizes', 'nnvm_opt']))

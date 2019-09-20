@@ -9,8 +9,7 @@ from mxnet.gluon.model_zoo import vision
 from mx_models import mxnet_zoo
 
 from validate_config import validate
-from common import invoke_main, write_status
-from trial_util import configure_seed, run_trials
+from exp_templates import (common_trial_params, common_early_exit, run_template)
 
 def get_network(name, ctx):
     image_shape = (1, 3, 224, 224)
@@ -67,30 +66,11 @@ def cnn_teardown(thunk):
     pass
 
 
-def main(config_dir, output_dir):
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return 1
-
-    if 'mxnet' not in config['frameworks']:
-        write_status(output_dir, True, 'MxNet not run')
-        return 0
-
-    configure_seed(config)
-
-    success, msg = run_trials(
-        'mxnet', 'cnn_comp',
-        config['dry_run'], config['n_times_per_input'], config['n_inputs'],
-        cnn_trial, cnn_setup, cnn_teardown,
-        ['network', 'device', 'batch_size'],
-        [config['networks'], config['devices'], config['batch_sizes']],
-        path_prefix=output_dir)
-
-    write_status(output_dir, success, msg)
-    if not success:
-        return 1
-
-
 if __name__ == '__main__':
-    invoke_main(main, 'config_dir', 'output_dir')
+    run_template(validate_config=validate,
+                 check_early_exit=common_early_exit({'frameworks': 'mxnet'}),
+                 gen_trial_params=common_trial_params(
+                     'mxnet', 'cnn_comp',
+                     cnn_trial, cnn_setup, cnn_teardown,
+                     ['network', 'device', 'batch_size'],
+                     ['networks', 'devices', 'batch_sizes']))
