@@ -2,23 +2,44 @@
 #
 # Builds dashboard deps, runs the benchmark infrastructure,
 # builds the webpage, and invokes the slack integration
+#
+# Arguments (must be in this order):
+# dashboard home (mandatory)
+# rebuild dashboard tvm (optional, true by default)
+# experiment dir (optional, assumed to experiments in this repo)
+# subsystem dir (optional, assumed to subsystem in this repo)
 dashboard_home=$1
 
 # store path to this script
 cd "$(dirname "$0")"
 script_dir=$(pwd)
+experiments_dir=$script_dir/../experiments
+subsystem_dir=$script_dir/../subsystem
+rebuild_dashboard_tvm=true
+if [ "$#" -ge 3 ]; then
+    rebuild_dashboard_tvm="$2"
+fi
+if [ "$#" -ge 4 ]; then
+   experiments_dir="$3"
+fi
+if [ "$#" -ge 5 ]; then
+   subsystem_dir ="$4"
+fi
+
 
 export TVM_HOME=~/dashboard-tvm
 # ensure the newly-pulled tvm will be on the Python path
 export PYTHONPATH="$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}"
 
 # build a fresh TVM from scratch
-rm -rf "$TVM_HOME"
-git clone --recursive https://github.com/dmlc/tvm "$TVM_HOME"
-mkdir "$TVM_HOME/build"
-cp config.cmake "$TVM_HOME/build"
-cd "$TVM_HOME"
-make -j 32
+if [ rebuild_dashboard_tvm ]; then
+    rm -rf "$TVM_HOME"
+    git clone --recursive https://github.com/dmlc/tvm "$TVM_HOME"
+    mkdir "$TVM_HOME/build"
+    cp config.cmake "$TVM_HOME/build"
+    cd "$TVM_HOME"
+    make -j 32
+fi
 
 aot_path=~/dashboard-aot
 # ensure relay AOT will be on the Python path
@@ -36,8 +57,6 @@ export LD_LIBRARY_PATH=/usr/local/cuda-10.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRAR
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
 
 cd $script_dir/..
-experiments_dir=$(pwd)/experiments
-subsystem_dir=$(pwd)/subsystem
 
 # export because benchmarks may need it
 export BENCHMARK_DEPS=$(pwd)/shared
