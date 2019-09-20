@@ -16,13 +16,16 @@ script_dir=$(pwd)
 experiments_dir=$script_dir/../experiments
 subsystem_dir=$script_dir/../subsystem
 rebuild_dashboard_tvm=true
-if [ "$#" -ge 3 ]; then
+if [ "$#" -ge 2 ]; then
     rebuild_dashboard_tvm="$2"
+    if [ "$rebuild_dashboard_tvm" != true ]; then
+        rebuild_dashboard_tvm=false
+    fi
 fi
-if [ "$#" -ge 4 ]; then
+if [ "$#" -ge 3 ]; then
    experiments_dir="$3"
 fi
-if [ "$#" -ge 5 ]; then
+if [ "$#" -ge 4 ]; then
    subsystem_dir ="$4"
 fi
 
@@ -32,7 +35,7 @@ export TVM_HOME=~/dashboard-tvm
 export PYTHONPATH="$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}"
 
 # build a fresh TVM from scratch
-if [ rebuild_dashboard_tvm ]; then
+if [ $rebuild_dashboard_tvm = true ]; then
     rm -rf "$TVM_HOME"
     git clone --recursive https://github.com/dmlc/tvm "$TVM_HOME"
     mkdir "$TVM_HOME/build"
