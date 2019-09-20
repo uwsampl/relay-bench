@@ -1,9 +1,10 @@
 from validate_config import validate
-from common import invoke_main, write_status
-from trial_util import run_trials, configure_seed
+from exp_templates import (common_trial_params, common_early_exit,
+                           run_template)
 
 from language_data import N_LETTERS
 from relay_rnn import samples, RNNCellOnly, RNNLoop
+
 
 def rnn_setup(device, configuration, method, hidden_size, lang, letters):
     gpu = (device == 'gpu')
@@ -12,11 +13,10 @@ def rnn_setup(device, configuration, method, hidden_size, lang, letters):
 
     net = RNNCellOnly if cell_only else RNNLoop
     init_net = net(aot, gpu, N_LETTERS, hidden_size, N_LETTERS)
+
     if cell_only:
-        thunk = lambda: samples(init_net, lang, letters)
-    else:
-        thunk = lambda: init_net.samples(lang, letters)
-    return [thunk]
+        return [lambda: samples(init_net, lang, letters)]
+    return [lambda: init_net.samples(lang, letters)]
 
 
 def rnn_trial(thunk):
@@ -27,31 +27,13 @@ def rnn_teardown(thunk):
     pass
 
 
-def main(config_dir, output_dir):
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return 1
-
-    if 'relay' not in config['frameworks']:
-        write_status(output_dir, True, 'Relay not run')
-        return 0
-
-    configure_seed(config)
-
-    success, msg = run_trials(
-        'relay', 'char_rnn',
-        config['dry_run'], config['n_times_per_input'], config['n_inputs'],
-        rnn_trial, rnn_setup, rnn_teardown,
-        ['device', 'configuration', 'method',
-         'hidden_size', 'language', 'input'],
-        [config['devices'], config['relay_configs'], config['relay_methods'],
-         config['hidden_sizes'], config['languages'], config['inputs']],
-        path_prefix=output_dir)
-
-    write_status(output_dir, success, msg)
-    if not success:
-        return 1
-
 if __name__ == '__main__':
-    invoke_main(main, 'config_dir', 'output_dir')
+    run_template(validate_config=validate,
+                 check_early_exit=common_early_exit({'frameworks': 'relay'}),
+                 gen_trial_params=common_trial_params(
+                     'relay', 'char_rnn',
+                     rnn_trial, rnn_setup, rnn_teardown,
+                     ['device', 'configuration', 'method',
+                      'hidden_size', 'language', 'input'],
+                     ['devices', 'relay_configs', 'relay_methods',
+                      'hidden_sizes', 'languages', 'inputs']))

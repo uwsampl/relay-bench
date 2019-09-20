@@ -6,15 +6,18 @@ common cases in practice.
 """
 import os
 
+from collections import OrderedDict
 from collections.abc import Iterable
 
-from common import (invoke_main, read_config, write_status,
+from common import (invoke_main, write_status,
                     sort_data, time_difference,
                     render_exception, write_json)
 from trial_util import run_trials, configure_seed
 from analysis_util import trials_stat_summary, add_detailed_summary
 from summary_util import write_generic_summary
-from plot_util import generate_longitudinal_comparisons
+from plot_util import (generate_longitudinal_comparisons,
+                       PlotBuilder, PlotScale, PlotType)
+
 
 def common_trial_params(fw, exp_name, trial_func, trial_setup, trial_teardown,
                         fieldnames, conf_keys):
@@ -29,7 +32,8 @@ def common_trial_params(fw, exp_name, trial_func, trial_setup, trial_teardown,
     exp_name: str, Name of the experiment
     trial_func, trial_setup, trial_teardown: see trial_util.run_trials
     fieldnames: [str], list of experiment output fields
-    conf_keys: [str], list of dictionary keys in the config corresponding to fieldnames (in order)
+    conf_keys: [str], list of dictionary keys in the config
+                      corresponding to fieldnames (in order)
     """
     def gen_trial_params(config):
         config_values = []
@@ -136,6 +140,70 @@ def generate_graphs_by_dev(visualize):
     return generate
 
 
+def common_individual_comparison(x_name, title_stem, filename_stem,
+                                 scale=PlotScale.LOG,
+                                 use_networks=True,
+                                 cnn_name_map=True):
+    """
+    Returns a function that creates a graph of per-model
+    performance on each device
+    """
+    model_to_text = {
+        'nature-dqn': 'Nature DQN',
+        'vgg-16': 'VGG-16',
+        'resnet-18': 'ResNet-18',
+        'mobilenet': 'MobileNet'
+    }
+
+    def visualize(dev, raw_data, output_dir):
+        # empty data: nothing to do
+        if not raw_data.items():
+            return
+
+        plot_type = PlotType.MULTI_BAR if use_networks else PlotType.BAR
+
+        if use_networks and cnn_name_map:
+            # make model names presentable
+            for (_, models) in raw_data.items():
+                # NOTE: need to convert the keys to a list, since we're mutating them
+                # during traversal.
+                for model in list(models.keys()):
+                    val = models[model]
+                    del models[model]
+                    models[model_to_text[model]] = val
+
+        sorted_raw = OrderedDict(sorted(raw_data.items()))
+        data = {
+            'raw': sorted_raw,
+            'meta': [x_name, 'Mean Inference Time (ms)']
+        }
+        if use_networks:
+            data = {
+                'raw': sorted_raw,
+                'meta': [x_name, 'Network', 'Mean Inference Time (ms)']
+            }
+
+        builder = PlotBuilder() \
+                  .set_title('{} on {}'.format(
+                      title_stem, dev.upper())) \
+                  .set_x_label(x_name) \
+                  .set_y_label('Mean Inference Time (ms)') \
+                  .set_y_scale(scale)
+
+        # TODO(@weberlo): this results in a bug in the non-network cases
+        # for some reason
+        if use_networks:
+            builder.set_figure_height(3.0) \
+                   .set_aspect_ratio(3.3) \
+                   .set_sig_figs(3)
+
+        builder.make(plot_type, data) \
+               .save(output_dir, '{}-{}.png'.format(
+                   filename_stem, dev))
+
+    return generate_graphs_by_dev(visualize)
+
+
 def visualize_template(validate_config, generate_individual_comparisons):
     """
     Common template for the "visualize" step of an experiment.
@@ -181,7 +249,8 @@ def visualize_template(validate_config, generate_individual_comparisons):
             generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
             generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
         except Exception as e:
-            write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
+            write_status(output_dir, False,
+                         'Exception encountered:\n' + render_exception(e))
             return 1
 
         write_status(output_dir, True, 'success')

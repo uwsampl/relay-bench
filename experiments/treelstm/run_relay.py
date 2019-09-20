@@ -98,4 +98,5 @@ def main(config_dir, output_dir, method, dataset):
 
 
 if __name__ == '__main__':
+    # does not follow common template
     invoke_main(main, 'config_dir', 'output_dir', 'method', 'dataset')

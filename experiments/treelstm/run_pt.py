@@ -76,4 +76,5 @@ def main(config_dir, output_dir):
     write_status(output_dir, True, 'success')
 
 if __name__ == '__main__':
+    # does not follow common template
     invoke_main(main, 'config_dir', 'output_dir')

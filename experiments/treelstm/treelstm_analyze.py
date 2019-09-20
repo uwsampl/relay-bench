@@ -1,66 +1,44 @@
-import numpy as np
-
 from validate_config import validate
-from common import invoke_main, write_status, write_json, render_exception
-from analysis_util import trials_stat_summary, add_detailed_summary
+from exp_templates import analysis_template
 
-def main(data_dir, config_dir, output_dir):
-    config, msg = validate(config_dir)
-    if config is None:
-        write_status(output_dir, False, msg)
-        return 1
+
+def generate_listing_settings(config):
+    listing_settings = {}
 
     frameworks = config['frameworks']
     methods = config['relay_methods']
-    devices = config['devices']
-    num_reps = config['n_inputs']
-    datasets = config['datasets']
 
-    listing_settings = {}
+    if 'pt' in frameworks:
+        listing_settings['Pytorch'] = ('pt', {})
+
+    if 'relay' in frameworks:
+        if 'aot' in methods:
+            listing_settings['Aot'] = ('relay', {'method': 'aot'})
+        if 'intp' in methods:
+            listing_settings['Intp'] = ('relay', {'method': 'intp'})
+
+    return listing_settings
+
+
+def generate_data_query(config, dev, settings):
+    fw = settings[0]
+    special_fields = settings[1]
+
+    num_reps = config['n_inputs']
 
     base_fields = ['device']
     relay_fields = ['method']
     treelstm_fields = ['dataset', 'idx']
 
-    if 'pt' in frameworks:
-        listing_settings['Pytorch'] = ('pt', base_fields + treelstm_fields, {})
+    fields = base_fields + treelstm_fields
+    if fw == 'relay':
+        fields = base_fields + relay_fields + treelstm_fields
 
-    if 'relay' in frameworks:
-        fieldnames = base_fields + relay_fields + treelstm_fields
-        if 'aot' in methods:
-            listing_settings['Aot'] = ('relay', fieldnames, {'method': 'aot'})
-        if 'intp' in methods:
-            listing_settings['Intp'] = ('relay', fieldnames, {'method': 'intp'})
+    field_values = {'device': dev, **special_fields}
 
-
-    # output averages on each network for each framework and each device
-    ret = {}
-    for dev in devices:
-        ret[dev] = {}
-        for listing, (framework, fieldnames, field_settings) in listing_settings.items():
-            ret[dev][listing] = {}
-            field_values = {
-                'device': dev
-            }
-            for extra_field, value in field_settings.items():
-                field_values[extra_field] = value
-
-            # compute mean over datasets
-            dataset_means = []
-            for (dataset, _) in datasets:
-                field_values['dataset'] = dataset
-                summary, success, msg = trials_stat_summary(data_dir, framework, 'treelstm', num_reps,
-                                                            fieldnames, field_values)
-                if not success:
-                    write_status(output_dir, False, msg)
-                    return 1
-                dataset_means.append(summary['mean'])
-                add_detailed_summary(ret, summary, dev, listing, dataset)
-            ret[dev][listing] = np.mean(dataset_means)
-
-    write_json(output_dir, 'data.json', ret)
-    write_status(output_dir, True, 'success')
+    return [fw, 'treelstm', num_reps, fields, field_values]
 
 
 if __name__ == '__main__':
-    invoke_main(main, 'data_dir', 'config_dir', 'output_dir')
+    analysis_template(validate, generate_listing_settings,
+                      generate_data_query, use_networks=False)
