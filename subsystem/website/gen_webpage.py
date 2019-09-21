@@ -160,9 +160,10 @@ def set_up_out_dir(info, out_dir):
     if score_successful(info):
         score_graphs = os.path.join(info.subsys_output_dir('score'), 'graphs')
         for subdir in os.listdir(score_graphs):
-            if not os.path.isdir(subdir):
+            full_path = os.path.join(score_graphs, subdir)
+            if not os.path.isdir(full_path):
                 continue
-            shutil.copytree(subdir, os.path.join(web_graph_dir, subdir))
+            shutil.copytree(full_path, os.path.join(web_graph_dir, subdir))
     shutil.copy(os.path.abspath('jerry.jpg'),
                 os.path.join(out_dir, LORD_JERRY_PATH))
 

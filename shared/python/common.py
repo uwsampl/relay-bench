@@ -125,13 +125,11 @@ def traverse_fields(entry, ignore_fields=None):
     ignore_set = {'timestamp', 'tvm_hash', 'detailed'}
     if ignore_fields is not None:
         ignore_set = set(ignore_fields)
-    def ignore_cond(field):
-        return field in ignore_set
 
     level_fields = {field for field in entry.keys()
-                    if not ignore_cond(field)}
-    values_to_check = [value for value in entry.values()
-                       if isinstance(value, dict)]
+                    if field not in ignore_set}
+    values_to_check = [entry[field] for field in level_fields
+                       if isinstance(entry[field], dict)]
 
     tail = []
     max_len = 0

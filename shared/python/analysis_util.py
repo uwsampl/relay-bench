@@ -100,12 +100,10 @@ def add_detailed_summary(report, detailed_summary, *fields):
     etc., made assumptions about the layout of records.
     Eventually the old records should be migrated.
     """
-    if 'detailed' not in report:
-        report['detailed'] = {}
-
-    current = report['detailed']
-    for field in fields:
+    current = report
+    all_fields = ['detailed', *fields]
+    for field in all_fields[:-1]:
         if field not in current:
             current[field] = {}
         current = current[field]
-    current = detailed_summary
+    current[all_fields[-1]] = detailed_summary
