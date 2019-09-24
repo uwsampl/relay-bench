@@ -162,17 +162,19 @@ def common_individual_comparison(x_name, title_stem, filename_stem,
 
         plot_type = PlotType.MULTI_BAR if use_networks else PlotType.BAR
 
-        if use_networks and cnn_name_map:
-            # make model names presentable
-            for (_, models) in raw_data.items():
-                # NOTE: need to convert the keys to a list, since we're mutating them
-                # during traversal.
-                for model in list(models.keys()):
-                    val = models[model]
-                    del models[model]
-                    models[model_to_text[model]] = val
+        data_copy = dict(raw_data)
 
-        sorted_raw = OrderedDict(sorted(raw_data.items()))
+        if use_networks and cnn_name_map:
+            renamed_data = {}
+            # make model names presentable
+            for (dev, models) in data_copy.items():
+                renamed_data[dev] = {}
+                for model in models.keys():
+                    val = models[model]
+                    renamed_data[dev][model_to_text[model]] = val
+            data_copy = renamed_data
+
+        sorted_raw = OrderedDict(sorted(data_copy.items()))
         data = {
             'raw': sorted_raw,
             'meta': [x_name, 'Mean Inference Time (ms)']
