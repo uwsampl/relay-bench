@@ -167,11 +167,11 @@ def common_individual_comparison(x_name, title_stem, filename_stem,
         if use_networks and cnn_name_map:
             renamed_data = {}
             # make model names presentable
-            for (dev, models) in data_copy.items():
-                renamed_data[dev] = {}
+            for (fw, models) in data_copy.items():
+                renamed_data[fw] = {}
                 for model in models.keys():
                     val = models[model]
-                    renamed_data[dev][model_to_text[model]] = val
+                    renamed_data[fw][model_to_text[model]] = val
             data_copy = renamed_data
 
         sorted_raw = OrderedDict(sorted(data_copy.items()))
@@ -185,12 +185,11 @@ def common_individual_comparison(x_name, title_stem, filename_stem,
                 'meta': [x_name, 'Network', 'Mean Inference Time (ms)']
             }
 
-        builder = PlotBuilder() \
-                  .set_title('{} on {}'.format(
-                      title_stem, dev.upper())) \
-                  .set_x_label(x_name) \
-                  .set_y_label('Mean Inference Time (ms)') \
-                  .set_y_scale(scale)
+        builder = PlotBuilder()
+        builder.set_title('{} on {}'.format(title_stem, dev.upper())) \
+               .set_x_label(x_name) \
+               .set_y_label('Mean Inference Time (ms)') \
+               .set_y_scale(scale)
 
         # TODO(@weberlo): this results in a bug in the non-network cases
         # for some reason
