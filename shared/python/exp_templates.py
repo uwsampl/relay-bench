@@ -243,7 +243,7 @@ def visualize_template(validate_config, generate_individual_comparisons):
 
             all_data = sort_data(data_dir)
             most_recent = dict(all_data[-1])
-            last_two_weeks = [entry for entry in all_data
+            last_two_weeks = [dict(entry) for entry in all_data
                               if time_difference(most_recent, entry).days < 14]
 
             generate_individual_comparisons(config, most_recent, output_dir)
