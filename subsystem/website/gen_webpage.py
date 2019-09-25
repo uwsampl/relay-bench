@@ -8,7 +8,7 @@ import os
 import shutil
 
 from common import (read_config, write_status, idemp_mkdir,
-                    invoke_main, render_exception)
+                    invoke_main, sort_data)
 from dashboard_info import DashboardInfo
 
 PAGE_PREFIX_TEMPLATE = '''
@@ -114,6 +114,9 @@ def gen_page_body(exp_titles, score_titles):
         leaf_dir = depth == 1 and len(shown_dir) != 0
         if leaf_dir and shown_dir in exp_titles:
             heading_text = exp_titles[shown_dir]
+            # add a link to the experiment raw data
+            data_path = os.path.join(f'./data/{shown_dir}.json')
+            heading_text = f'<a href="{data_path}">{heading_text}</a>'
         if leaf_dir and shown_dir in score_titles:
             heading_text = score_titles[shown_dir]
 
@@ -155,7 +158,9 @@ def set_up_out_dir(info, out_dir):
     idemp_mkdir(out_dir)
 
     web_graph_dir = os.path.join(out_dir, 'graph')
+    web_data_dir = os.path.join(out_dir, 'data')
     shutil.rmtree(web_graph_dir, ignore_errors=True)
+    shutil.rmtree(web_data_dir, ignore_errors=True)
     shutil.copytree(info.exp_graphs, web_graph_dir)
     if score_successful(info):
         score_graphs = os.path.join(info.subsys_output_dir('score'), 'graphs')
@@ -164,6 +169,7 @@ def set_up_out_dir(info, out_dir):
             if not os.path.isdir(full_path):
                 continue
             shutil.copytree(full_path, os.path.join(web_graph_dir, subdir))
+    prepare_exp_data_pages(info, web_data_dir)
     shutil.copy(os.path.abspath('jerry.jpg'),
                 os.path.join(out_dir, LORD_JERRY_PATH))
 
@@ -191,6 +197,20 @@ def get_score_titles(info):
             if 'title' in metric_conf:
                 ret[metric_name] = metric_conf['title']
     return ret
+
+
+def prepare_exp_data_pages(info, out_dir):
+    idemp_mkdir(out_dir)
+    for exp in info.all_present_experiments():
+        stage_statuses = info.exp_stage_statuses(exp)
+        if 'analysis' not in stage_statuses or not stage_statuses['analysis']['success']:
+            continue
+        all_exp_data = sort_data(info.exp_data_dir(exp))
+
+        # customize the formatting here so that it's at
+        # least somewhat human-readable
+        with open(os.path.join(out_dir, '{}.json'.format(exp)), 'w') as f:
+            json.dump(all_exp_data[::-1], f, indent=1)
 
 
 if __name__ == '__main__':
