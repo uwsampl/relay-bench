@@ -375,7 +375,8 @@ class LongitudinalPlotter:
 
 def generate_longitudinal_comparisons(sorted_data, output_dir,
                                       subdir_name='longitudinal',
-                                      stat_name='Time (ms)'):
+                                      stat_name='Time (ms)',
+                                      unit_type=UnitType.SECONDS):
     '''
     Generic longitudinal graph generator. Given a list of JSON
     objects sorted by timestamp, generates a
@@ -402,6 +403,7 @@ def generate_longitudinal_comparisons(sorted_data, output_dir,
             .set_title('({}) over Time'.format(','.join(fields))) \
             .set_x_label(data['meta'][0]) \
             .set_y_label(data['meta'][1]) \
+            .set_unit_type(unit_type) \
             .make(PlotType.LONGITUDINAL, data) \
             .save(longitudinal_dir, 'longitudinal-{}.png'.format('-'.join(fields)))
 

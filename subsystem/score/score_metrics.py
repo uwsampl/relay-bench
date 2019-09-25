@@ -5,7 +5,7 @@ dashboard score metrics.
 import os
 
 from common import sort_data, time_difference
-from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons
+from plot_util import PlotBuilder, PlotScale, PlotType, generate_longitudinal_comparisons, UnitType
 from dashboard_info import DashboardInfo
 
 def latest_data(info, exp, dev):
@@ -64,9 +64,11 @@ class ScoreMetric:
                           if time_difference(most_recent, entry).days < 14]
 
         generate_longitudinal_comparisons(scores, graph_dir,
-                                          'all_time', stat_name='Score')
+                                          'all_time', stat_name='Score',
+                                          unit_type=UnitType.COMPARATIVE)
         generate_longitudinal_comparisons(last_two_weeks, graph_dir,
-                                          'two_weeks', stat_name='Score')
+                                          'two_weeks', stat_name='Score',
+                                          unit_type=UnitType.COMPARATIVE)
 
 
 class NNVMScore(ScoreMetric):
@@ -104,21 +106,23 @@ class NNVMScore(ScoreMetric):
 
 
     def score_graph(self, score, graph_dir):
-
         data = {
             'raw': make_ratio_score(score),
-            'meta': ['Score', 'Ratio']
+            'meta': ['score', 'score']
         }
 
         dest_dir = os.path.join(graph_dir, 'comparison')
         PlotBuilder().set_title('NNVM Score') \
-                     .set_y_label('Number of Benchmarks') \
+                     .set_x_label('') \
+                     .set_y_label('Proportion of Benchmarks') \
                      .set_y_scale(PlotScale.LINEAR) \
                      .make(PlotType.BAR, data) \
+                     .set_unit_type(UnitType.COMPARATIVE) \
                      .save(dest_dir, 'nnvm_score.png')
 
 
     def longitudinal_graphs(self, scores, graph_dir):
+        print('more graphs lol')
         map_scores = [
             make_ratio_score(score, include_timestamp=True)
             for score in scores
@@ -178,14 +182,16 @@ class RNNScore(ScoreMetric):
     def score_graph(self, score, graph_dir):
         data = {
             'raw': make_ratio_score(score),
-            'meta': ['Score', 'Ratio']
+            'meta': ['score', 'score']
         }
 
         dest_dir = os.path.join(graph_dir, 'comparison')
         PlotBuilder().set_title('RNN Speedup') \
-                     .set_y_label('Number of Benchmarks') \
+                     .set_x_label('') \
+                     .set_y_label('Proportion of Benchmarks') \
                      .set_y_scale(PlotScale.LINEAR) \
                      .make(PlotType.BAR, data) \
+                     .set_unit_type(UnitType.COMPARATIVE) \
                      .save(dest_dir, 'rnn_score.png')
 
 
