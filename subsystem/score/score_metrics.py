@@ -122,7 +122,6 @@ class NNVMScore(ScoreMetric):
 
 
     def longitudinal_graphs(self, scores, graph_dir):
-        print('more graphs lol')
         map_scores = [
             make_ratio_score(score, include_timestamp=True)
             for score in scores
