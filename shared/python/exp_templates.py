@@ -4,6 +4,7 @@ for dashboard steps. Experiments are free to deviate
 from these; these have simply arisen from the most
 common cases in practice.
 """
+import copy
 import os
 
 from collections import OrderedDict
@@ -162,7 +163,7 @@ def common_individual_comparison(x_name, title_stem, filename_stem,
 
         plot_type = PlotType.MULTI_BAR if use_networks else PlotType.BAR
 
-        data_copy = dict(raw_data)
+        data_copy = copy.deepcopy(raw_data)
 
         if use_networks and cnn_name_map:
             renamed_data = {}
@@ -242,13 +243,13 @@ def visualize_template(validate_config, generate_individual_comparisons):
                 return 1
 
             all_data = sort_data(data_dir)
-            most_recent = dict(all_data[-1])
-            last_two_weeks = [dict(entry) for entry in all_data
+            most_recent = all_data[-1]
+            last_two_weeks = [entry for entry in all_data
                               if time_difference(most_recent, entry).days < 14]
 
-            generate_individual_comparisons(config, most_recent, output_dir)
             generate_longitudinal_comparisons(all_data, output_dir, 'all_time')
             generate_longitudinal_comparisons(last_two_weeks, output_dir, 'two_weeks')
+            generate_individual_comparisons(config, most_recent, output_dir)
         except Exception as e:
             write_status(output_dir, False,
                          'Exception encountered:\n' + render_exception(e))
