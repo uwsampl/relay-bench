@@ -11,7 +11,8 @@ import numpy as np
 
 from common import (write_status, write_json, check_file_exists,
                     get_timestamp, invoke_main, read_config,
-                    sort_data, traverse_fields, gather_stats)
+                    sort_data, traverse_fields, gather_stats,
+                    time_difference)
 from slack_util import generate_ping_list
 from dashboard_info import DashboardInfo
 
@@ -43,6 +44,9 @@ def main(config_dir, home_dir, output_dir):
         subprocess.call(['rm', '-f',
                          os.path.join(output_dir, 'report.json')])
 
+    time_window = -1
+    if 'time_window' in conf:
+        time_window = int(conf['time_window'])
     pings = conf['notify'] if 'notify' in conf else []
 
     # map: exp -> [(fields w/ high SD, historic mean, SD, current)]
@@ -65,6 +69,9 @@ def main(config_dir, home_dir, output_dir):
         exp_alerts[exp] = []
         most_recent = all_data[-1]
         past_data = all_data[:-1]
+        if time_window >= 1:
+            past_data = [entry for entry in past_data
+                         if time_difference(most_recent, entry).days <= time_window]
 
         field_values = traverse_fields(most_recent)
         for fields in itertools.product(*field_values):
