@@ -52,6 +52,9 @@ export PYTHONPATH="$aot_path:${PYTHONPATH}"
 rm -rf "$aot_path"
 git clone https://github.com/uwsampl/relay-aot.git "$aot_path"
 
+# need /usr/local/bin in PATH
+export PATH="/usr/local/bin${PATH:+:${PATH}}"
+
 # ensure CUDA will be present in the path
 export PATH="/usr/local/cuda-10.0/bin:/usr/local/cuda-10.0/NsightCompute-1.0${PATH:+:${PATH}}"
 
