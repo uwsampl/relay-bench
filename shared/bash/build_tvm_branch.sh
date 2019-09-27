@@ -12,11 +12,10 @@ if [[ $remote != "origin" ]]; then
     remote_name="other_repo"
     git remote add "$remote_name" "$remote"
     git fetch "$remote_name" "$branch"
-fi
-
-git checkout "$remote_name/$branch"
-make -j
-
-if [[ $remote != "origin" ]]; then
+    git checkout "$remote_name/$branch"
+    make -j
     git remote rm "$remote_name"
+else
+    git checkout "$branch"
+    make -j
 fi
