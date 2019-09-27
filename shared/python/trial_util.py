@@ -5,13 +5,20 @@ import random
 import time
 
 import numpy as np
+import mxnet as mx
+import tensorflow as tf
+import torch as pt
 
 from common import render_exception
 
 
 def set_seed(seed):
-    # cover our bases: some benchmarks use either python's random or np.random
+    # cover our bases: different frameworks and libraries
+    # need to have their seeds set
     np.random.seed(seed)
+    mx.random.seed(seed)
+    tf.set_random_seed(seed)
+    pt.manual_seed(seed)
     random.seed(seed)
 
 
