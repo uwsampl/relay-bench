@@ -134,7 +134,9 @@ experiments/treelstm/pt_tlstm/lib/stanford-postagger**
 experiments/treelstm/setup/*
 
 # pulled-in resources for training loop
-experiments/training_loop/beacon
+experiments/training_loop/data
+experiments/training_loop/smll
+experiments/training_loop/source.py
 
 # data and graphs
 *.csv

@@ -7,11 +7,14 @@ source $BENCHMARK_DEPS/bash/common.sh
 include_shared_python_deps
 add_to_pythonpath $(pwd)
 
-python_run_trial "run_keras.py" $config_dir $data_dir
+rm -rf smll
+rm -rf data
+rm -f source.py
+git clone git@github.com:uwsampl/smll.git
 
-# This benchmark requires a specific branch of Beacon
-rm -rf ./beacon
-git clone git@github.com:MarisaKirisame/beacon.git
-add_to_pythonpath $(pwd)/beacon
+cd smll
+stack run -- compile
+cd ..
+cp smll/python/source.py ./source.py
 
-python_run_trial "run_relay.py" $config_dir $data_dir
+python_run_trial "run_pt.py" $config_dir $data_dir

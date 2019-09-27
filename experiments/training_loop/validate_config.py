@@ -16,28 +16,27 @@ def validate(config_dir):
     ret, msg = check_config(
         config,
         {
-            'dry_run': 2,
-            'n_inputs': 1,
-            'n_times_per_input': 3,
-            'devices': ['cpu'],
-            'frameworks': {'keras', 'relay'},
-            'batch_sizes': [1],
-            'num_classes': [10],
-            'epochs': [20],
+            'dry_run': 3,
+            'devices': {'gpu'},
+            'frameworks': {'pt'},
+            'datasets': {'mnist'},
+            'models': {'mlp'},
+            'batch_size': 32,
+            'epochs': 5,
+            'reps': 3,
             'set_seed': False,
             'seed': 0
         },
         {
-            'devices': {'cpu'},
-            'frameworks': {'keras', 'relay'}
+            'devices': {'gpu'},
+            'frameworks': {'pt'},
+            'models': {'mlp'}
         },
         {
-            'batch_sizes': non_negative_cond(),
-            'num_classes': non_negative_cond(),
+            'batch_size': non_negative_cond(),
             'epochs': non_negative_cond(),
             'dry_run': non_negative_cond(),
-            'n_inputs': non_negative_cond(),
-            'n_times_per_input': non_negative_cond(),
+            'reps': non_negative_cond(),
             'set_seed': bool_cond(),
             'seed': non_negative_cond()
         }

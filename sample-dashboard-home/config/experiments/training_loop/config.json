@@ -1,16 +1,14 @@
 {
     "active": false,
     "dry_run": 1,
-    "n_inputs": 1,
-    "n_times_per_input": 1,
-    "devices": ["cpu"],
-    "frameworks": ["keras", "relay"],
-    "batch_sizes": [1],
-    "epochs": [20],
-    "num_classes": [10],
+    "reps": 3,
+    "devices": ["gpu"],
+    "frameworks": ["pt"],
+    "models": ["mlp"],
+    "datasets": ["mnist"],
+    "batch_size": 32,
+    "epochs": 5,
     "title": "Training Loop Comparison",
     "notify": ["List of people to ping on Slack in the event of failure"],
-    "description": "Comparison of different frameworks on a training loop for a multi-layer perceptron (MLP) model using the MNIST data set",
-    "tvm_remote": "git@github.com:MarisaKirisame/tvm.git",
-    "tvm_branch": "add-grads"
+    "description": "Comparison of different frameworks on a training loop for various models on various datasets"
 }
