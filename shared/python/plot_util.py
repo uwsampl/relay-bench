@@ -1,4 +1,5 @@
-"""Utility definitions for Matplotlib"""
+"""High-level plotting interface (built on Seaborn) for common benchmark plotting patterns"""
+import copy
 import datetime
 import enum
 import functools
@@ -24,16 +25,16 @@ NUM_SIG_FIGS = 3
 class UnitType(enum.Enum):
     SECONDS = 0
     MILLISECONDS = 1
-    # Speedup or Slowdown
+    # speedup or slowdown
     COMPARATIVE = 2
 
 
 UNIT_TYPE = UnitType.SECONDS
 
 class PlotType(enum.Enum):
-    # Bar plot with a single bar per x tick
+    # bar plot with a single bar per x tick
     BAR = 0
-    # Bar plot with multiple bars per x tick
+    # bar plot with multiple bars per x tick
     MULTI_BAR = 1
     # longitudinal graph
     LONGITUDINAL = 2
@@ -59,10 +60,13 @@ class PlotBuilder:
         self.sig_figs = NUM_SIG_FIGS
 
     def make(self, plot_type, data):
+        """
+        Configures a plot generically then routes to a specialized plotter
+        depending on the `plot_type`.  The format of `data` depends on the
+        `plot_type` and is documented in each of the plotters.
+        """
         if len(data) == 0:
             raise RuntimeError('no data to plot')
-
-        self.plot_type = plot_type
 
         sns.set(style='darkgrid')
         sns.set_context('paper')
@@ -72,6 +76,7 @@ class PlotBuilder:
 
         plt.figure()
 
+        data = copy.deepcopy(data)
         # plot-type-specific config
         if plot_type == PlotType.BAR:
             y_data = BarPlotter(self).make(data)
@@ -133,14 +138,14 @@ class PlotBuilder:
             text = sig_fig_format.format(val)
 
             if 'e+' in text and len(text) > 6:
-                # If scientific notation with a large positive exponent is required
+                # if scientific notation with a large positive exponent is required
                 # to represent it, use fewer sig figs
                 text = '{:#.1g}'.format(val)
             return text
 
         for bar in bar_container.get_children():
-            # The height of the bar is in the data space, so it's equivalent to
-            # the value that was used to plot it.
+            # the height of the bar is in the data space, so it's equivalent to
+            # the value that was used to plot it
             bar_val = bar.get_height()
             # TODO(weberlo): 0.0 should be considered valid
             if _is_valid_num(bar_val) and bar_val != 0.0:
@@ -209,6 +214,31 @@ class BarPlotter:
         self.builder = builder
 
     def make(self, data):
+        """
+        Creates and configures a bar plot, using `data` for the values to plot.
+
+        The schema for `data` is
+            {
+                'meta': [bar label, y-axis label],
+                'raw': {
+                    bar name #1: bar val #1,
+                    bar name #2: bar val #2,
+                    ...
+                },
+            }
+        with an example instance being
+            {
+                'meta': ['Executor', 'Mean Inference Time (ms)'],
+                'raw': {
+                    'Aot': 0.046,
+                    'Intp Cell': 14.95,
+                    'Intp Loop': 1.94,
+                    'Pytorch': 0.065,
+                },
+            }
+        .  If a particular ordering is desired for the raw data, an
+        `OrderedDict` can be used.
+        """
         self.process_data(data)
         df = self.to_dataframe(data)
         all_y_data = list(df[data['meta'][1]])
@@ -256,15 +286,58 @@ class CatPlotter:
         self.builder = builder
 
     def make(self, data):
+        """
+        Creates and configures a categorical plot, which is a form of nested bar plot, using
+        `data` for the values to plot.
+
+        TODO(weberlo): this data schema is *especially* counterintuitive. use
+        a better representation.
+        The schema for `data` is
+            {
+                'meta': [bar label, category label, y axis label],
+                'raw': {
+                    bar #1: {
+                        cat #1: (bar #1, cat #1) y val,
+                        cat #2: (bar #1, cat #2) y val,
+                        ...
+                    },
+                    bar #2: {
+                        cat #1: (bar #2, cat #1) y val,
+                        cat #2: (bar #2, cat #2) y val,
+                        ...
+                    },
+                },
+            }
+        with an example instance being
+            {
+                'meta': ['Framework', 'Network', 'Mean Inference Time Speedup\nof Relay'],
+                'raw': {
+                    'TensorFlow': {
+                        'DQN': 21.26,
+                        'MobileNet V2': 4.34,
+                        'ResNet-18': 3.19,
+                        'VGG-16': 1.57,
+                    },
+                    'PyTorch': {
+                        'DQN': 29.05,
+                        'MobileNet V2': 12.92,
+                        'ResNet-18': 9.04,
+                        'VGG-16': 1.29,
+                    },
+                },
+            }
+        .  If a particular ordering is desired for the raw data, an
+        `OrderedDict` can be used.
+        """
         self.process_data(data)
         df = self.to_dataframe(data)
 
         all_y_data = list(df[data['meta'][2]])
         all_data_mean = np.mean(all_y_data)
 
-        # TODO: Could remove `kind='bar'` to switch to scatter, use
+        # TODO: could remove `kind='bar'` to switch to a scatter plot, use
         # `g.axes[0][0].get_collections()`, spread the points in each bucket,
-        # then use  `g.axes[0][0].set_collections()` to update it.
+        # then use  `g.axes[0][0].set_collections()` to update it
         #for collection in g.axes[0][0].collections:
         #    self._label_scatter_val(collection, all_data_mean)
         metadata = data['meta']
@@ -333,6 +406,32 @@ class LongitudinalPlotter:
         self.builder = builder
 
     def make(self, data):
+        """
+        Creates and configures a line plot, primarily used for longitudinal
+        analyses, using `data` for the values to plot.
+
+        The schema for `data` is
+            {
+                'meta': [x label, y label],
+                'raw': {
+                    'x': [x val #1, x val #2, ...],
+                    'y': [y val #1, y val #2, ...],
+                }
+            }
+        with an example instance being
+            {
+                'meta': ['Date of Run', 'Time (ms)'],
+                'raw': {
+                    'x': [
+                        datetime.datetime(2019, 8, 11, 0, 1),
+                        datetime.datetime(2019, 8, 12, 0, 1),
+                    ],
+                    'y': [0.065, 0.079],
+                }
+            }
+        .  If a particular ordering is desired for the raw data, an
+        `OrderedDict` can be used.
+        """
         self.process_data(data)
         x_data = data['raw']['x']
         y_data = data['raw']['y']
@@ -377,13 +476,13 @@ def generate_longitudinal_comparisons(sorted_data, output_dir,
                                       subdir_name='longitudinal',
                                       stat_name='Time (ms)',
                                       unit_type=UnitType.SECONDS):
-    '''
+    """
     Generic longitudinal graph generator. Given a list of JSON
     objects sorted by timestamp, generates a
     longitudinal graph for every combination of the
     entries' fields (based on traversing the most recent entry) and
     writes it to output_dir/longitudinal.
-    '''
+    """
     if not sorted_data:
         return
 
@@ -409,13 +508,23 @@ def generate_longitudinal_comparisons(sorted_data, output_dir,
 
 
 def _is_valid_num(val):
-    return val is not None and not np.isnan(val)
+    """Returns true if `val` is usable for plotting"""
+    if isinstance(val, float):
+        return val is not None and not np.isnan(val)
+    elif isinstance(val, int):
+        return val is not None
+    else:
+        raise RuntimeError('non-numeric value given')
 
 
-def _traverse_dict(dic, path=None):
+def _traverse_dict(d, path=None):
+    """
+    Returns a generator for all values in a dictionary, paired with the path of
+    keys necessary to reach the value.
+    """
     if path is None:
         path = []
-    for (key, val) in dic.items():
+    for (key, val) in d.items():
         local_path = list(path)
         local_path.append(key)
         if isinstance(val, dict):
