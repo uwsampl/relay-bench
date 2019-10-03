@@ -69,8 +69,6 @@ window.onload = function(e) {
 </html>
 '''
 
-LORD_JERRY_PATH='jerry.jpg'
-
 def main(config_dir, home_dir, out_dir):
     config = read_config(config_dir)
     info = DashboardInfo(home_dir)
@@ -138,7 +136,7 @@ def init_page_prefix_template(deadline_config):
         for deadline_name in deadline_config['deadlines']:
             deadline_html += '<div align="center"><h2 style="background-color: white; color: red;">%s: <span id="%s"></span></h1></div>\n' % (deadline_name, deadline_name)
 
-    background_html = f'<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666" style="background-image: url({LORD_JERRY_PATH}); background-position: center;">'
+    background_html = f'<body bgcolor="ffffff" link="006666" alink="8b4513" vlink="006666">'
 
     return PAGE_PREFIX_TEMPLATE % (background_html, deadline_html)
 
@@ -170,8 +168,6 @@ def set_up_out_dir(info, out_dir):
                 continue
             shutil.copytree(full_path, os.path.join(web_graph_dir, subdir))
     prepare_exp_data_pages(info, web_data_dir)
-    shutil.copy(os.path.abspath('jerry.jpg'),
-                os.path.join(out_dir, LORD_JERRY_PATH))
 
 
 def get_exp_titles(info):
