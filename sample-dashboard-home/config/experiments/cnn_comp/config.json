@@ -1,0 +1,16 @@
+{
+    "active": false,
+    "dry_run": 1,
+    "n_inputs": 1,
+    "n_times_per_input": 1,
+    "devices": ["cpu"],
+    "batch_sizes": [1],
+    "relay_opt": 3,
+    "nnvm_opt": 3,
+    "use_xla": true,
+    "frameworks": ["tf", "pt", "relay", "nnvm", "mxnet"],
+    "networks": ["resnet-18"],
+    "title": "CNN Comparison",
+    "notify": ["List of people to ping on Slack in the event of failure"],
+    "description": "Comparison of running times of different CNNs between frameworks"
+}

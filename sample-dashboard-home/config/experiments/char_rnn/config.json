@@ -1,0 +1,16 @@
+{
+    "active": false,
+    "dry_run": 1,
+    "n_inputs": 1,
+    "n_times_per_input": 1,
+    "inputs": ["ABCDEFGHIJKLMNOPQRSTUVWXYZ"],
+    "devices": ["cpu"],
+    "hidden_sizes": [16],
+    "frameworks": ["pt", "relay"],
+    "relay_methods": ["aot"],
+    "relay_configs": ["loop"],
+    "languages": ["English"],
+    "title": "Char RNN Comparison",
+    "notify": ["List of people to ping on Slack in the event of failure"],
+    "description": "Comparison of different frameworks and configurations on a character-level RNN based on the PyTorch tutorial"
+}

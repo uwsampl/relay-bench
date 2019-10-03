@@ -1,0 +1,14 @@
+{
+    "active": false,
+    "dry_run": 1,
+    "reps": 3,
+    "devices": ["gpu"],
+    "frameworks": ["pt"],
+    "models": ["mlp"],
+    "datasets": ["mnist"],
+    "batch_size": 32,
+    "epochs": 5,
+    "title": "Training Loop Comparison",
+    "notify": ["List of people to ping on Slack in the event of failure"],
+    "description": "Comparison of different frameworks on a training loop for various models on various datasets"
+}

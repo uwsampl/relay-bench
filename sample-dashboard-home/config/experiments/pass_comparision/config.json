@@ -1,0 +1,13 @@
+{
+    "active": false,
+    "dry_run": 1,
+    "n_inputs": 1,
+    "n_times_per_input": 1,
+    "devices": ["cpu"],
+    "batch_sizes": [1],
+    "passes": [[0, ""], [3, "FuseOps"], [3, ["EliminateCommonSubexpr", "FoldConstant", "FuseOps"]]],
+    "networks": ["resnet-18"],
+    "title": "Relay Pass Comparison",
+    "notify": ["List of people to ping on Slack in the event of failure"],
+    "description": "Comparison of average Relay runs of different CNNs with specific passes added or removed from the normal opt levels"
+}

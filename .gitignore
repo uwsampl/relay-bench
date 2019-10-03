@@ -9,6 +9,9 @@ __pycache__/
 # Java class files
 *.class
 
+# Emacs backups
+*~
+
 # Distribution / packaging
 .Python
 build/
@@ -119,12 +122,27 @@ source.cc
 *.onnx
 *.DS_Store
 
+# gluon rnn data
+experiments/gluon_rnns/setup/*
+
 # treelstm data
-oopsla_benchmarks/pytorch/rnn/tlstm/data/*
-oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-tagger/*
-oopsla_benchmarks/pytorch/rnn/tlstm/lib/stanford-parser/*
+experiments/treelstm/pt_tlstm/data/*
+experiments/treelstm/pt_tlstm/lib/stanford-tagger/*
+experiments/treelstm/pt_tlstm/lib/stanford-parser/*
+experiments/treelstm/pt_tlstm/lib/stanford-postagger-2015-01-30/*
+experiments/treelstm/pt_tlstm/lib/stanford-postagger**
+experiments/treelstm/setup/*
+
+# pulled-in resources for training loop
+experiments/training_loop/data
+experiments/training_loop/smll
+experiments/training_loop/source.py
 
 # data and graphs
 *.csv
 *.png
+*.zip
 
+# leftover files from copying setups
+.last_setup
+status.json

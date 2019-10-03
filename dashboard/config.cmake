@@ -133,3 +133,12 @@ set(USE_SORT OFF)
 
 # Build ANTLR parser for Relay text format
 set(USE_ANTLR OFF)
+
+# Whether to build fast VTA simulator driver
+set(USE_VTA_FSIM ON)
+
+# Whether to build cycle-accurate VTA simulator driver
+set(USE_VTA_TSIM ON)
+
+# Whether to build VTA FPGA driver (device side only)
+set(USE_VTA_FPGA OFF)

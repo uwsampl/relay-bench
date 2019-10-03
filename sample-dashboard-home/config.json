@@ -1,0 +1,5 @@
+{
+    "tmp_data_dir": "~/test-dashboard-data",
+    "backup_dir": "~/test-dashboard-backup",
+    "setup_dir": "~/test-dashboard-setup"
+}
