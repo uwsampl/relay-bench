@@ -1,3 +1,5 @@
+## Build TVM
+## ============
 FROM ubuntu:18.04
 
 ARG DEFAULT_WORKDIR=/tvm
@@ -19,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	libxml2-dev
 
 WORKDIR /opt
-
+#### setup llvm binary file
 RUN wget http://releases.llvm.org/9.0.0/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz && \
 	tar xvf clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz && \
 	rm clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz
@@ -35,6 +37,8 @@ WORKDIR $DEFAULT_WORKDIR/build
 RUN cmake .. && make -j4
 
 
+## Build MLPerf
+## ============
 FROM ubuntu:18.04
 
 ENV PYTHON_VERSION=3.6.8
@@ -65,6 +69,7 @@ RUN cd /opt && \
 RUN conda config --set always_yes yes --set changeps1 no
 
 RUN conda install pytorch-cpu torchvision-cpu -c pytorch
+## to avoid tf.Session not found, using tensorflow version 1.14
 RUN pip install future pillow onnx opencv-python-headless tensorflow==1.14.0 onnxruntime
 RUN pip install Cython && pip install pycocotools
 RUN cd /tmp && \
@@ -75,9 +80,12 @@ RUN cd /tmp && \
     rm -rf mlperf
 
 
+## Build relay-bench dashboard
+## ============
 FROM ubuntu:18.04
 
 COPY --from=0 /tvm /opt/tvm
+COPY --from=0 /opt/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04 /opt/clang+llvm-9.0.0-x86_64-linux-gnu-ubuntu-18.04
 COPY --from=1 /tmp/inference /opt/mlperf-inference
 
 ENV PYTHONPATH $DEFAULT_WORKDIR/python:$DEFAULT_WORKDIR/topi/python:$DEFAULT_WORKDIR/nnvm/python:${PYTHONPATH}
