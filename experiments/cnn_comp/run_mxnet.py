@@ -11,8 +11,8 @@ from mx_models import mxnet_zoo
 from validate_config import validate
 from exp_templates import (common_trial_params, common_early_exit, run_template)
 
-def get_network(name, ctx):
-    image_shape = (1, 3, 224, 224)
+def get_network(name, batch_size, ctx):
+    image_shape = (batch_size, 3, 224, 224)
     is_gluon = False
     if 'vgg' in name:
         net = mxnet_zoo.mx_vgg(16)
@@ -34,7 +34,7 @@ def get_network(name, ctx):
 def cnn_setup(network, dev, batch_size):
     ctx = mx.gpu(0) if dev == 'gpu' else mx.cpu()
 
-    net, image_shape, is_gluon = get_network(network, ctx)
+    net, image_shape, is_gluon = get_network(network, batch_size, ctx)
     data = mx.nd.array(np.random.uniform(size=image_shape).astype('float32'), ctx=ctx)
 
     # gluon and non-gluon networks are executed slightly differently
