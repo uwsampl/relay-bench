@@ -8,16 +8,9 @@ import subprocess
 import time
 
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
-                    prepare_out_file, read_json, write_json, read_config, validate_json)
+                    prepare_out_file, read_json, write_json, read_config, validate_json, print_log)
 from dashboard_info import DashboardInfo
 
-
-def print_log(msg, dec_char='*'):
-    padding = max(list(map(lambda line: len(line), msg.split('\n'))))
-    decorate = dec_char * (padding + 4)
-    print(decorate)
-    print(msg)
-    print(decorate)
 
 def validate_status(dirname):
     return validate_json(dirname, 'success', 'message')
