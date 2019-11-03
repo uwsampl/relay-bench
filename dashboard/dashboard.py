@@ -8,20 +8,19 @@ import subprocess
 import time
 
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
-                    prepare_out_file, read_json, write_json, read_config)
+                    prepare_out_file, read_json, write_json, read_config, validate_json)
 from dashboard_info import DashboardInfo
 
+
+def print_log(msg, dec_char='*'):
+    padding = max(list(map(lambda line: len(line), msg.split('\n'))))
+    decorate = dec_char * (padding + 4)
+    print(decorate)
+    print(msg)
+    print(decorate)
+
 def validate_status(dirname):
-    if not check_file_exists(dirname, 'status.json'):
-        return {'success': False, 'message': 'No status.json in {}'.format(dirname)}
-    status = read_json(dirname, 'status.json')
-    if 'success' not in status:
-        return {'success': False,
-                'message': 'status.json in {} has no \'success\' field'.format(dirname)}
-    if 'message' not in status:
-        return {'success': False,
-                'message': 'status.json in {} has no \'message\' field'.format(dirname)}
-    return status
+    return validate_json(dirname, 'success', 'message')
 
 
 def build_tvm_branch(remote, branch):
@@ -206,6 +205,8 @@ def copy_setup(experiments_dir, setup_dir, exp_name):
 
 
 def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
+
+    to_local_time = lambda sec: time.asctime(time.localtime(sec))
     exp_dir = os.path.join(experiments_dir, exp_name)
     exp_conf = info.exp_config_dir(exp_name)
 
@@ -213,12 +214,26 @@ def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
     idemp_mkdir(exp_data_dir)
 
+    # Mark the start and the end of an experiment
+    start_time = time.time()
+    start_msg = f'Experiment {exp_name} starts @ {to_local_time(start_time)}'
+    print_log(start_msg)
     # run the run.sh file on the configs directory and the destination directory
     subprocess.call([os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
                     cwd=exp_dir)
-
+    end_time = time.time()
+    delta = datetime.timedelta(seconds=end_time - start_time)
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
+    # write time information if the experiment succeed
+    if status['success']:
+        end_msg = f'Experiment {exp_name} ends @ {to_local_time(end_time)}\nTime Delta: {delta}'
+        print_log(end_msg)
+        status['start_time'] = to_local_time(start_time)
+        status['end_time'] = to_local_time(end_time)
+        status['time_delta'] = str(delta)
+    else:
+        print_log(f'*** {exp_name} FAILED ***\n*** Reason: {status["message"]} ***')
     # not literally copying because validate may have produced a status that generated an error
     info.report_exp_status(exp_name, 'run', status)
     return status['success']

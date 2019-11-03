@@ -14,10 +14,12 @@ def generate_ping_list(user_ids):
     return ', '.join(['<@{}>'.format(user_id) for user_id in user_ids])
 
 
-def build_field(title='', value='', short=False):
+def build_field(title='', value='', tm_start=None, tm_end=None, duration=None, short=False):
     ret = {'value': value, 'short': short}
     if title != '':
         ret['title'] = title
+    if tm_start and tm_end and duration:
+        ret['value'] = f'_Starts at: {tm_start}_ \n _Ends at: {tm_end}_ \n _Duration: {duration}_\n\n' + ret['value']
     return ret
 
 

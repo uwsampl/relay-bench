@@ -8,6 +8,16 @@ import logging
 import os
 import sys
 
+def validate_json(dirname, *fields, filename='status.json'):
+    if not check_file_exists(dirname, filename):
+        return {'success': False, 'message': 'No {} in {}'.format(filename, dirname)}
+    fp = read_json(dirname, filename)
+    for required_field in fields:
+        if required_field not in fp:
+            return {'success': False,
+                    'message': '{} in {} has no \'{}\' field'.format(filename, dirname, required_field)}
+    return fp
+
 def check_file_exists(dirname, filename):
     dirname = os.path.expanduser(dirname)
     full_name = os.path.join(dirname, filename)
@@ -164,7 +174,6 @@ def invoke_main(main_func, *arg_names):
     parser = argparse.ArgumentParser()
     for arg_name in arg_names:
         name = arg_name
-        arg_type = str
         parser.add_argument('--{}'.format(name.replace('_', '-')),
                             required=True, type=str)
     args = parser.parse_args()
