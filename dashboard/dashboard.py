@@ -261,7 +261,6 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
             status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
         else:
             data = read_json(tmp_analysis_dir, 'data.json')
-            
             data.update({
                 'timestamp'  : date_str,
                 'tvm_hash'   : tvm_hash,
@@ -277,10 +276,10 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
     keys = run_status.keys()
     if len(keys) and functools.reduce(lambda x, y: x and y, 
                                      map(lambda x: x in keys, 
-                                        ('success', 'start_time', 'end_time', 'time_delta'))):
+                                        ('start_time', 'end_time', 'time_delta'))):
         rs_get = run_status.get
         dump_data.update({
-            'success'    : run_status.get('success'),
+            'success'    : rs_get('success'),
             'start_time' : rs_get('start_time'),
             'end_time'   : rs_get('end_time'),
             'time_delta' : rs_get('time_delta')
