@@ -8,6 +8,12 @@ import logging
 import os
 import sys
 
+
+def print_log(msg, dec_char='*'):
+    padding = max(list(map(len, msg.split('\n'))))
+    decorate = dec_char * (padding + 4)
+    print(f'{decorate}\n{msg}\n{decorate}')
+
 def validate_json(dirname, *fields, filename='status.json'):
     if not check_file_exists(dirname, filename):
         return {'success': False, 'message': 'No {} in {}'.format(filename, dirname)}

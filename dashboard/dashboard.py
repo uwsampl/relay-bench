@@ -8,16 +8,9 @@ import subprocess
 import time
 
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
-                    prepare_out_file, read_json, write_json, read_config, validate_json)
+                    prepare_out_file, read_json, write_json, read_config, validate_json, print_log)
 from dashboard_info import DashboardInfo
 
-
-def print_log(msg, dec_char='*'):
-    padding = max(list(map(lambda line: len(line), msg.split('\n'))))
-    decorate = dec_char * (padding + 4)
-    print(decorate)
-    print(msg)
-    print(decorate)
 
 def validate_status(dirname):
     return validate_json(dirname, 'success', 'message')
@@ -225,15 +218,16 @@ def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     delta = datetime.timedelta(seconds=end_time - start_time)
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
-    # write time information if the experiment succeed
+    # show experiment status to terminal
     if status['success']:
         end_msg = f'Experiment {exp_name} ends @ {to_local_time(end_time)}\nTime Delta: {delta}'
         print_log(end_msg)
-        status['start_time'] = to_local_time(start_time)
-        status['end_time'] = to_local_time(end_time)
-        status['time_delta'] = str(delta)
     else:
         print_log(f'*** {exp_name} FAILED ***\n*** Reason: {status["message"]} ***')
+    # record start & end & duration of an experiment
+    status['start_time'] = to_local_time(start_time)
+    status['end_time'] = to_local_time(end_time)
+    status['time_delta'] = str(delta)
     # not literally copying because validate may have produced a status that generated an error
     info.report_exp_status(exp_name, 'run', status)
     return status['success']
