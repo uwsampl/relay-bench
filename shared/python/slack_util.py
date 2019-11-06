@@ -20,6 +20,8 @@ def build_field(title='', value='', tm_start=None, tm_end=None, duration=None, s
         ret['title'] = title
     if tm_start and tm_end and duration:
         ret['value'] = f'_Starts at: {tm_start}_ \n _Ends at: {tm_end}_ \n _Duration: {duration}_\n\n' + ret['value']
+    else:
+        ret['value'] = f'*No Timing Info Recorded*\n' + ret['value']
     return ret
 
 

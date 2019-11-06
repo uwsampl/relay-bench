@@ -13,19 +13,14 @@ from slack_util import (generate_ping_list,
                         post_message)
 
 def failed_experiment_field(exp, stage_statuses, stage, start_time=None, end_time=None, duration=None, notify=None):
-    if start_time and end_time and duration:
-        exp_time = f'_Starts at: {start_time}_\n_Ends at: {end_time}_\n_Duration: {duration}_\n'
-    else:
-        exp_time = '*No Timing Info Recorded\n*'
-    message = '{}Failed at stage {}:\n{}'.format(
-        exp_time,
+    message = 'Failed at stage {}:\n{}'.format(
         stage,
         textwrap.shorten(stage_statuses[stage]['message'], width=280))
 
     if notify is not None:
         message += '\nATTN: {}'.format(generate_ping_list(notify))
 
-    return build_field(title=exp, value=message)
+    return build_field(title=exp, value=message, tm_start=start_time, tm_end=end_time, duration=duration)
 
 
 def main(config_dir, home_dir, output_dir):
@@ -72,9 +67,9 @@ def main(config_dir, home_dir, output_dir):
             if not stage_statuses[stage]['success']:
                 failed_experiments.append(
                     failed_experiment_field(exp_title, stage_statuses,
-                                            stage, start_time=run_status['start_time'],
-                                                     end_time=run_status['end_time'],
-                                                     duration=run_status['time_delta'],
+                                            stage, start_time=run_status.get('start_time'),
+                                                     end_time=run_status.get('end_time'),
+                                                     duration=run_status.get('time_delta'),
                                                      notify=notify))
                 failure = True
                 break

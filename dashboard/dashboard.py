@@ -6,6 +6,7 @@ import os
 import random
 import subprocess
 import time
+import functools
 
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
                     prepare_out_file, read_json, write_json, read_config, validate_json, print_log)
@@ -251,6 +252,8 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
 
     status = validate_status(tmp_analysis_dir)
 
+    # collect data to dump to data_*.json
+    dump_data = {}
     # read the analyzed data, append a timestamp field, and copy over to the permanent data dir
     if status['success']:
         data_exists = check_file_exists(tmp_analysis_dir, 'data.json')
@@ -258,12 +261,36 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
             status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
         else:
             data = read_json(tmp_analysis_dir, 'data.json')
-            data['timestamp'] = date_str
-            data['tvm_hash'] = tvm_hash
-            write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), data)
+            
+            data.update({
+                'timestamp'  : date_str,
+                'tvm_hash'   : tvm_hash,
+            })
+            dump_data.update(data)
 
+    # fetch time spent on the experiment
+    run_status = validate_json(info.exp_status_dir(exp_name), 
+                            'start_time', 
+                            'end_time', 
+                            'time_delta', filename='run.json')
+    # only process valid files
+    keys = run_status.keys()
+    if len(keys) and functools.reduce(lambda x, y: x and y, 
+                                     map(lambda x: x in keys, 
+                                        ('success', 'start_time', 'end_time', 'time_delta'))):
+        rs_get = run_status.get
+        dump_data.update({
+            'success'    : run_status.get('success'),
+            'start_time' : rs_get('start_time'),
+            'end_time'   : rs_get('end_time'),
+            'time_delta' : rs_get('time_delta')
+        })
+    # dump date iff we have something to write 
+    write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data) if len(dump_data) else 'NO DATA; PASS'
     info.report_exp_status(exp_name, 'analysis', status)
-    return status['success']
+    # we may transfer the timing info to data.json for a failed experiment, so
+    # here we have finished writing the data, we can set its status to fail.
+    return status['success'] and run_status['success']
 
 
 def visualize_experiment(info, experiments_dir, exp_name):
@@ -376,13 +403,16 @@ def run_all_experiments(info, experiments_dir, setup_dir,
 
         success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
         if not success:
-            exp_status[exp] = 'failed'
+            # We need to run analyze for failed experiments in order
+            # to record the timing information
+            exp_status[exp] = 'failed_run'
 
         if used_branch:
             build_tvm_branch('origin', 'master')
 
     # for each active experiment not yet eliminated, run analysis
-    active_exps = [exp for exp, status in exp_status.items() if status == 'active']
+    # for each experiment that was executed, write timing information for them
+    active_exps = [exp for exp, status in exp_status.items() if status in ('active', 'failed_run')]
     for exp in active_exps:
         success = analyze_experiment(info, experiments_dir, tmp_data_dir,
                                      time_str, tvm_hashes[exp], exp)

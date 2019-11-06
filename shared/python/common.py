@@ -10,7 +10,7 @@ import sys
 
 
 def print_log(msg, dec_char='*'):
-    padding = max(list(map(len, msg.split('\n'))))
+    padding = max(list(map(len, str(msg).split('\n'))))
     decorate = dec_char * (padding + 4)
     print(f'{decorate}\n{msg}\n{decorate}')
 
@@ -138,7 +138,8 @@ def traverse_fields(entry, ignore_fields=None):
     Also ignores the 'detailed' field by default (as old data files will not have detailed summaries).
     Set ignore_fields to a non-None value to avoid the defaults.
     """
-    ignore_set = {'timestamp', 'tvm_hash', 'detailed'}
+    ignore_set = {'timestamp', 'tvm_hash', 'detailed', 
+                  'start_time', 'end_time', 'time_delta', 'success'}
     if ignore_fields is not None:
         ignore_set = set(ignore_fields)
 
