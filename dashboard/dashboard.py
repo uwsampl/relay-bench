@@ -266,25 +266,24 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
                 'tvm_hash'   : tvm_hash,
             })
             dump_data.update(data)
-
-    # fetch time spent on the experiment
-    run_status = validate_json(info.exp_status_dir(exp_name), 
-                            'start_time', 
-                            'end_time', 
-                            'time_delta', filename='run.json')
-    # only process valid files
-    keys = run_status.keys()
-    if keys and functools.reduce(lambda x, y: x and y, 
-                                     map(lambda x: x in keys, 
-                                        ('start_time', 'end_time', 'time_delta'))):
-        rs_get = run_status.get
-        dump_data.update({
-            'start_time' : rs_get('start_time'),
-            'end_time'   : rs_get('end_time'),
-            'time_delta' : rs_get('time_delta')
-        })
-    # dump date iff we have something to write 
-    write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data) if len(dump_data) else 'NO DATA; PASS'
+            # fetch time spent on the experiment
+            run_status = validate_json(info.exp_status_dir(exp_name), 
+                                    'start_time', 
+                                    'end_time', 
+                                    'time_delta', filename='run.json')
+            # only process valid files
+            keys = run_status.keys()
+            if keys and functools.reduce(lambda x, y: x and y, 
+                                            map(lambda x: x in keys, 
+                                                ('start_time', 'end_time', 'time_delta'))):
+                rs_get = run_status.get
+                dump_data.update({
+                    'start_time' : rs_get('start_time'),
+                    'end_time'   : rs_get('end_time'),
+                    'time_delta' : rs_get('time_delta')
+                })
+            write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data)
+    
     info.report_exp_status(exp_name, 'analysis', status)
     return status['success']
 
@@ -399,8 +398,6 @@ def run_all_experiments(info, experiments_dir, setup_dir,
 
         success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
         if not success:
-            # We need to run analyze for failed experiments in order
-            # to record the timing information
             exp_status[exp] = 'failed'
 
         if used_branch:
