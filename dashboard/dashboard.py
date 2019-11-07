@@ -233,6 +233,28 @@ def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     info.report_exp_status(exp_name, 'run', status)
     return status['success']
 
+def get_timing_info(info, exp_name):
+    '''
+        Get the timing information of an experiment
+        recorded in `run.json`.
+    '''
+    run_status = validate_json(info.exp_status_dir(exp_name), 
+                                    'success',
+                                    'start_time', 
+                                    'end_time', 
+                                    'time_delta', filename='run.json')
+    # validate run.json data
+    keys = run_status.keys()
+    if keys and functools.reduce(lambda x, y: x and y, 
+                                    map(lambda x: x in keys, 
+                                       ('start_time', 'end_time', 'time_delta'))):
+        rs_get = run_status.get
+        return {
+            'start_time' : rs_get('start_time'),
+            'end_time'   : rs_get('end_time'),
+            'time_delta' : rs_get('time_delta')
+        }
+    return {}
 
 def analyze_experiment(info, experiments_dir, tmp_data_dir,
                        date_str, tvm_hash, exp_name):
@@ -252,14 +274,14 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
 
     status = validate_status(tmp_analysis_dir)
 
-    # collect data to dump to data_*.json
-    dump_data = {}
     # read the analyzed data, append a timestamp field, and copy over to the permanent data dir
     if status['success']:
         data_exists = check_file_exists(tmp_analysis_dir, 'data.json')
         if not data_exists:
             status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
         else:
+            # collect data to dump to data_*.json
+            dump_data = {}
             data = read_json(tmp_analysis_dir, 'data.json')
             data.update({
                 'timestamp'  : date_str,
@@ -267,21 +289,7 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
             })
             dump_data.update(data)
             # fetch time spent on the experiment
-            run_status = validate_json(info.exp_status_dir(exp_name), 
-                                    'start_time', 
-                                    'end_time', 
-                                    'time_delta', filename='run.json')
-            # only process valid files
-            keys = run_status.keys()
-            if keys and functools.reduce(lambda x, y: x and y, 
-                                            map(lambda x: x in keys, 
-                                                ('start_time', 'end_time', 'time_delta'))):
-                rs_get = run_status.get
-                dump_data.update({
-                    'start_time' : rs_get('start_time'),
-                    'end_time'   : rs_get('end_time'),
-                    'time_delta' : rs_get('time_delta')
-                })
+            dump_data.update(get_timing_info(info, exp_name))
             write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data)
     
     info.report_exp_status(exp_name, 'analysis', status)
