@@ -274,12 +274,11 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
                             'time_delta', filename='run.json')
     # only process valid files
     keys = run_status.keys()
-    if len(keys) and functools.reduce(lambda x, y: x and y, 
+    if keys and functools.reduce(lambda x, y: x and y, 
                                      map(lambda x: x in keys, 
                                         ('start_time', 'end_time', 'time_delta'))):
         rs_get = run_status.get
         dump_data.update({
-            'success'    : rs_get('success'),
             'start_time' : rs_get('start_time'),
             'end_time'   : rs_get('end_time'),
             'time_delta' : rs_get('time_delta')
@@ -287,9 +286,7 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
     # dump date iff we have something to write 
     write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data) if len(dump_data) else 'NO DATA; PASS'
     info.report_exp_status(exp_name, 'analysis', status)
-    # we may transfer the timing info to data.json for a failed experiment, so
-    # here we have finished writing the data, we can set its status to fail.
-    return status['success'] and run_status['success']
+    return status['success']
 
 
 def visualize_experiment(info, experiments_dir, exp_name):
@@ -404,14 +401,13 @@ def run_all_experiments(info, experiments_dir, setup_dir,
         if not success:
             # We need to run analyze for failed experiments in order
             # to record the timing information
-            exp_status[exp] = 'failed_run'
+            exp_status[exp] = 'failed'
 
         if used_branch:
             build_tvm_branch('origin', 'master')
 
     # for each active experiment not yet eliminated, run analysis
-    # for each experiment that was executed, write timing information for them
-    active_exps = [exp for exp, status in exp_status.items() if status in ('active', 'failed_run')]
+    active_exps = [exp for exp, status in exp_status.items() if status == 'active']
     for exp in active_exps:
         success = analyze_experiment(info, experiments_dir, tmp_data_dir,
                                      time_str, tvm_hashes[exp], exp)
