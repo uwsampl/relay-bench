@@ -6,22 +6,15 @@ import os
 import random
 import subprocess
 import time
+import functools
 
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
-                    prepare_out_file, read_json, write_json, read_config)
+                    prepare_out_file, read_json, write_json, read_config, validate_json, print_log)
 from dashboard_info import DashboardInfo
 
+
 def validate_status(dirname):
-    if not check_file_exists(dirname, 'status.json'):
-        return {'success': False, 'message': 'No status.json in {}'.format(dirname)}
-    status = read_json(dirname, 'status.json')
-    if 'success' not in status:
-        return {'success': False,
-                'message': 'status.json in {} has no \'success\' field'.format(dirname)}
-    if 'message' not in status:
-        return {'success': False,
-                'message': 'status.json in {} has no \'message\' field'.format(dirname)}
-    return status
+    return validate_json(dirname, 'success', 'message')
 
 
 def build_tvm_branch(remote, branch):
@@ -206,6 +199,8 @@ def copy_setup(experiments_dir, setup_dir, exp_name):
 
 
 def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
+
+    to_local_time = lambda sec: time.asctime(time.localtime(sec))
     exp_dir = os.path.join(experiments_dir, exp_name)
     exp_conf = info.exp_config_dir(exp_name)
 
@@ -213,16 +208,53 @@ def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     exp_data_dir = os.path.join(tmp_data_dir, exp_name)
     idemp_mkdir(exp_data_dir)
 
+    # Mark the start and the end of an experiment
+    start_time = time.time()
+    start_msg = f'Experiment {exp_name} starts @ {to_local_time(start_time)}'
+    print_log(start_msg)
     # run the run.sh file on the configs directory and the destination directory
     subprocess.call([os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
                     cwd=exp_dir)
-
+    end_time = time.time()
+    delta = datetime.timedelta(seconds=end_time - start_time)
     # collect the status file from the destination directory, copy to status dir
     status = validate_status(exp_data_dir)
+    # show experiment status to terminal
+    if status['success']:
+        end_msg = f'Experiment {exp_name} ends @ {to_local_time(end_time)}\nTime Delta: {delta}'
+        print_log(end_msg)
+    else:
+        print_log(f'*** {exp_name} FAILED ***\n*** Reason: {status["message"]} ***')
+    # record start & end & duration of an experiment
+    status['start_time'] = to_local_time(start_time)
+    status['end_time'] = to_local_time(end_time)
+    status['time_delta'] = str(delta)
     # not literally copying because validate may have produced a status that generated an error
     info.report_exp_status(exp_name, 'run', status)
     return status['success']
 
+def get_timing_info(info, exp_name):
+    '''
+        Get the timing information of an experiment
+        recorded in `run.json`.
+    '''
+    run_status = validate_json(info.exp_status_dir(exp_name), 
+                                    'success',
+                                    'start_time', 
+                                    'end_time', 
+                                    'time_delta', filename='run.json')
+    # validate run.json data
+    keys = run_status.keys()
+    if keys and functools.reduce(lambda x, y: x and y, 
+                                    map(lambda x: x in keys, 
+                                       ('start_time', 'end_time', 'time_delta'))):
+        rs_get = run_status.get
+        return {
+            'start_time' : rs_get('start_time'),
+            'end_time'   : rs_get('end_time'),
+            'time_delta' : rs_get('time_delta')
+        }
+    return {}
 
 def analyze_experiment(info, experiments_dir, tmp_data_dir,
                        date_str, tvm_hash, exp_name):
@@ -248,11 +280,16 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
         if not data_exists:
             status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
         else:
-            data = read_json(tmp_analysis_dir, 'data.json')
-            data['timestamp'] = date_str
-            data['tvm_hash'] = tvm_hash
-            write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), data)
-
+            # collect data to dump to data_*.json
+            dump_data = {
+                'timestamp'  : date_str,
+                'tvm_hash'   : tvm_hash,
+            }
+            dump_data.update(read_json(tmp_analysis_dir, 'data.json'))
+            # fetch time spent on the experiment
+            dump_data.update(get_timing_info(info, exp_name))
+            write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data)
+    
     info.report_exp_status(exp_name, 'analysis', status)
     return status['success']
 

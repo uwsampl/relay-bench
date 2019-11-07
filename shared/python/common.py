@@ -8,6 +8,22 @@ import logging
 import os
 import sys
 
+
+def print_log(msg, dec_char='*'):
+    padding = max(list(map(len, str(msg).split('\n'))))
+    decorate = dec_char * (padding + 4)
+    print(f'{decorate}\n{msg}\n{decorate}')
+
+def validate_json(dirname, *fields, filename='status.json'):
+    if not check_file_exists(dirname, filename):
+        return {'success': False, 'message': 'No {} in {}'.format(filename, dirname)}
+    fp = read_json(dirname, filename)
+    for required_field in fields:
+        if required_field not in fp:
+            return {'success': False,
+                    'message': '{} in {} has no \'{}\' field'.format(filename, dirname, required_field)}
+    return fp
+
 def check_file_exists(dirname, filename):
     dirname = os.path.expanduser(dirname)
     full_name = os.path.join(dirname, filename)
@@ -122,7 +138,8 @@ def traverse_fields(entry, ignore_fields=None):
     Also ignores the 'detailed' field by default (as old data files will not have detailed summaries).
     Set ignore_fields to a non-None value to avoid the defaults.
     """
-    ignore_set = {'timestamp', 'tvm_hash', 'detailed'}
+    ignore_set = {'timestamp', 'tvm_hash', 'detailed', 
+                  'start_time', 'end_time', 'time_delta', 'success'}
     if ignore_fields is not None:
         ignore_set = set(ignore_fields)
 
@@ -164,7 +181,6 @@ def invoke_main(main_func, *arg_names):
     parser = argparse.ArgumentParser()
     for arg_name in arg_names:
         name = arg_name
-        arg_type = str
         parser.add_argument('--{}'.format(name.replace('_', '-')),
                             required=True, type=str)
     args = parser.parse_args()
