@@ -281,13 +281,11 @@ def analyze_experiment(info, experiments_dir, tmp_data_dir,
             status = {'success': False, 'message': 'No data.json file produced by {}'.format(exp_name)}
         else:
             # collect data to dump to data_*.json
-            dump_data = {}
-            data = read_json(tmp_analysis_dir, 'data.json')
-            data.update({
+            dump_data = {
                 'timestamp'  : date_str,
                 'tvm_hash'   : tvm_hash,
-            })
-            dump_data.update(data)
+            }
+            dump_data.update(read_json(tmp_analysis_dir, 'data.json'))
             # fetch time spent on the experiment
             dump_data.update(get_timing_info(info, exp_name))
             write_json(analyzed_data_dir, 'data_{}.json'.format(date_str), dump_data)
