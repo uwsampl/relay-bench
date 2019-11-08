@@ -12,15 +12,24 @@ from slack_util import (generate_ping_list,
                         build_field, build_attachment, build_message,
                         post_message)
 
-def failed_experiment_field(exp, stage_statuses, stage, start_time=None, end_time=None, duration=None, notify=None):
+def attach_duration(message, duration=None):
+    if duration is None:
+        return message
+    return '_Duration: {}_\n\n{}'.format(duration, message)
+
+
+def failed_experiment_field(exp, stage_statuses, stage, duration=None, notify=None):
     message = 'Failed at stage {}:\n{}'.format(
         stage,
         textwrap.shorten(stage_statuses[stage]['message'], width=280))
 
+    if duration is not None:
+        message += '\nTime to failure: {}'.format(duration)
+
     if notify is not None:
         message += '\nATTN: {}'.format(generate_ping_list(notify))
 
-    return build_field(title=exp, value=message, tm_start=start_time, tm_end=end_time, duration=duration)
+    return build_field(title=exp, value=message)
 
 
 def main(config_dir, home_dir, output_dir):
@@ -50,7 +59,7 @@ def main(config_dir, home_dir, output_dir):
 
         exp_conf = info.read_exp_config(exp_name)
         exp_status = info.exp_status_dir(exp_name)
-        run_status = validate_json(exp_status, 'start_time', 'end_time', 'time_delta', filename='run.json')
+        run_status = validate_json(exp_status, 'time_delta', filename='run.json')
 
         exp_title = exp_name if 'title' not in exp_conf else exp_conf['title']
         notify = exp_conf['notify']
@@ -67,10 +76,9 @@ def main(config_dir, home_dir, output_dir):
             if not stage_statuses[stage]['success']:
                 failed_experiments.append(
                     failed_experiment_field(exp_title, stage_statuses,
-                                            stage, start_time=run_status.get('start_time'),
-                                                     end_time=run_status.get('end_time'),
-                                                     duration=run_status.get('time_delta'),
-                                                     notify=notify))
+                                            stage,
+                                            duration=run_status.get('time_delta'),
+                                            notify=notify))
                 failure = True
                 break
 
@@ -85,8 +93,9 @@ def main(config_dir, home_dir, output_dir):
 
         summary = info.read_exp_summary(exp_name)
         successful_experiments.append(
-            build_field(summary['title'], summary['value'], run_status.get('start_time'),\
-                                    run_status.get('end_time'), run_status.get('time_delta')))
+            build_field(summary['title'],
+                        attach_duration(summary['value'],
+                                        run_status.get('time_delta'))))
 
     # produce messages
     attachments = []
