@@ -15,6 +15,7 @@ cd "$(dirname "$0")"
 script_dir=$(pwd)
 experiments_dir=$script_dir/../experiments
 subsystem_dir=$script_dir/../subsystem
+telemetry_dir=$script_dir/../telemetry
 rebuild_dashboard_tvm=true
 if [ "$#" -ge 2 ]; then
     rebuild_dashboard_tvm="$2"
@@ -71,4 +72,5 @@ source $BENCHMARK_DEPS/bash/common.sh
 include_shared_python_deps
 
 cd $script_dir
-python3 dashboard.py --home-dir "$dashboard_home" --experiments-dir "$experiments_dir" --subsystem-dir "$subsystem_dir"
+echo $telemetry_dir
+python3 dashboard.py --home-dir "$dashboard_home" --experiments-dir "$experiments_dir" --subsystem-dir "$subsystem_dir" --telemetry-script-dir "$telemetry_dir"

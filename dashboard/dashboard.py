@@ -338,9 +338,49 @@ def summarize_experiment(info, experiments_dir, exp_name):
     info.report_exp_status(exp_name, 'summary', status)
 
 
+def start_telemetry(script_dir, exp_name, output_dir, interval=5):
+    '''
+    Start recording the telemetry info.
+    :returns: subprocess instance of the telemetry recorder
+    '''
+    return subprocess.Popen(['python3', f'{script_dir}/run.py', 
+                            f'--exp_name={exp_name}',
+                            f'--interval={interval}',
+                            f'--output_dir={output_dir}'], stdout=subprocess.PIPE)
+
+def process_telemetry_statistics(info, exp_name, output_dir, time_str):
+    '''
+    Collect data of telemetry statistics and write to results directory
+    '''
+    telemetry_output_dir = info.exp_telemetry_dir(exp_name)
+    if not os.path.exists(telemetry_output_dir):
+        idemp_mkdir(telemetry_output_dir)
+    data_dir = os.path.join(output_dir, f'telemetry/{exp_name}')
+    gpu_data_dir = os.path.join(output_dir, 'gpu')
+    cpu_data_dir = os.path.join(output_dir, 'cpu')
+    cpu_telemetry_dir = os.path.join(data_dir, 'cpu')
+    gpu_telemetry_dir = os.path.join(data_dir, 'gpu')
+    gpu_stat = {}
+    cpu_stat = {}
+    for (_, _, files) in os.walk(gpu_telemetry_dir):
+        for fp in files:
+            with open(os.path.join(gpu_telemetry_dir, fp), 'r') as file:
+                gpu_stat.update({ fp : {'data' : []} })
+                update = gpu_stat[fp]['data'].append
+                for line in map(lambda x: x.split(), file.read().split('\n')):
+                    if line:
+                        if len(line) >= 4:
+                            _, ts, data, unit = line
+                        else:
+                            _, ts, data, unit = line + [None]
+                        if 'unit' not in gpu_stat[fp].keys():
+                            gpu_stat[fp]['unit'] = unit
+                        update((ts, data))
+    write_json(os.path.join(telemetry_output_dir, 'gpu'), f'gpu-{time_str}.json', gpu_stat)
+
 def run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, randomize=True):
+                        time_str, telemetry_script_dir, randomize=True):
     """
     Handles logic for setting up and running all experiments.
     """
@@ -402,7 +442,10 @@ def run_all_experiments(info, experiments_dir, setup_dir,
 
         tvm_hashes[exp] = tvm_hash
 
+        telemetry_process = start_telemetry(telemetry_script_dir, exp, tmp_data_dir)
         success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
+        telemetry_process.kill()
+        process_telemetry_statistics(info, exp, tmp_data_dir, time_str)
         if not success:
             exp_status[exp] = 'failed'
 
@@ -489,7 +532,7 @@ def run_all_subsystems(info, subsystem_dir, time_str):
         success = run_subsystem(info, subsystem_dir, subsys)
 
 
-def main(home_dir, experiments_dir, subsystem_dir):
+def main(home_dir, experiments_dir, subsystem_dir, telemetry_script_dir):
     """
     Home directory: Where config info for experiments, etc., is
     Experiments directory: Where experiment implementations are
@@ -539,10 +582,10 @@ def main(home_dir, experiments_dir, subsystem_dir):
 
     run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, randomize=randomize_exps)
+                        time_str, telemetry_script_dir, randomize=randomize_exps)
 
     run_all_subsystems(info, subsystem_dir, time_str)
 
 
 if __name__ == '__main__':
-    invoke_main(main, 'home_dir', 'experiments_dir', 'subsystem_dir')
+    invoke_main(main, 'home_dir', 'experiments_dir', 'subsystem_dir', 'telemetry_script_dir')

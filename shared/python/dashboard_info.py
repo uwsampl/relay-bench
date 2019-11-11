@@ -76,14 +76,15 @@ class DashboardInfo:
         # better to generate the fields and accessors than have a full file of boilerplate
         # info type, system type, singular, plural
         dashboard_fields = [
-            (InfoType.config,  SystemType.exp,    'config',  'configs'),
-            (InfoType.results, SystemType.exp,    'data',    'data'),
-            (InfoType.results, SystemType.exp,    'status',  'statuses'),
-            (InfoType.results, SystemType.exp,    'graph',   'graphs'),
-            (InfoType.results, SystemType.exp,    'summary', 'summaries'),
-            (InfoType.config,  SystemType.subsys, 'config',  'configs'),
-            (InfoType.results, SystemType.subsys, 'status',  'statuses'),
-            (InfoType.results, SystemType.subsys, 'output',  'output')
+            (InfoType.config,  SystemType.exp,    'config',    'configs'),
+            (InfoType.results, SystemType.exp,    'data',      'data'),
+            (InfoType.results, SystemType.exp,    'telemetry', 'telemetries'),
+            (InfoType.results, SystemType.exp,    'status',    'statuses'),
+            (InfoType.results, SystemType.exp,    'graph',     'graphs'),
+            (InfoType.results, SystemType.exp,    'summary',   'summaries'),
+            (InfoType.config,  SystemType.subsys, 'config',    'configs'),
+            (InfoType.results, SystemType.subsys, 'status',    'statuses'),
+            (InfoType.results, SystemType.subsys, 'output',    'output')
         ]
 
         # we need to have a function return the lambda for proper closure behavior

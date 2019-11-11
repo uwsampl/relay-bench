@@ -6,7 +6,10 @@ import sys
 import os
 
 
-def parse_cpu_stat(current_stat:dict) -> dict:
+def parse_cpu_stat(info:list) -> list:
+    # TODO: use sensors-detect to initialize the
+    #       configuration for `sensors` command
+    #       Note: need sudo
     pass
 
 def parse_gpu_stat(info:list) -> list:
@@ -36,17 +39,22 @@ def main(args):
     parser = argparse.ArgumentParser(description='Telemtry Process of Dashboard')
     parser.add_argument('--interval', type=int, nargs=1, required=False)
     parser.add_argument('--output_dir', type=str, nargs=1, required=True)
-    parser.add_argument('--timestamp', type=str, nargs=1, required=True)
+    parser.add_argument('--exp_name', type=str, nargs=1, required=True)
     arguments = parser.parse_args(args[1:])
     nvidia_fields = 'timestamp,clocks.gr,clocks.current.memory,utilization.gpu,utilization.memory,memory.used,pstate,power.limit,temperature.gpu,fan.speed'.split(',')
     out_dir = arguments.output_dir[0]
-    if not os.path.exists(out_dir):
-        os.mkdir(out_dir)
-    log_dir = os.path.join(out_dir, arguments.timestamp[0])
-    if not os.path.exists(log_dir):
-        os.mkdir(log_dir)
-        os.mkdir(os.path.join(log_dir, 'gpu'))
-        os.mkdir(os.path.join(log_dir, 'cpu'))
+    # directory structure:
+    # ./output_dir
+    #       -> telemtry
+    #           -> char_rnn
+    #           -> treelstm ...
+    # Possible locations: ~/dashboard-conf/dashboard/results/experiments
+    out_dir = os.path.join(os.path.expanduser(out_dir), 'telemetry')
+    log_dir = os.path.join(out_dir, arguments.exp_name[0])
+    if os.path.exists(log_dir):
+        os.system('rm -r {}'.format(log_dir))
+    os.makedirs(os.path.join(log_dir, 'gpu'))
+    os.makedirs(os.path.join(log_dir, 'cpu'))
     start_job(log_dir, nvidia_fields, arguments.interval[0] if arguments.interval else 30)
 
 if __name__ == '__main__':
