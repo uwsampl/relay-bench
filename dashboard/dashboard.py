@@ -356,12 +356,10 @@ def process_telemetry_statistics(info, exp_name, output_dir, time_str):
     if not os.path.exists(telemetry_output_dir):
         idemp_mkdir(telemetry_output_dir)
     data_dir = os.path.join(output_dir, f'telemetry/{exp_name}')
-    gpu_data_dir = os.path.join(output_dir, 'gpu')
-    cpu_data_dir = os.path.join(output_dir, 'cpu')
     cpu_telemetry_dir = os.path.join(data_dir, 'cpu')
     gpu_telemetry_dir = os.path.join(data_dir, 'gpu')
-    gpu_stat = {}
-    cpu_stat = {}
+    gpu_stat = { 'timestamp' : time_str }
+    cpu_stat = { 'timestamp' : time_str }
     for (_, _, files) in os.walk(gpu_telemetry_dir):
         for fp in files:
             with open(os.path.join(gpu_telemetry_dir, fp), 'r') as file:
@@ -376,7 +374,21 @@ def process_telemetry_statistics(info, exp_name, output_dir, time_str):
                         if 'unit' not in gpu_stat[fp].keys():
                             gpu_stat[fp]['unit'] = unit
                         update((ts, data))
+
+    for (_, _, files) in os.walk(cpu_telemetry_dir):
+        for fp in files:
+            with open(os.path.join(cpu_telemetry_dir, fp), 'r') as file:
+                cpu_stat.update({ fp : {} })
+                update = lambda label: cpu_stat[fp][label].append
+                for lst in map(lambda x: x.split(), file.read().split('\n')):
+                    if lst:
+                        _, ts, label, data = lst
+                        if label not in cpu_stat[fp].keys():
+                            cpu_stat[fp].update({ label : [] })
+                        update(label)((ts, data))
+                pass
     write_json(os.path.join(telemetry_output_dir, 'gpu'), f'gpu-{time_str}.json', gpu_stat)
+    write_json(os.path.join(telemetry_output_dir, 'cpu'), f'cpu-{time_str}.json', cpu_stat)
 
 def run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
