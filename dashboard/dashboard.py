@@ -338,7 +338,7 @@ def summarize_experiment(info, experiments_dir, exp_name):
     info.report_exp_status(exp_name, 'summary', status)
 
 
-def start_telemetry(script_dir, exp_name, output_dir, interval=5):
+def start_telemetry(script_dir, exp_name, output_dir, interval=15):
     '''
     Start recording the telemetry info.
     :returns: subprocess instance of the telemetry recorder
