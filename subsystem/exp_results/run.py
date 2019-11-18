@@ -70,19 +70,6 @@ def main(config_dir, home_dir, output_dir):
             inactive_experiments.append(exp_title)
             continue
 
-        gpu_stat_data = sort_data(gpu_stat)
-        cpu_stat_data = sort_data(cpu_stat)
-
-        gpu_stat_msg = 'No Telemetry for GPU'
-        cpu_stat_msg = 'No Telemetry for CPU'
-
-        # TODO: After ensuring the data collector works for
-        #       all experiments, implement the reporting.
-        if gpu_stat_data:
-            pass
-        if cpu_stat:
-            pass
-
         failure = False
         for stage in ['setup', 'run', 'analysis', 'summary']:
             if stage not in stage_statuses:

@@ -1,5 +1,6 @@
 import os
 import math
+import datetime
 from common import invoke_main, sort_data, idemp_mkdir, write_status, process_gpu_telemetry, process_cpu_telemetry
 from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, UnitType, PlotType
@@ -15,7 +16,10 @@ def extract_float(s:str) -> float:
 def generate_graph(timestamp:str, title:str, cate_name:str, dataset:list, save_path, y_label='', unit=None):
     plt_builder = PlotBuilder()
     prepared_data = {
-        'raw' : {'x' : list(map(lambda x: x[0],  dataset)), 
+        'raw' : {'x' : list(map(lambda x: int(x[0]), dataset)),
+                        # list(map(lambda x: datetime.datetime \
+                        #                    .strptime(x[0], '%H:%M:%S')
+                        #                   .strftime('%M:%S'), dataset)), 
                  'y' : list(filter(lambda x: x is not math.nan, 
                                map(lambda x: extract_float(x[1]), dataset)))},
         'meta' : ['Time', y_label]
@@ -34,33 +38,35 @@ def main(config_dir, home_dir, output_dir):
     for exp_name in info.all_present_experiments():
         exp_conf = info.read_exp_config(exp_name)
         if exp_conf['active']:
-            print(exp_name)
             telemetry_folder = info.exp_telemetry_dir(exp_name)
             if os.path.exists(telemetry_folder):
                 exp_graph_folder = os.path.join(telemetry_folder, 'graph')
                 cpu_stat = os.path.join(telemetry_folder, 'cpu')
                 gpu_stat = os.path.join(telemetry_folder, 'gpu')
-                cpu_graph_dir = os.path.join(exp_graph_folder, 'cpu')
                 gpu_graph_dir = os.path.join(exp_graph_folder, 'gpu')
-                idemp_mkdir(cpu_graph_dir)
-                idemp_mkdir(gpu_graph_dir)
                 cpu_data = sort_data(cpu_stat)
                 gpu_data = sort_data(gpu_stat)
-                # try:
-                if cpu_data:
-                    latest = process_cpu_telemetry(cpu_data[-1])
-                    ts, *data = latest
-                    for adapter, title, unit, data in data:
-                        generate_graph(ts, f'{adapter}-{title}', title, data, cpu_graph_dir)
-                
-                if gpu_data:
-                    latest = process_gpu_telemetry(gpu_data[-1])
-                    ts, *unpack = latest
-                    for _, title, unit, data in unpack:
-                        generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '')
-                # except:
-                #     write_status(output_dir, False, 'Encountered err while generating graphs')
-                #     return
+                try:
+                    if cpu_data:
+                        latest = process_cpu_telemetry(cpu_data[-1])
+                        ts, *data = latest
+                        current_ts_dir = os.path.join(exp_graph_folder, ts)
+                        cpu_graph_dir = os.path.join(current_ts_dir, 'cpu')
+                        idemp_mkdir(cpu_graph_dir)
+                        for adapter, title, unit, data in data:
+                            generate_graph(ts, f'{adapter}-{title}', title, data, cpu_graph_dir)
+                    
+                    if gpu_data:
+                        latest = process_gpu_telemetry(gpu_data[-1])
+                        ts, *unpack = latest
+                        current_ts_dir = os.path.join(exp_graph_folder, ts)
+                        gpu_graph_dir = os.path.join(current_ts_dir, 'gpu')
+                        idemp_mkdir(gpu_graph_dir)
+                        for _, title, unit, data in unpack:
+                            generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '')
+                except Exception as e:
+                    write_status(output_dir, False, f'Encountered err while generating graphs: {e}')
+                    return
                 write_status(output_dir, True, 'success')
             else:
                 write_status(output_dir, False, 'No telemetry data found')

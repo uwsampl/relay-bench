@@ -38,7 +38,7 @@ def parse_gpu_stat(info:list) -> list:
         return []
     return info[-1].decode().split(', ')
 
-def start_job(fp_dir, nvidia_fields, time_span) -> None:
+def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
     '''
     A chornological job, runs every `time_span` seconds.
     Fetches data from `nvidia-smi` and `sensors`, then parse it
@@ -47,26 +47,30 @@ def start_job(fp_dir, nvidia_fields, time_span) -> None:
 
     Note: The process will be halted by `dashboard.py` when an experiment ends. 
     '''
-    threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span]).start()
     nvidia_smi = subprocess.Popen(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))], stdout=subprocess.PIPE)
     parsed_data = parse_gpu_stat(nvidia_smi.stdout.readlines())
     try:
         assert len(parsed_data) == len(nvidia_fields)
-        timestamp = parsed_data[0]
+        # timestamp = parsed_data[0]
+        time_after = time_span * time_run
         for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
             with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
-                fp.write(f'{timestamp} {data}\n')
+                # fp.write(f'{timestamp[:-4]} {data}\n')
+                fp.write(f'{time_after} {data}\n')
     except:
         print('Inconsistent length, passing')
         pass
     sensors = subprocess.Popen(['sensors'], stdout=subprocess.PIPE)
     cpu_stat = parse_cpu_stat(sensors.stdout.read().decode().split('\n'))
-    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     for (fname, entries) in cpu_stat.items():
         if entries[1:]:
             with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
                 for (label, data) in entries[1:]:
-                    fp.write(f'{timestamp} {label} {data}\n')
+                    # fp.write(f'{timestamp} {label} {data}\n')
+                    fp.write(f'{time_after} {label} {data}\n')
+    
+    threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span, time_run + 1]).start()
 
 def main(args):
     parser = argparse.ArgumentParser(description='Telemtry Process of Dashboard')
@@ -90,7 +94,7 @@ def main(args):
         os.system('rm -r {}'.format(log_dir))
     os.makedirs(os.path.join(log_dir, 'gpu'))
     os.makedirs(os.path.join(log_dir, 'cpu'))
-    start_job(log_dir, nvidia_fields, arguments.interval[0] if arguments.interval else 30)
+    start_job(log_dir, nvidia_fields, arguments.interval[0] if arguments.interval else 30, 0)
 
 if __name__ == '__main__':
     main(sys.argv)

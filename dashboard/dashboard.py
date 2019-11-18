@@ -367,10 +367,12 @@ def process_telemetry_statistics(info, exp_name, output_dir, time_str):
                 update = gpu_stat[fp]['data'].append
                 for line in map(lambda x: x.split(), file.read().split('\n')):
                     if line:
-                        if len(line) >= 4:
-                            _, ts, data, unit = line
+                        # Some data do not have a unit(e.g. pstate, 
+                        # which indicates current performance of GPU).
+                        if len(line) == 3:
+                            ts, data, unit = line
                         else:
-                            _, ts, data, unit = line + [None]
+                            ts, data, unit = line + [None]
                         if 'unit' not in gpu_stat[fp].keys():
                             gpu_stat[fp]['unit'] = unit
                         update((ts, data))
@@ -382,7 +384,7 @@ def process_telemetry_statistics(info, exp_name, output_dir, time_str):
                 update = lambda label: cpu_stat[fp][label].append
                 for lst in map(lambda x: x.split(), file.read().split('\n')):
                     if lst:
-                        _, ts, label, data = lst
+                        ts, label, data = lst
                         if label not in cpu_stat[fp].keys():
                             cpu_stat[fp].update({ label : [] })
                         update(label)((ts, data))
@@ -392,7 +394,7 @@ def process_telemetry_statistics(info, exp_name, output_dir, time_str):
 
 def run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, telemetry_script_dir, randomize=True):
+                        time_str, telemetry_script_dir, telemetry_interval=15, randomize=True):
     """
     Handles logic for setting up and running all experiments.
     """
@@ -454,9 +456,11 @@ def run_all_experiments(info, experiments_dir, setup_dir,
 
         tvm_hashes[exp] = tvm_hash
 
-        telemetry_process = start_telemetry(telemetry_script_dir, exp, tmp_data_dir)
+        telemetry_process = start_telemetry(telemetry_script_dir, exp
+                                          , tmp_data_dir, interval=telemetry_interval)
         success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
         telemetry_process.kill()
+        # Gather stat collected by the telemetry process
         process_telemetry_statistics(info, exp, tmp_data_dir, time_str)
         if not success:
             exp_status[exp] = 'failed'
@@ -592,9 +596,10 @@ def main(home_dir, experiments_dir, subsystem_dir, telemetry_script_dir):
     if 'randomize' in dash_config:
         randomize_exps = dash_config['randomize']
 
+    telemetry_rate = dash_config.get('telemetry_rate')
     run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, telemetry_script_dir, randomize=randomize_exps)
+                        time_str, telemetry_script_dir, telemetry_interval=telemetry_rate if telemetry_rate else 15, randomize=randomize_exps)
 
     run_all_subsystems(info, subsystem_dir, time_str)
 
