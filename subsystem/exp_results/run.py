@@ -60,8 +60,6 @@ def main(config_dir, home_dir, output_dir):
         exp_conf = info.read_exp_config(exp_name)
         exp_status = info.exp_status_dir(exp_name)
         exp_telemetry_dir = info.exp_telemetry_dir(exp_name)
-        gpu_stat = os.path.join(exp_telemetry_dir, exp_name, 'gpu')
-        cpu_stat = os.path.join(exp_telemetry_dir, exp_name, 'cpu')
         run_status = validate_json(exp_status, 'time_delta', filename='run.json')
 
         exp_title = exp_name if 'title' not in exp_conf else exp_conf['title']
