@@ -24,7 +24,9 @@ perform a single ImageNet classification task.
 import itertools
 import json
 import os
+import signal
 import time
+from threading import Timer
 from PIL import Image
 
 from mxnet.gluon.model_zoo import vision
@@ -230,6 +232,12 @@ def run_single(model, target_name, device, config):
         return mean_time
 
 
+def timeout_failure(output_dir):
+    """Terminates the experiment early."""
+    write_status(output_dir, False, 'Experiment timed out')
+    os.kill(os.getpid(), signal.SIGKILL)
+
+
 def main(config_dir, output_dir):
     """Run the experiment."""
     config, msg = validate(config_dir)
@@ -238,6 +246,10 @@ def main(config_dir, output_dir):
         return 1
 
     try:
+        # the experiment involves RPC calls that could potentially hang so we have a timeout on our end too
+        killswitch = Timer(config.get('timeout', 300), lambda: timeout_failure(output_dir))
+        killswitch.start()
+
         result = {}
         config_iter = itertools.product(
                 config['models'],
@@ -252,6 +264,8 @@ def main(config_dir, output_dir):
             if device not in result[model][target]:
                 result[model][target][device] = {}
             result[model][target][device] = run_single(model, target, device, config)
+
+        killswitch.cancel()
     except Exception as e:
         write_status(output_dir, False, 'Exception encountered:\n' + render_exception(e))
         return 1
