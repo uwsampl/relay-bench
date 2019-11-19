@@ -75,7 +75,8 @@ def init_remote(vta_env, config):
         device_host = config.get('pynq_rpc_host', '192.168.2.99')
         device_port = config.get('pynq_rpc_port', 9091)
         if not tracker_host or not tracker_port:
-            remote = rpc.connect(device_host, device_port)
+            remote = rpc.connect(device_host, device_port,
+                                 session_timeout=config.get('timeout', 300))
         else:
             remote = autotvm.measure.request_remote(vta_env.TARGET, tracker_host, tracker_port, timeout=10000)
 
