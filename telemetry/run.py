@@ -47,6 +47,7 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
 
     Note: The process will be halted by `dashboard.py` when an experiment ends. 
     '''
+    threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span, time_run + 1]).start()
     nvidia_smi = subprocess.Popen(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))], stdout=subprocess.PIPE)
     parsed_data = parse_gpu_stat(nvidia_smi.stdout.readlines())
     try:
@@ -69,8 +70,6 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
                 for (label, data) in entries[1:]:
                     # fp.write(f'{timestamp} {label} {data}\n')
                     fp.write(f'{time_after} {label} {data}\n')
-    
-    threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span, time_run + 1]).start()
 
 def main(args):
     parser = argparse.ArgumentParser(description='Telemtry Process of Dashboard')
