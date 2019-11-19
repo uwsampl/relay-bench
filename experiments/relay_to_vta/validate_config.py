@@ -16,7 +16,8 @@ def validate(config_dir):
         config,
         {
             'n_times_per_input': 4,
-            'num_reps': 3
+            'num_reps': 3,
+            'timeout': 300
         },
         {
             'models': {'resnet18_v1'},
@@ -27,7 +28,8 @@ def validate(config_dir):
             'tracker_host': string_cond(),
             'tracker_port': non_negative_cond(),
             'n_times_per_input': non_negative_cond(),
-            'num_reps': non_negative_cond()
+            'num_reps': non_negative_cond(),
+            'timeout': non_negative_cond()
         }
     )
 
