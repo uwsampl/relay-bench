@@ -13,7 +13,8 @@ def extract_float(s:str) -> float:
     except:
         return math.nan
 
-def generate_graph(timestamp:str, title:str, cate_name:str, dataset:list, save_path, y_label='', unit=None):
+def generate_graph(timestamp:str, title:str, cate_name:str,
+                   dataset:list, save_path, y_label='', copy_to=[], unit=None):
     plt_builder = PlotBuilder()
     prepared_data = {
         'raw' : {'x' : list(map(lambda x: int(x[0]), dataset)),
@@ -31,6 +32,10 @@ def generate_graph(timestamp:str, title:str, cate_name:str, dataset:list, save_p
                     .set_unit_type(unit if unit else UnitType.COMPARATIVE)\
                     .make(PlotType.LONGITUDINAL, prepared_data)\
                     .save(save_path, f'{cate_name}-{timestamp}.png')
+        for each in copy_to:
+            img_path = os.path.join(save_path, f'{cate_name}-{timestamp}.png')
+            # overwrite image of last run
+            os.system(f'cp {img_path} {each}/{cate_name}.png')
 
 def main(config_dir, home_dir, output_dir):
     info = DashboardInfo(home_dir)
@@ -43,27 +48,32 @@ def main(config_dir, home_dir, output_dir):
                 exp_graph_folder = os.path.join(telemetry_folder, 'graph')
                 cpu_stat = os.path.join(telemetry_folder, 'cpu')
                 gpu_stat = os.path.join(telemetry_folder, 'gpu')
-                gpu_graph_dir = os.path.join(exp_graph_folder, 'gpu')
                 cpu_data = sort_data(cpu_stat)
                 gpu_data = sort_data(gpu_stat)
+                graph_folder = info.exp_graph_dir(exp_name)
+                website_include_dir = os.path.join(graph_folder)
                 try:
                     if cpu_data:
                         latest = process_cpu_telemetry(cpu_data[-1])
                         ts, *data = latest
                         current_ts_dir = os.path.join(exp_graph_folder, ts)
                         cpu_graph_dir = os.path.join(current_ts_dir, 'cpu')
+                        copy_to = os.path.join(website_include_dir, 'cpu_telemetry')
                         idemp_mkdir(cpu_graph_dir)
+                        idemp_mkdir(copy_to)
                         for adapter, title, unit, data in data:
-                            generate_graph(ts, f'{adapter}-{title}', title, data, cpu_graph_dir)
+                            generate_graph(ts, f'{adapter}-{title}', title, data, cpu_graph_dir, copy_to=[copy_to])
                     
                     if gpu_data:
                         latest = process_gpu_telemetry(gpu_data[-1])
                         ts, *unpack = latest
                         current_ts_dir = os.path.join(exp_graph_folder, ts)
                         gpu_graph_dir = os.path.join(current_ts_dir, 'gpu')
+                        copy_to = os.path.join(website_include_dir, 'gpu_telemetry')
                         idemp_mkdir(gpu_graph_dir)
+                        idemp_mkdir(copy_to)
                         for _, title, unit, data in unpack:
-                            generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '')
+                            generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '', copy_to=[copy_to])
                 except Exception as e:
                     write_status(output_dir, False, f'Encountered err while generating graphs: {e}')
                     return
