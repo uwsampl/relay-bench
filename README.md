@@ -40,6 +40,7 @@ The top-level dashboard config.json may contain the following fields:
 - `tmp_data_dir` (str, mandatory): Directory for storing experiment raw data (we hope to move this to cloud storage eventually), which are zipped CSV files
 - `backup_dir` (str, mandatory): Directory for storing compressed copies of dashboard backups AKA dumping zip files (we hope to move this to cloud storage too)
 - `setup_dir` (str, mandatory): Directory for storing persistent setup files for experiments (this probably should stay local)
+- `telemetry_rate` (integer, mandatory): The rate (in seconds) that the telemetry process collect data from `sensors` and `nvidia-smi` (e.g. setting to 30 will make the telemetry process collect data once 30 seconds).
 - `randomize` (boolean, optional): Whether to randomize the experiment order. Defaults to true. If false, experiments will be run based on their specified priority (ties broken by lexicographic order by name).
 
 Example configurations for the dashboard and every experiment and subsystem are given in `sample-dashboard-home/`.
