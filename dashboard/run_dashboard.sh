@@ -72,5 +72,4 @@ source $BENCHMARK_DEPS/bash/common.sh
 include_shared_python_deps
 
 cd $script_dir
-echo $telemetry_dir
 python3 dashboard.py --home-dir "$dashboard_home" --experiments-dir "$experiments_dir" --subsystem-dir "$subsystem_dir" --telemetry-script-dir "$telemetry_dir"

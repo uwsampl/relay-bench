@@ -11,6 +11,7 @@ import functools
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
                     prepare_out_file, read_json, write_json, read_config, validate_json, print_log)
 from dashboard_info import DashboardInfo
+from telemetry_util import start_telemetry, process_telemetry_statistics
 
 
 def validate_status(dirname):
@@ -337,61 +338,6 @@ def summarize_experiment(info, experiments_dir, exp_name):
         }
     info.report_exp_status(exp_name, 'summary', status)
 
-
-def start_telemetry(script_dir, exp_name, output_dir, interval=15):
-    '''
-    Start recording the telemetry info.
-    :returns: subprocess instance of the telemetry recorder
-    '''
-    return subprocess.Popen(['python3', f'{script_dir}/run.py', 
-                            f'--exp_name={exp_name}',
-                            f'--interval={interval}',
-                            f'--output_dir={output_dir}'], stdout=subprocess.PIPE)
-
-def process_telemetry_statistics(info, exp_name, output_dir, time_str):
-    '''
-    Collect data of telemetry statistics and write to results directory
-    '''
-    telemetry_output_dir = info.exp_telemetry_dir(exp_name)
-    if not os.path.exists(telemetry_output_dir):
-        idemp_mkdir(telemetry_output_dir)
-    data_dir = os.path.join(output_dir, f'telemetry/{exp_name}')
-    cpu_telemetry_dir = os.path.join(data_dir, 'cpu')
-    gpu_telemetry_dir = os.path.join(data_dir, 'gpu')
-    gpu_stat = { 'timestamp' : time_str }
-    cpu_stat = { 'timestamp' : time_str }
-    for (_, _, files) in os.walk(gpu_telemetry_dir):
-        for fp in files:
-            with open(os.path.join(gpu_telemetry_dir, fp), 'r') as file:
-                gpu_stat.update({ fp : {'data' : []} })
-                update = gpu_stat[fp]['data'].append
-                for line in map(lambda x: x.split(), file.read().split('\n')):
-                    if line:
-                        # Some data do not have a unit(e.g. pstate, 
-                        # which indicates current performance of GPU).
-                        if len(line) == 3:
-                            ts, data, unit = line
-                        else:
-                            ts, data, unit = line + [None]
-                        if 'unit' not in gpu_stat[fp].keys():
-                            gpu_stat[fp]['unit'] = unit
-                        update((ts, data))
-
-    for (_, _, files) in os.walk(cpu_telemetry_dir):
-        for fp in files:
-            with open(os.path.join(cpu_telemetry_dir, fp), 'r') as file:
-                cpu_stat.update({ fp : {} })
-                update = lambda label: cpu_stat[fp][label].append
-                for lst in map(lambda x: x.split(), file.read().split('\n')):
-                    if lst:
-                        ts, label, data = lst
-                        if label not in cpu_stat[fp].keys():
-                            cpu_stat[fp].update({ label : [] })
-                        update(label)((ts, data))
-                pass
-    write_json(os.path.join(telemetry_output_dir, 'gpu'), f'gpu-{time_str}.json', gpu_stat)
-    write_json(os.path.join(telemetry_output_dir, 'cpu'), f'cpu-{time_str}.json', cpu_stat)
-
 def run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
                         time_str, telemetry_script_dir, telemetry_interval=15, randomize=True):
@@ -456,8 +402,8 @@ def run_all_experiments(info, experiments_dir, setup_dir,
 
         tvm_hashes[exp] = tvm_hash
 
-        telemetry_process = start_telemetry(telemetry_script_dir, exp
-                                          , tmp_data_dir, interval=telemetry_interval)
+        telemetry_process = start_telemetry(telemetry_script_dir, exp,
+                                            tmp_data_dir, interval=telemetry_interval)
         success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
         telemetry_process.kill()
         # Gather stat collected by the telemetry process
@@ -596,10 +542,10 @@ def main(home_dir, experiments_dir, subsystem_dir, telemetry_script_dir):
     if 'randomize' in dash_config:
         randomize_exps = dash_config['randomize']
 
-    telemetry_rate = dash_config.get('telemetry_rate')
+    telemetry_rate = dash_config.get('telemetry_rate', 15)
     run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, telemetry_script_dir, telemetry_interval=telemetry_rate if telemetry_rate else 15, randomize=randomize_exps)
+                        time_str, telemetry_script_dir, telemetry_interval=telemetry_rate, randomize=randomize_exps)
 
     run_all_subsystems(info, subsystem_dir, time_str)
 

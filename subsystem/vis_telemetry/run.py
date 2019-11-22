@@ -61,6 +61,7 @@ def main(config_dir, home_dir, output_dir):
                         copy_to = os.path.join(website_include_dir, 'cpu_telemetry')
                         idemp_mkdir(cpu_graph_dir)
                         idemp_mkdir(copy_to)
+                        print(f'Visualizing CPU telemetry for {exp_name}')
                         for adapter, title, unit, data in data:
                             generate_graph(ts, f'{adapter}-{title}', title, data, cpu_graph_dir, copy_to=[copy_to])
                     
@@ -72,6 +73,7 @@ def main(config_dir, home_dir, output_dir):
                         copy_to = os.path.join(website_include_dir, 'gpu_telemetry')
                         idemp_mkdir(gpu_graph_dir)
                         idemp_mkdir(copy_to)
+                        print(f'Visualizing GPU telemetry for {exp_name}')
                         for _, title, unit, data in unpack:
                             generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '', copy_to=[copy_to])
                 except Exception as e:
