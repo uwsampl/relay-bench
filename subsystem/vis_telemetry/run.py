@@ -78,7 +78,7 @@ def main(config_dir, home_dir, output_dir):
                             generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '', copy_to=[copy_to])
                 except Exception as e:
                     write_status(output_dir, False, f'Encountered err while generating graphs: {e}')
-                    return
+                    return 1
                 write_status(output_dir, True, 'success')
             else:
                 write_status(output_dir, False, 'No telemetry data found')

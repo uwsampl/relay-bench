@@ -7,10 +7,11 @@ def start_telemetry(script_dir, exp_name, output_dir, interval=15):
     Start recording the telemetry info.
     :returns: subprocess instance of the telemetry recorder
     '''
-    return subprocess.Popen(['python3', f'{script_dir}/run.py', 
-                            f'--exp_name={exp_name}',
-                            f'--interval={interval}',
-                            f'--output_dir={output_dir}'], stdout=subprocess.PIPE)
+    if interval > 0:
+        return subprocess.Popen(['python3', f'{script_dir}/run.py', 
+                                f'--exp_name={exp_name}',
+                                f'--interval={interval}',
+                                f'--output_dir={output_dir}'], stdout=subprocess.PIPE)
 
 def parse_cpu_stat(stat_dir, time_str):
     '''

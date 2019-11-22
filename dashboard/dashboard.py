@@ -122,7 +122,7 @@ def target_precheck(root_dir, configs_dir, target_name,
     return ({'success': True, 'message': ''}, target_info)
 
 
-def experiment_precheck(info, experiments_dir, exp_name):
+def experiment_precheck(info, experiments_dir, exp_name, default_telemetry_rate):
     return target_precheck(
         experiments_dir, info.exp_configs, exp_name,
         {
@@ -130,7 +130,8 @@ def experiment_precheck(info, experiments_dir, exp_name):
             'priority': 0,
             'rerun_setup': False,
             'tvm_remote': 'origin',
-            'tvm_branch': 'master'
+            'tvm_branch': 'master',
+            'telemetry_rate': default_telemetry_rate
         },
         ['run.sh', 'analyze.sh', 'visualize.sh', 'summarize.sh'])
 
@@ -353,7 +354,7 @@ def run_all_experiments(info, experiments_dir, setup_dir,
     # do the walk of experiment configs, take account of which experiments are
     # either inactive or invalid
     for exp_name in info.all_present_experiments():
-        precheck, exp_info = experiment_precheck(info, experiments_dir, exp_name)
+        precheck, exp_info = experiment_precheck(info, experiments_dir, exp_name, telemetry_interval)
         info.report_exp_status(exp_name, 'precheck', precheck)
         exp_status[exp_name] = 'active'
         exp_confs[exp_name] = exp_info
@@ -401,13 +402,17 @@ def run_all_experiments(info, experiments_dir, setup_dir,
             tvm_hash = get_tvm_hash()
 
         tvm_hashes[exp] = tvm_hash
-
         telemetry_process = start_telemetry(telemetry_script_dir, exp,
-                                            tmp_data_dir, interval=telemetry_interval)
+                                            tmp_data_dir,
+                                            interval=exp_confs[exp]['telemetry_rate']
+                                                     if 'telemetry_rate' in exp_confs[exp] 
+                                                     else telemetry_interval)
         success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
-        telemetry_process.kill()
-        # Gather stat collected by the telemetry process
-        process_telemetry_statistics(info, exp, tmp_data_dir, time_str)
+        # Telemetry can be disabled
+        if telemetry_process:
+            telemetry_process.kill()
+            # Gather stat collected by the telemetry process
+            process_telemetry_statistics(info, exp, tmp_data_dir, time_str)
         if not success:
             exp_status[exp] = 'failed'
 
