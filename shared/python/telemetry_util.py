@@ -58,7 +58,7 @@ def process_telemetry_statistics(info, exp_name, output_dir, time_str, cpu_stat_
     Note: The "parsing" logic procedure written in this file is specialized to deal with
           telemetry collected at pipsqueak. They are not guaranteed to work on other platforms.
     '''
-    telemetry_output_dir = info.exp_telemetry_dir(exp_name)
+    telemetry_output_dir = info.subsys_telemetry_dir(exp_name)
     if not os.path.exists(telemetry_output_dir):
         idemp_mkdir(telemetry_output_dir)
     data_dir = os.path.join(output_dir, f'telemetry/{exp_name}')

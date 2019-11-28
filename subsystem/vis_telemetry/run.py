@@ -43,7 +43,7 @@ def main(config_dir, home_dir, output_dir):
     for exp_name in info.all_present_experiments():
         exp_conf = info.read_exp_config(exp_name)
         if exp_conf['active']:
-            telemetry_folder = info.exp_telemetry_dir(exp_name)
+            telemetry_folder = info.subsys_telemetry_dir(exp_name)
             if os.path.exists(telemetry_folder):
                 exp_graph_folder = os.path.join(telemetry_folder, 'graph')
                 cpu_stat = os.path.join(telemetry_folder, 'cpu')

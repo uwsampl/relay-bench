@@ -38,6 +38,13 @@ def parse_gpu_stat(info:list) -> list:
         return []
     return info[-1].decode().split(', ')
 
+def wait_process(ps):
+    try:
+        ps.wait(timeout=20)
+        return ps.stdout
+    except TimeoutError:
+        return None
+
 def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
     '''
     A chornological job, runs every `time_span` seconds.
@@ -49,27 +56,31 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
     '''
     threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span, time_run + 1]).start()
     nvidia_smi = subprocess.Popen(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))], stdout=subprocess.PIPE)
-    parsed_data = parse_gpu_stat(nvidia_smi.stdout.readlines())
-    try:
-        assert len(parsed_data) == len(nvidia_fields)
-        # timestamp = parsed_data[0]
-        time_after = time_span * time_run
-        for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
-            with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
-                # fp.write(f'{timestamp[:-4]} {data}\n')
-                fp.write(f'{time_after} {data}\n')
-    except:
-        print('Inconsistent length, passing')
-        pass
+    cmd_output = wait_process(nvidia_smi)
+    if cmd_output:
+        parsed_data = parse_gpu_stat(cmd_output.readlines())
+        try:
+            assert len(parsed_data) == len(nvidia_fields)
+            # timestamp = parsed_data[0]
+            time_after = time_span * time_run
+            for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
+                with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
+                    # fp.write(f'{timestamp[:-4]} {data}\n')
+                    fp.write(f'{time_after} {data}\n')
+        except:
+            print('Inconsistent length, passing')
+
     sensors = subprocess.Popen(['sensors'], stdout=subprocess.PIPE)
-    cpu_stat = parse_cpu_stat(sensors.stdout.read().decode().split('\n'))
-    # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    for (fname, entries) in cpu_stat.items():
-        if entries[1:]:
-            with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
-                for (label, data) in entries[1:]:
-                    # fp.write(f'{timestamp} {label} {data}\n')
-                    fp.write(f'{time_after} {label} {data}\n')
+    cmd_output = wait_process(sensors)
+    if sensors:
+        cpu_stat = parse_cpu_stat(cmd_output.read().decode().split('\n'))
+        # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for (fname, entries) in cpu_stat.items():
+            if entries[1:]:
+                with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
+                    for (label, data) in entries[1:]:
+                        # fp.write(f'{timestamp} {label} {data}\n')
+                        fp.write(f'{time_after} {label} {data}\n')
 
 def main(args):
     parser = argparse.ArgumentParser(description='Telemtry Process of Dashboard')

@@ -34,6 +34,7 @@ def _yield_subdir_names(base_dir):
 class SystemType(Enum):
     exp = 1
     subsys = 2
+    telemetry = 3
 
 
 class InfoType(Enum):
@@ -78,14 +79,26 @@ class DashboardInfo:
         dashboard_fields = [
             (InfoType.config,  SystemType.exp,    'config',    'configs'),
             (InfoType.results, SystemType.exp,    'data',      'data'),
-            (InfoType.results, SystemType.exp,    'telemetry', 'telemetries'),
             (InfoType.results, SystemType.exp,    'status',    'statuses'),
             (InfoType.results, SystemType.exp,    'graph',     'graphs'),
             (InfoType.results, SystemType.exp,    'summary',   'summaries'),
             (InfoType.config,  SystemType.subsys, 'config',    'configs'),
             (InfoType.results, SystemType.subsys, 'status',    'statuses'),
-            (InfoType.results, SystemType.subsys, 'output',    'output')
+            (InfoType.results, SystemType.subsys, 'output',    'output'),
+            (InfoType.results, SystemType.telemetry, 'telemetry', 'telemetries'),
         ]
+
+        abbrev_dict = {
+            1 : 'exp',
+            2 : 'subsys',
+            3 : 'telem'
+        }
+
+        sys_des_dict = {
+            1 : 'experiments',
+            2 : 'subsystem',
+            3 : 'telemetry'
+        }
 
         # we need to have a function return the lambda for proper closure behavior
         def gen_accessor(base_dir):
