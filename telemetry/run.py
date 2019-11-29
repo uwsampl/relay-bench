@@ -31,19 +31,10 @@ def parse_gpu_stat(info:list) -> list:
     Takes data returned by `nvidia-smi`, which contains a string with two lines, returns
     the last line, which is the data we need to monitor during an experiment.
     '''
-    try:
-        # ensure the list is not empty
-        assert info
-    except:
-        return []
-    return info[-1].decode().split(', ')
-
-def wait_process(ps):
-    try:
-        ps.wait(timeout=20)
-        return ps.stdout
-    except TimeoutError:
-        return None
+    filtered = list(filter(lambda x: x, info))
+    # ensure the list is not empty
+    assert filtered
+    return filtered[-1].split(', ')
 
 def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
     '''
@@ -55,32 +46,28 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
     Note: The process will be halted by `dashboard.py` when an experiment ends. 
     '''
     threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span, time_run + 1]).start()
-    nvidia_smi = subprocess.Popen(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))], stdout=subprocess.PIPE)
-    cmd_output = wait_process(nvidia_smi)
-    if cmd_output:
-        parsed_data = parse_gpu_stat(cmd_output.readlines())
-        try:
-            assert len(parsed_data) == len(nvidia_fields)
-            # timestamp = parsed_data[0]
-            time_after = time_span * time_run
-            for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
-                with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
-                    # fp.write(f'{timestamp[:-4]} {data}\n')
-                    fp.write(f'{time_after} {data}\n')
-        except:
-            print('Inconsistent length, passing')
+    nvidia_smi = subprocess.run(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))],
+                            stdout=subprocess.PIPE, timeout=10)
+    parsed_data = parse_gpu_stat(nvidia_smi.stdout.decode().split('\n'))
+    # The length of lists of data should be the same
+    # since we are using `nvidia_fields` to call the command
+    assert len(parsed_data) == len(nvidia_fields)
+    # timestamp = parsed_data[0]
+    time_after = time_span * time_run
+    for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
+        with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
+            # fp.write(f'{timestamp[:-4]} {data}\n')
+            fp.write(f'{time_after} {data}\n')
 
-    sensors = subprocess.Popen(['sensors'], stdout=subprocess.PIPE)
-    cmd_output = wait_process(sensors)
-    if sensors:
-        cpu_stat = parse_cpu_stat(cmd_output.read().decode().split('\n'))
-        # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        for (fname, entries) in cpu_stat.items():
-            if entries[1:]:
-                with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
-                    for (label, data) in entries[1:]:
-                        # fp.write(f'{timestamp} {label} {data}\n')
-                        fp.write(f'{time_after} {label} {data}\n')
+    sensors = subprocess.run(['sensors'], stdout=subprocess.PIPE)
+    cpu_stat = parse_cpu_stat(sensors.stdout.decode().split('\n'))
+    # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    for (fname, entries) in cpu_stat.items():
+        if entries[1:]:
+            with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
+                for (label, data) in entries[1:]:
+                    # fp.write(f'{timestamp} {label} {data}\n')
+                    fp.write(f'{time_after} {label} {data}\n')
 
 def main(args):
     parser = argparse.ArgumentParser(description='Telemtry Process of Dashboard')
