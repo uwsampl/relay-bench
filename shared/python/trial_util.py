@@ -75,17 +75,12 @@ def run_trials(method, task_name,
                 writer.writeheader()
 
             for args in product(*parameter_ranges):
-                narg = list(args)
-                if narg and narg[0] == 'cpu':
-                    pid = os.getpid()
-                    print(f'Pinning PID: {pid}')
-                    os.system(f'taskset -p 0x000000ff {pid}')
                 costs = []
                 for t in range(n_input):
                     score = 0.0
                     try:
                         trial_args = trial_setup(*args)
-                        score = _score_loop(t, trial, trial_args, list(narg),
+                        score = _score_loop(t, trial, trial_args, list(args),
                                             times_per_input, dry_run,
                                             writer, fieldnames)
                         trial_teardown(*trial_args)

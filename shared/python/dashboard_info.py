@@ -34,7 +34,6 @@ def _yield_subdir_names(base_dir):
 class SystemType(Enum):
     exp = 1
     subsys = 2
-    telemetry = 3
 
 
 class InfoType(Enum):
@@ -85,7 +84,7 @@ class DashboardInfo:
             (InfoType.config,  SystemType.subsys, 'config',    'configs'),
             (InfoType.results, SystemType.subsys, 'status',    'statuses'),
             (InfoType.results, SystemType.subsys, 'output',    'output'),
-            (InfoType.results, SystemType.telemetry, 'telemetry', 'telemetries'),
+            (InfoType.results, SystemType.subsys, 'telemetry', 'telemetries'),
         ]
 
         abbrev_dict = {
