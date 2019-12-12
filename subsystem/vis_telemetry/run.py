@@ -53,8 +53,8 @@ def main(config_dir, home_dir, output_dir):
             telemetry_folder = info.subsys_telemetry_dir(exp_name)
             if os.path.exists(telemetry_folder):
                 exp_graph_folder = os.path.join(telemetry_folder, 'graph')
-                cpu_stat = os.path.join(telemetry_folder, 'cpu')
-                gpu_stat = os.path.join(telemetry_folder, 'gpu')
+                cpu_stat = info.exp_cpu_telemetries(exp_name)
+                gpu_stat = info.exp_gpu_telemetries(exp_name)
                 cpu_data = sort_data(cpu_stat)
                 gpu_data = sort_data(gpu_stat)
                 graph_folder = info.exp_graph_dir(exp_name)

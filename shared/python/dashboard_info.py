@@ -147,6 +147,11 @@ class DashboardInfo:
     def read_subsys_config(self, subsys_name):
         return read_config(self.subsys_config_dir(subsys_name))
 
+    def exp_cpu_telemetries(self, exp_name):
+        return os.path.join(self.subsys_telemetry_dir(exp_name), 'cpu')
+
+    def exp_gpu_telemetries(self, exp_name):
+        return os.path.join(self.subsys_telemetry_dir(exp_name), 'gpu')
 
     def exp_active(self, exp_name):
         return self.exp_config_valid(exp_name) and self.read_exp_config(exp_name)['active']
