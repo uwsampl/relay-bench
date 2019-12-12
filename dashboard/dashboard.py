@@ -413,7 +413,6 @@ def run_all_experiments(info, experiments_dir, setup_dir,
 
         tvm_hashes[exp] = tvm_hash
         pin_process = exp_confs[exp].get('process_pinning', None)
-        print(exp_confs[exp])
         if run_telemetry and 'run_telemetry' in exp_confs[exp].keys():
             run_telemetry = run_telemetry and exp_confs[exp]['run_telemetry']
         enabled = pin_process.get('enable', False) if pin_process else False
