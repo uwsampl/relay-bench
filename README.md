@@ -40,6 +40,7 @@ The top-level dashboard config.json may contain the following fields:
 - `tmp_data_dir` (str, mandatory): Directory for storing experiment raw data (we hope to move this to cloud storage eventually), which are zipped CSV files
 - `backup_dir` (str, mandatory): Directory for storing compressed copies of dashboard backups AKA dumping zip files (we hope to move this to cloud storage too)
 - `setup_dir` (str, mandatory): Directory for storing persistent setup files for experiments (this probably should stay local)
+- `run_telemetry` (boolean, optional): Top-level switch for CPU / GPU logging for experiments (can be overwritten by configurations of experiments, default false)
 - `telemetry_rate` (integer, optional): The rate (in seconds) that the telemetry process collect data from `sensors` and `nvidia-smi` (e.g. setting to 30 will make the telemetry process collect data once 30 seconds). The default value is 15. To disable the telemetry process, set this field to a negative integer.
 - `randomize` (boolean, optional): Whether to randomize the experiment order. Defaults to true. If false, experiments will be run based on their specified priority (ties broken by lexicographic order by name).
 
@@ -70,6 +71,10 @@ Experiment `config.json` files may contain, in addition to any fields specific t
 - `tvm_remote` (optional, string): TVM fork to use for tvm_branch's functionality
 - `tvm_branch` (optional, string): If indicated, the experiment will check out the specified branch from the `tvm_remote` repo and build that variant of TVM for the experiment
 - `rerun_setup` (optional, boolean): If indicated and the experiment has a `setup.sh`, this will force the setup to be rerun regardless of whether the experiment has changed. Defaults to false.
+- `process_pinning` (optional, dict): configuration of process pinning for experiments
+  - `enable` (mandatory, boolean): Switch for the process pinning
+  - `cores`: (mandatory, parameter passed to `taskset`): Bitmask / cpu list, etc. See `man taskset` for more information. 
+- `run_telemetry` (optional, boolean): Switch of GPU / CPU logging for current experiment. If indicated, the configuration will overwrite the top-level configuration for current experiment. (default: same as the value in top-level configuration).
 - `telemetry_rate` (optional, integer): If indicated, the number in this field will overwrite the timespan between two data collections of the telemetry process, else, the value will be that in the top-level dashboard configuration. 
 - `priority` (optional, int): If the dashboard is not set to run experiments in random order, the priority will be used to decide the experiment ordering. If unspecified, the priority will default to 0. The highest-priority experiments will run first. Ties will be broken by lexicographic order by experiment directory name. (This mechanism is included primarily for debugging purposes, like determining if the experiment ordering affects the results. Experiments should not rely on running in any particular order, however.)
 

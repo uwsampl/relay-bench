@@ -6,7 +6,7 @@ from common import invoke_main, write_status, write_summary, sort_data
 SIM_TARGETS = {'sim', 'tsim'}
 PHYS_TARGETS = {'pynq'}
 METADATA_KEYS = {'timestamp', 'tvm_hash',
-                 'start_time', 'end_time', 'time_delta'}
+                 'start_time', 'end_time', 'time_delta', 'run_telemetry'}
 
 def main(data_dir, config_dir, output_dir):
     config, msg = validate(config_dir)

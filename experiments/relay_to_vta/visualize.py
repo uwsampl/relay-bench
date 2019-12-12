@@ -15,7 +15,7 @@ DEVICE_TO_TEXT = {
     'vta': 'Mobile CPU w/ FPGA'
 }
 METADATA_KEYS = {'timestamp', 'tvm_hash',
-                 'start_time', 'end_time', 'time_delta'}
+                 'start_time', 'end_time', 'time_delta', 'run_telemetry'}
 
 def generate_arm_vta_comparisons(data, output_prefix):
     comparison_dir = os.path.join(output_prefix, 'comparison')

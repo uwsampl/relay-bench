@@ -1,7 +1,7 @@
 import os
 import math
 import datetime
-from common import invoke_main, sort_data, idemp_mkdir, write_status, process_gpu_telemetry, process_cpu_telemetry
+from common import invoke_main, sort_data, idemp_mkdir, write_status, process_gpu_telemetry, process_cpu_telemetry, validate_json
 from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, UnitType, PlotType
 
@@ -47,7 +47,9 @@ def main(config_dir, home_dir, output_dir):
     idemp_mkdir(output_dir)
     for exp_name in info.all_present_experiments():
         exp_conf = info.read_exp_config(exp_name)
-        if exp_conf['active']:
+        exp_status = info.exp_status_dir(exp_name)
+        run_status = validate_json(exp_status, 'run_telemetry', filename='run.json')
+        if exp_conf['active'] and run_status.get('success', False) and run_status.get('run_telemetry', False):
             telemetry_folder = info.subsys_telemetry_dir(exp_name)
             if os.path.exists(telemetry_folder):
                 exp_graph_folder = os.path.join(telemetry_folder, 'graph')
