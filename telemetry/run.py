@@ -4,6 +4,7 @@ import argparse
 import datetime
 import sys
 import os
+from common import idemp_mkdir, invoke_main
 
 
 def parse_cpu_stat(info:list) -> dict:
@@ -69,29 +70,21 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
                     # fp.write(f'{timestamp} {label} {data}\n')
                     fp.write(f'{time_after} {label} {data}\n')
 
-def main(args):
-    parser = argparse.ArgumentParser(description='Telemtry Process of Dashboard')
-    parser.add_argument('--interval', type=int, nargs=1, required=False)
-    parser.add_argument('--output_dir', type=str, nargs=1, required=True)
-    parser.add_argument('--exp_name', type=str, nargs=1, required=True)
-    arguments = parser.parse_args(args[1:])
-    nvidia_fields = 'timestamp,clocks.gr,clocks.current.memory,utilization.gpu,utilization.memory,memory.used,pstate,power.limit,temperature.gpu,fan.speed'.split(',')
-    out_dir = arguments.output_dir[0]
+def main(interval, output_dir, exp_name):
     '''
         # directory structure:
         # ./output_dir
         #       -> telemtry
         #           -> char_rnn
         #           -> treelstm ...
-        # Possible locations: ~/dashboard-conf/dashboard/results/experiments
     '''
-    out_dir = os.path.join(os.path.expanduser(out_dir), 'telemetry')
-    log_dir = os.path.join(out_dir, arguments.exp_name[0])
-    if os.path.exists(log_dir):
-        os.system('rm -r {}'.format(log_dir))
-    os.makedirs(os.path.join(log_dir, 'gpu'))
-    os.makedirs(os.path.join(log_dir, 'cpu'))
-    start_job(log_dir, nvidia_fields, arguments.interval[0] if arguments.interval else 30, 0)
+    out_dir = os.path.join(output_dir, 'telemetry')
+    log_dir = os.path.join(out_dir, exp_name)
+    idemp_mkdir(os.path.join(log_dir, 'cpu'))
+    idemp_mkdir(os.path.join(log_dir, 'gpu'))
+    nvidia_fields = 'timestamp,clocks.gr,clocks.current.memory,utilization.gpu,utilization.memory,memory.used,pstate,power.limit,temperature.gpu,fan.speed'.split(',')
+    start_job(log_dir, nvidia_fields, int(interval), 0)
 
 if __name__ == '__main__':
-    main(sys.argv)
+    # main(sys.argv)
+    invoke_main(main, 'interval', 'output_dir', 'exp_name')

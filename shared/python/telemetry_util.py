@@ -9,9 +9,9 @@ def start_telemetry(script_dir, exp_name, output_dir, interval=15):
     '''
     if interval > 0:
         return subprocess.Popen(['python3', f'{script_dir}/run.py', 
-                                f'--exp_name={exp_name}',
+                                f'--exp-name={exp_name}',
                                 f'--interval={interval}',
-                                f'--output_dir={output_dir}'], stdout=subprocess.PIPE)
+                                f'--output-dir={output_dir}'], stdout=subprocess.PIPE, env=os.environ)
 
 def parse_cpu_stat(stat_dir, time_str):
     '''
@@ -43,10 +43,10 @@ def parse_gpu_stat(stat_dir, time_str):
                 for line in filter(lambda x: x, map(lambda x: x.split(), file.read().split('\n'))):
                     # Some data do not have a unit(e.g. pstate, 
                     # which indicates current performance of GPU).
-                    if len(line) == 3:
-                        ts, data, unit = line
-                    else:
-                        ts, data, unit = line + [None]
+                    if len(line) < 3:
+                        # Ensure there are at least three entries
+                        line += [None] * (3 - len(line))
+                    ts, data, unit = line
                     if 'unit' not in gpu_stat[fp].keys():
                         gpu_stat[fp]['unit'] = unit
                     update((ts, data))
