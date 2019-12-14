@@ -10,13 +10,7 @@ def extract_float(s:str) -> float:
     if s.lower() in ('alarm', 'n/a'):
         return math.nan
     data = ''.join(list(filter(lambda x: x.isdigit() or x in ('+', '-', '.', 'e'), s)))
-    try:
-        # We cannot assume if one data point cannot be parsed to float implies
-        # all points collected for one data field cannot be parsed.
-        return float(data)
-    except ValueError as e:
-        print(f'Invalid data: {s}\n{e}')
-        return math.nan
+    return float(data)
 
 def generate_graph(timestamp:str, title:str, cate_name:str, \
                    dataset:list, save_path, y_label='', copy_to=[], unit=None):
