@@ -1,6 +1,6 @@
 seaborn
 tensorflow==1.14.0
-tensorflow-gpu==1.14.0
+tensorflow-gpu==1.15.0
 torchvision==0.4.0
 numpy==1.17.3
 torch==1.2.0
