@@ -2,6 +2,7 @@ import os
 import math
 import datetime
 from common import invoke_main, sort_data, idemp_mkdir, write_status, process_gpu_telemetry, process_cpu_telemetry, validate_json
+from check_prerequisites import check_prerequisites
 from dashboard_info import DashboardInfo
 from plot_util import PlotBuilder, UnitType, PlotType
 
@@ -36,53 +37,56 @@ def generate_graph(timestamp:str, title:str, cate_name:str, \
             # overwrite image of last run
             os.system(f'cp {img_path} {each}/{cate_name}.png')
 
+def visualize(device, data, exp_graph_dir, website_copy_dir, msg='',
+                get_title=lambda *arg: '-'.join(arg)):
+    ts, *data = data
+    current_ts_dir = os.path.join(exp_graph_dir, ts)
+    graph_dir = os.path.join(current_ts_dir, device)
+    idemp_mkdir(graph_dir)
+    idemp_mkdir(website_copy_dir)
+    print(msg)
+    for adapter, title, unit, data in data:
+        generate_graph(ts, get_title(adapter, title, unit, data), title, data, graph_dir, 
+                        y_label=unit if unit else '', copy_to=[website_copy_dir])
+
+
 def main(config_dir, home_dir, output_dir):
     info = DashboardInfo(home_dir)
     idemp_mkdir(output_dir)
     for exp_name in info.all_present_experiments():
-        exp_conf = info.read_exp_config(exp_name)
         exp_status = info.exp_status_dir(exp_name)
-        run_status = validate_json(exp_status, 'run_telemetry', filename='run.json')
-        if exp_conf['active'] and run_status.get('success', False) and run_status.get('run_telemetry', False):
+        run_status = validate_json(exp_status, 'run_cpu_telemetry', 'run_gpu_telemetry', filename='run.json')
+        if check_prerequisites(info, { exp_name : {}}) == (True, 'success') and run_status.get('success', False):
             telemetry_folder = info.subsys_telemetry_dir(exp_name)
             if os.path.exists(telemetry_folder):
                 exp_graph_folder = os.path.join(telemetry_folder, 'graph')
-                cpu_stat = info.exp_cpu_telemetries(exp_name)
-                gpu_stat = info.exp_gpu_telemetries(exp_name)
+                cpu_stat = info.exp_cpu_telemetry(exp_name)
+                gpu_stat = info.exp_gpu_telemetry(exp_name)
                 cpu_data = sort_data(cpu_stat)
                 gpu_data = sort_data(gpu_stat)
                 graph_folder = info.exp_graph_dir(exp_name)
                 website_include_dir = os.path.join(graph_folder)
                 try:
-                    if cpu_data:
-                        latest = process_cpu_telemetry(cpu_data[-1])
-                        ts, *data = latest
-                        current_ts_dir = os.path.join(exp_graph_folder, ts)
-                        cpu_graph_dir = os.path.join(current_ts_dir, 'cpu')
-                        copy_to = os.path.join(website_include_dir, 'cpu_telemetry')
-                        idemp_mkdir(cpu_graph_dir)
-                        idemp_mkdir(copy_to)
-                        print(f'Visualizing CPU telemetry for {exp_name}')
-                        for adapter, title, unit, data in data:
-                            generate_graph(ts, f'{adapter}-{title}', title, data, cpu_graph_dir, copy_to=[copy_to])
+                    if cpu_data and run_status.get('run_cpu_telemetry', False):
+                        visualize('cpu', process_cpu_telemetry(cpu_data[-1]), 
+                                  exp_graph_folder, 
+                                  os.path.join(website_include_dir, 'cpu_telemetry'),
+                                  f'Visualizing CPU telemetry for {exp_name}',
+                                  lambda adapter, title, *rest: f'{adapter}-{title}')
                     
-                    if gpu_data:
-                        latest = process_gpu_telemetry(gpu_data[-1])
-                        ts, *unpack = latest
-                        current_ts_dir = os.path.join(exp_graph_folder, ts)
-                        gpu_graph_dir = os.path.join(current_ts_dir, 'gpu')
-                        copy_to = os.path.join(website_include_dir, 'gpu_telemetry')
-                        idemp_mkdir(gpu_graph_dir)
-                        idemp_mkdir(copy_to)
-                        print(f'Visualizing GPU telemetry for {exp_name}')
-                        for _, title, unit, data in unpack:
-                            generate_graph(ts, title, title, data, gpu_graph_dir, y_label=unit if unit else '', copy_to=[copy_to])
+                    if gpu_data and run_status.get('run_gpu_telemetry', False):
+                        visualize('gpu', process_gpu_telemetry(gpu_data[-1]), 
+                                  exp_graph_folder, 
+                                  os.path.join(website_include_dir, 'gpu_telemetry'),
+                                  f'Visualizing GPU telemetry for {exp_name}',
+                                  lambda _, title, *rest: title)
                 except Exception as e:
                     write_status(output_dir, False, f'Encountered err while generating graphs: {e}')
-                    return 1
+                    return
                 write_status(output_dir, True, 'success')
             else:
                 write_status(output_dir, False, 'No telemetry data found')
+                return
 
 if __name__ == '__main__':
     invoke_main(main, 'config_dir', 'home_dir', 'output_dir')

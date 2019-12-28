@@ -2,7 +2,7 @@ import subprocess
 import os
 from common import idemp_mkdir, write_json
 
-def start_telemetry(script_dir, exp_name, output_dir, interval=15):
+def start_telemetry(script_dir, exp_name, run_cpu_telemetry, run_gpu_telemetry, output_dir, interval=15):
     '''
     Start recording the telemetry info.
     :returns: subprocess instance of the telemetry recorder
@@ -11,6 +11,8 @@ def start_telemetry(script_dir, exp_name, output_dir, interval=15):
         return subprocess.Popen(['python3', f'{script_dir}/run.py', 
                                 f'--exp-name={exp_name}',
                                 f'--interval={interval}',
+                                f'--run-cpu-telemetry={run_cpu_telemetry}',
+                                f'--run-gpu-telemetry={run_gpu_telemetry}',
                                 f'--output-dir={output_dir}'], stdout=subprocess.PIPE, env=os.environ)
 
 def parse_cpu_stat(stat_dir, time_str):

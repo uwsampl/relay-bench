@@ -84,20 +84,8 @@ class DashboardInfo:
             (InfoType.config,  SystemType.subsys, 'config',    'configs'),
             (InfoType.results, SystemType.subsys, 'status',    'statuses'),
             (InfoType.results, SystemType.subsys, 'output',    'output'),
-            (InfoType.results, SystemType.subsys, 'telemetry', 'telemetries'),
+            (InfoType.results, SystemType.subsys, 'telemetry', 'telemetry'),
         ]
-
-        abbrev_dict = {
-            1 : 'exp',
-            2 : 'subsys',
-            3 : 'telem'
-        }
-
-        sys_des_dict = {
-            1 : 'experiments',
-            2 : 'subsystem',
-            3 : 'telemetry'
-        }
 
         # we need to have a function return the lambda for proper closure behavior
         def gen_accessor(base_dir):
@@ -147,10 +135,10 @@ class DashboardInfo:
     def read_subsys_config(self, subsys_name):
         return read_config(self.subsys_config_dir(subsys_name))
 
-    def exp_cpu_telemetries(self, exp_name):
+    def exp_cpu_telemetry(self, exp_name):
         return os.path.join(self.subsys_telemetry_dir(exp_name), 'cpu')
 
-    def exp_gpu_telemetries(self, exp_name):
+    def exp_gpu_telemetry(self, exp_name):
         return os.path.join(self.subsys_telemetry_dir(exp_name), 'gpu')
 
     def exp_active(self, exp_name):

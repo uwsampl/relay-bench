@@ -4,6 +4,7 @@ import argparse
 import datetime
 import sys
 import os
+import time
 from common import idemp_mkdir, invoke_main
 
 
@@ -37,7 +38,7 @@ def parse_gpu_stat(info:list) -> list:
     assert filtered
     return filtered[-1].split(', ')
 
-def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
+def start_job(fp_dir, nvidia_fields, time_span, time_run, run_cpu_telemetry, run_gpu_telemetry) -> None:
     '''
     A chornological job, runs every `time_span` seconds.
     Fetches data from `nvidia-smi` and `sensors`, then parse it
@@ -46,31 +47,32 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run) -> None:
 
     Note: The process will be halted by `dashboard.py` when an experiment ends. 
     '''
-    threading.Timer(time_span, start_job, args=[fp_dir, nvidia_fields, time_span, time_run + 1]).start()
-    nvidia_smi = subprocess.run(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))],
-                            stdout=subprocess.PIPE, timeout=10)
-    parsed_data = parse_gpu_stat(nvidia_smi.stdout.decode().split('\n'))
-    # The length of lists of data should be the same
-    # since we are using `nvidia_fields` to call the command
-    assert len(parsed_data) == len(nvidia_fields)
-    # timestamp = parsed_data[0]
     time_after = time_span * time_run
-    for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
-        with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
-            # fp.write(f'{timestamp[:-4]} {data}\n')
-            fp.write(f'{time_after} {data}\n')
+    if run_gpu_telemetry:
+        nvidia_smi = subprocess.run(['nvidia-smi', '--format=csv', '--query-gpu={}'.format(','.join(nvidia_fields))],
+                                stdout=subprocess.PIPE, timeout=10)
+        parsed_data = parse_gpu_stat(nvidia_smi.stdout.decode().split('\n'))
+        # The length of lists of data should be the same
+        # since we are using `nvidia_fields` to call the command
+        assert len(parsed_data) == len(nvidia_fields)
+        # timestamp = parsed_data[0]
+        for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
+            with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
+                # fp.write(f'{timestamp[:-4]} {data}\n')
+                fp.write(f'{time_after} {data}\n')
 
-    sensors = subprocess.run(['sensors'], stdout=subprocess.PIPE)
-    cpu_stat = parse_cpu_stat(sensors.stdout.decode().split('\n'))
-    # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    for (fname, entries) in cpu_stat.items():
-        if entries[1:]:
-            with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
-                for (label, data) in entries[1:]:
-                    # fp.write(f'{timestamp} {label} {data}\n')
-                    fp.write(f'{time_after} {label} {data}\n')
+    if run_cpu_telemetry:
+        sensors = subprocess.run(['sensors'], stdout=subprocess.PIPE)
+        cpu_stat = parse_cpu_stat(sensors.stdout.decode().split('\n'))
+        # timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for (fname, entries) in cpu_stat.items():
+            if entries[1:]:
+                with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
+                    for (label, data) in entries[1:]:
+                        # fp.write(f'{timestamp} {label} {data}\n')
+                        fp.write(f'{time_after} {label} {data}\n')
 
-def main(interval, output_dir, exp_name):
+def main(interval, output_dir, exp_name, run_cpu_telemetry, run_gpu_telemetry):
     '''
         # directory structure:
         # ./output_dir
@@ -83,8 +85,16 @@ def main(interval, output_dir, exp_name):
     idemp_mkdir(os.path.join(log_dir, 'cpu'))
     idemp_mkdir(os.path.join(log_dir, 'gpu'))
     nvidia_fields = 'timestamp,clocks.gr,clocks.current.memory,utilization.gpu,utilization.memory,memory.used,pstate,power.limit,temperature.gpu,fan.speed'.split(',')
-    start_job(log_dir, nvidia_fields, int(interval), 0)
+    start_job(log_dir, nvidia_fields, int(interval), 0,
+                run_cpu_telemetry == 'True', run_gpu_telemetry == 'True')
+    time_run = 0
+    interval = int(interval)
+    while True:
+        start_job(log_dir, nvidia_fields, interval, time_run,
+            run_cpu_telemetry == 'True', run_gpu_telemetry == 'True')
+        time_run += 1
+        time.sleep(interval)
 
 if __name__ == '__main__':
     # main(sys.argv)
-    invoke_main(main, 'interval', 'output_dir', 'exp_name')
+    invoke_main(main, 'interval', 'output_dir', 'exp_name', 'run_cpu_telemetry', 'run_gpu_telemetry')

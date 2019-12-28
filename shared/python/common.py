@@ -139,7 +139,8 @@ def traverse_fields(entry, ignore_fields=None):
     Set ignore_fields to a non-None value to avoid the defaults.
     """
     ignore_set = {'timestamp', 'tvm_hash', 'detailed', 
-                  'start_time', 'end_time', 'time_delta', 'success', 'run_telemetry'}
+                  'start_time', 'end_time', 'time_delta', 'success',
+                  'run_cpu_telemetry', 'run_gpu_telemetry'}
     if ignore_fields is not None:
         ignore_set = set(ignore_fields)
 

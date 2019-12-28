@@ -6,7 +6,7 @@ import json
 import os
 import textwrap
 
-from common import invoke_main, read_config, write_status, read_json, validate_json, sort_data
+from common import invoke_main, read_config, write_status, read_json, validate_json
 from dashboard_info import DashboardInfo
 from slack_util import (generate_ping_list,
                         build_field, build_attachment, build_message,
