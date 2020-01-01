@@ -9,12 +9,10 @@ def generate_listing_settings(config):
         'tf': 'TensorFlow',
         'pt': 'Pytorch',
         'mxnet': 'MxNet',
-        'nnvm': 'NNVM'
     }
 
     extra_fields = {
         'relay': {'opt_level': config['relay_opt']},
-        'nnvm': {'opt_level': config['nnvm_opt']},
         'tf': {'enable_xla': False},
         'mxnet': {},
         'pt': {}

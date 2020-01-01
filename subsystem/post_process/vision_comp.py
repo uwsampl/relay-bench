@@ -37,7 +37,7 @@ def main(config_dir, home_dir, output_dir):
     if 'our_name' in conf:
         our_name = conf['our_name']
 
-    conf_fws = ['relay', 'pt', 'tf', 'mxnet', 'nnvm']
+    conf_fws = ['relay', 'pt', 'tf', 'mxnet']
     networks = ['resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16']
     prereqs, msg = check_prerequisites(info, {
         'cnn_comp': {
@@ -55,8 +55,7 @@ def main(config_dir, home_dir, output_dir):
     raw_data = all_data[-1]['gpu']
 
     our_fw = 'Relay'
-    other_fws = ['TensorFlow', 'Pytorch', 'MxNet',
-                 'NNVM', 'TF XLA']
+    other_fws = ['TensorFlow', 'Pytorch', 'MxNet', 'TF XLA']
     fw_name_map = {fw: fw for fw in other_fws}
     fw_name_map['Pytorch'] = 'PyTorch'
 

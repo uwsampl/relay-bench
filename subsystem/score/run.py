@@ -8,10 +8,9 @@ from common import (write_status, write_json, prepare_out_file,
 from dashboard_info import DashboardInfo
 from check_prerequisites import check_prerequisites
 
-from score_metrics import ScoreMetric, NNVMScore, RNNScore
+from score_metrics import ScoreMetric, RNNScore
 
 SCORE_METRICS = {
-    'nnvm_score': NNVMScore,
     'rnn_score': RNNScore
 }
 

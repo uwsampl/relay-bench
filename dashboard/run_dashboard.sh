@@ -32,7 +32,7 @@ fi
 
 export TVM_HOME=~/dashboard-tvm
 # ensure the newly-pulled tvm will be on the Python path
-export PYTHONPATH="$TVM_HOME/python:$TVM_HOME/topi/python:$TVM_HOME/nnvm/python:${PYTHONPATH}"
+export PYTHONPATH="$TVM_HOME/python:$TVM_HOME/topi/python:${PYTHONPATH}"
 
 # build a fresh TVM from scratch
 if [ $rebuild_dashboard_tvm = true ]; then
