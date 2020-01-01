@@ -21,16 +21,15 @@ def validate(config_dir):
             'n_times_per_input': 10,
             'batch_sizes': {1},
             'relay_opt': 3,
-            'nnvm_opt': 3,
             'use_xla': True,
-            'frameworks': {'tf', 'pt', 'relay', 'nnvm', 'mxnet'},
+            'frameworks': {'tf', 'pt', 'relay', 'mxnet'},
             'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'},
             'set_seed': False,
             'seed': 0
         },
         {
             'devices':  {'cpu', 'gpu'},
-            'frameworks': {'tf', 'pt', 'relay', 'nnvm', 'mxnet'},
+            'frameworks': {'tf', 'pt', 'relay', 'mxnet'},
             'networks': {'resnet-18', 'mobilenet', 'nature-dqn', 'vgg-16'}
         },
         {
@@ -39,7 +38,6 @@ def validate(config_dir):
             'n_times_per_input': non_negative_cond(),
             'batch_sizes': non_negative_cond(),
             'relay_opt': non_negative_cond(),
-            'nnvm_opt': non_negative_cond(),
             'use_xla': bool_cond(),
             'set_seed': bool_cond(),
             'seed': non_negative_cond()

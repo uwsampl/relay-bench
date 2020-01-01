@@ -60,8 +60,8 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
 
     Returns
     -------
-    net: nnvm.symbol
-        The NNVM symbol of network definition
+    net: relay.Expr
+        The Relay code for the network definition
     params: dict 
         The random parameters for benchmark
     input_shape: tuple
@@ -69,10 +69,8 @@ def get_network(name, batch_size, dtype='float32', ir='relay'):
     """
     if ir == 'relay':
         from tvm.relay import testing
-    elif ir == 'nnvm':
-        from nnvm import testing
     else:
-        raise Exception("ir must be `relay` or `nnvm`, but you used `{}`".format(ir))
+        raise Exception("ir must be `relay`, but you used `{}`".format(ir))
 
     input_shape = (batch_size, 3, 224, 224)
     if name == 'mobilenet':

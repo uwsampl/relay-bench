@@ -71,64 +71,6 @@ class ScoreMetric:
                                           unit_type=UnitType.COMPARATIVE)
 
 
-class NNVMScore(ScoreMetric):
-    def __init__(self, config):
-        self.margin = 0
-        if 'margin' in config:
-            self.margin = config['margin']
-        self._prereq = {
-            'cnn_comp': {
-                'devices': ['gpu'],
-                'frameworks': ['relay', 'nnvm']
-            }
-        }
-
-
-    def compute_score(self, info):
-        eps = 1e-6
-        margin = self.margin + eps
-        raw_data = latest_data(info, 'cnn_comp', 'gpu')
-
-        conf = info.read_exp_config('cnn_comp')
-        total = len(conf['networks'])
-        score = len([
-            network for network in conf['networks']
-            if raw_data['Relay'][network] < raw_data['NNVM'][network] - margin
-        ])
-        return {
-            'Score': score,
-            'Total': total
-        }
-
-
-    def score_text(self, score):
-        return 'Beat NNVM: {} of {} networks'.format(score['Score'], score['Total'])
-
-
-    def score_graph(self, score, graph_dir):
-        data = {
-            'raw': make_ratio_score(score),
-            'meta': ['score', 'score']
-        }
-
-        dest_dir = os.path.join(graph_dir, 'comparison')
-        PlotBuilder().set_title('NNVM Score') \
-                     .set_x_label('') \
-                     .set_y_label('Proportion of Benchmarks') \
-                     .set_y_scale(PlotScale.LINEAR) \
-                     .make(PlotType.BAR, data) \
-                     .set_unit_type(UnitType.COMPARATIVE) \
-                     .save(dest_dir, 'nnvm_score.png')
-
-
-    def longitudinal_graphs(self, scores, graph_dir):
-        map_scores = [
-            make_ratio_score(score, include_timestamp=True)
-            for score in scores
-        ]
-        super().longitudinal_graphs(map_scores, graph_dir)
-
-
 class RNNScore(ScoreMetric):
     def __init__(self, config):
         self.speedup = 2
