@@ -58,7 +58,6 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run, run_cpu_telemetry, run
         # timestamp = parsed_data[0]
         for filename, data in zip(nvidia_fields[1:], parsed_data[1:]):
             with open(os.path.join(fp_dir, 'gpu', filename), 'a+') as fp:
-                # fp.write(f'{timestamp[:-4]} {data}\n')
                 fp.write(f'{time_after} {data}\n')
 
     if run_cpu_telemetry:
@@ -69,7 +68,6 @@ def start_job(fp_dir, nvidia_fields, time_span, time_run, run_cpu_telemetry, run
             if entries[1:]:
                 with open(os.path.join(fp_dir, 'cpu', fname), 'a+') as fp:
                     for (label, data) in entries[1:]:
-                        # fp.write(f'{timestamp} {label} {data}\n')
                         fp.write(f'{time_after} {label} {data}\n')
 
 def main(interval, output_dir, exp_name, run_cpu_telemetry, run_gpu_telemetry):
@@ -88,7 +86,7 @@ def main(interval, output_dir, exp_name, run_cpu_telemetry, run_gpu_telemetry):
     start_job(log_dir, nvidia_fields, int(interval), 0,
                 run_cpu_telemetry == 'True', run_gpu_telemetry == 'True')
     time_run = 0
-    interval = int(interval)
+    interval = float(interval)
     while True:
         start_job(log_dir, nvidia_fields, interval, time_run,
             run_cpu_telemetry == 'True', run_gpu_telemetry == 'True')
@@ -96,5 +94,4 @@ def main(interval, output_dir, exp_name, run_cpu_telemetry, run_gpu_telemetry):
         time.sleep(interval)
 
 if __name__ == '__main__':
-    # main(sys.argv)
     invoke_main(main, 'interval', 'output_dir', 'exp_name', 'run_cpu_telemetry', 'run_gpu_telemetry')
