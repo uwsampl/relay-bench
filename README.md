@@ -107,6 +107,15 @@ Subsystems will have config options as follows:
 
 *(Meta-note: Something that became clear in the process of developing the subsystems is that the experiments themselves can be handled as a single subsystem that is configured to run first. This might reduce some duplicated logic in the core infrastructure but would take a lot of engineering effort to properly implement and may not be worthwhile.)*
 
+### Telemetry Record
+If the telemetry switch is enabled for some experiment, the telemetry process will collect data from CPU and/or GPU (configured by users), and the main process will parse the data to `JSON` files (separated for CPU and GPU) and store them in `DASHBOARD_HOME/results/subsystem/telemetry/EXP_NAME`, where `DASHBOARD_HOME` and `EXP_NAME` are home directory (configured by users) and experiment names. In order to make `vis_telemetry` subsystem work, parsed GPU and CPU telemetry files have to be in a certain format. The structure of `JSON` file for GPU telemetry is:
+1. A timestamp
+2. Topic names mapped to an object that has a `data` field and a `unit` field. `data` field is a list of pairs where the first element is time elapsed from the beginning of the experiment, and the second element is the data collected by the telemetry process. The `unit` field is the unit of the data, if it is not applicable, the value will be `null`.
+
+The structure of `JSON` file for CPU telemetry is:
+1. A timestamp
+2. Adaptor names mapped to an object whose keys are names of sensors of the adapter, and values to the keys are list of pairs, where the first element is time elapsed from the beginning of the experiment , and the second element is the data collected by the telemetry process.
+
 ## Implementation Details
 
 ### Dependencies
