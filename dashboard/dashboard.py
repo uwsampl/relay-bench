@@ -11,6 +11,7 @@ import functools
 from common import (check_file_exists, idemp_mkdir, invoke_main, get_timestamp,
                     prepare_out_file, read_json, write_json, read_config, validate_json, print_log)
 from dashboard_info import DashboardInfo
+from telemetry_util import start_telemetry, process_telemetry_statistics
 
 
 def validate_status(dirname):
@@ -121,7 +122,7 @@ def target_precheck(root_dir, configs_dir, target_name,
     return ({'success': True, 'message': ''}, target_info)
 
 
-def experiment_precheck(info, experiments_dir, exp_name):
+def experiment_precheck(info, experiments_dir, exp_name, default_telemetry_rate, run_cpu_telemetry, run_gpu_telemetry):
     return target_precheck(
         experiments_dir, info.exp_configs, exp_name,
         {
@@ -129,7 +130,14 @@ def experiment_precheck(info, experiments_dir, exp_name):
             'priority': 0,
             'rerun_setup': False,
             'tvm_remote': 'origin',
-            'tvm_branch': 'master'
+            'tvm_branch': 'master',
+            'telemetry_rate': default_telemetry_rate,
+            'run_cpu_telemetry': run_cpu_telemetry,
+            'run_gpu_telemetry': run_gpu_telemetry,
+            'process_pinning': {
+                'enable': False,
+                'cores': None
+            }
         },
         ['run.sh', 'analyze.sh', 'visualize.sh', 'summarize.sh'])
 
@@ -198,7 +206,8 @@ def copy_setup(experiments_dir, setup_dir, exp_name):
                     cwd=exp_dir)
 
 
-def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
+def run_experiment(info, experiments_dir, tmp_data_dir, exp_name, pin_process=False, cores=None,
+                    run_cpu_telemetry=False, run_gpu_telemetry=False):
 
     to_local_time = lambda sec: time.asctime(time.localtime(sec))
     exp_dir = os.path.join(experiments_dir, exp_name)
@@ -213,7 +222,11 @@ def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     start_msg = f'Experiment {exp_name} starts @ {to_local_time(start_time)}'
     print_log(start_msg)
     # run the run.sh file on the configs directory and the destination directory
-    subprocess.call([os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
+    if pin_process and cores:
+        subprocess.call(['taskset', '--cpu-list', f'{cores}', os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
+                    cwd=exp_dir)
+    else:
+        subprocess.call([os.path.join(exp_dir, 'run.sh'), exp_conf, exp_data_dir],
                     cwd=exp_dir)
     end_time = time.time()
     delta = datetime.timedelta(seconds=end_time - start_time)
@@ -229,6 +242,8 @@ def run_experiment(info, experiments_dir, tmp_data_dir, exp_name):
     status['start_time'] = to_local_time(start_time)
     status['end_time'] = to_local_time(end_time)
     status['time_delta'] = str(delta)
+    status['run_cpu_telemetry'] = run_cpu_telemetry
+    status['run_gpu_telemetry'] = run_gpu_telemetry
     # not literally copying because validate may have produced a status that generated an error
     info.report_exp_status(exp_name, 'run', status)
     return status['success']
@@ -337,10 +352,10 @@ def summarize_experiment(info, experiments_dir, exp_name):
         }
     info.report_exp_status(exp_name, 'summary', status)
 
-
 def run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, randomize=True):
+                        time_str, telemetry_script_dir, 
+                        run_cpu_telemetry=False, run_gpu_telemetry=False, telemetry_interval=15, randomize=True):
     """
     Handles logic for setting up and running all experiments.
     """
@@ -353,7 +368,8 @@ def run_all_experiments(info, experiments_dir, setup_dir,
     # do the walk of experiment configs, take account of which experiments are
     # either inactive or invalid
     for exp_name in info.all_present_experiments():
-        precheck, exp_info = experiment_precheck(info, experiments_dir, exp_name)
+        precheck, exp_info = experiment_precheck(info, experiments_dir, exp_name, telemetry_interval,
+                                                    run_cpu_telemetry, run_gpu_telemetry)
         info.report_exp_status(exp_name, 'precheck', precheck)
         exp_status[exp_name] = 'active'
         exp_confs[exp_name] = exp_info
@@ -401,8 +417,27 @@ def run_all_experiments(info, experiments_dir, setup_dir,
             tvm_hash = get_tvm_hash()
 
         tvm_hashes[exp] = tvm_hash
-
-        success = run_experiment(info, experiments_dir, tmp_data_dir, exp)
+        pin_process = exp_confs[exp].get('process_pinning', None)
+        exp_run_cpu_telemetry = exp_confs[exp]['run_cpu_telemetry']
+        exp_run_gpu_telemetry = exp_confs[exp]['run_gpu_telemetry']
+        run_telemetry = exp_run_cpu_telemetry or exp_run_gpu_telemetry
+        enabled = pin_process.get('enable', False) if pin_process else False
+        cores = pin_process.get('cores', None) if enabled else None
+        telemetry_interval = exp_confs[exp].get('telemetry_rate', telemetry_interval)
+        if run_telemetry:
+            telemetry_process = start_telemetry(telemetry_script_dir, exp,
+                                                exp_run_cpu_telemetry,
+                                                exp_run_gpu_telemetry,
+                                                tmp_data_dir,
+                                                interval=telemetry_interval) if run_telemetry else None
+        success = run_experiment(info, experiments_dir, tmp_data_dir, exp,
+                                 pin_process=pin_process, cores=cores,
+                                run_cpu_telemetry=exp_run_cpu_telemetry, run_gpu_telemetry=exp_run_gpu_telemetry)
+        # Telemetry can be disabled
+        if run_telemetry and telemetry_process:
+            telemetry_process.kill()
+            # Gather stat collected by the telemetry process
+            process_telemetry_statistics(info, exp, tmp_data_dir, time_str)
         if not success:
             exp_status[exp] = 'failed'
 
@@ -489,7 +524,7 @@ def run_all_subsystems(info, subsystem_dir, time_str):
         success = run_subsystem(info, subsystem_dir, subsys)
 
 
-def main(home_dir, experiments_dir, subsystem_dir):
+def main(home_dir, experiments_dir, subsystem_dir, telemetry_script_dir):
     """
     Home directory: Where config info for experiments, etc., is
     Experiments directory: Where experiment implementations are
@@ -537,12 +572,16 @@ def main(home_dir, experiments_dir, subsystem_dir):
     if 'randomize' in dash_config:
         randomize_exps = dash_config['randomize']
 
+    telemetry_rate = dash_config.get('telemetry_rate', 15)
+    run_cpu_telemetry = dash_config.get('run_cpu_telemetry', False)
+    run_gpu_telemetry = dash_config.get('run_gpu_telemetry', False)
     run_all_experiments(info, experiments_dir, setup_dir,
                         tmp_data_dir, data_archive,
-                        time_str, randomize=randomize_exps)
+                        time_str, telemetry_script_dir, run_cpu_telemetry=run_cpu_telemetry, run_gpu_telemetry=run_gpu_telemetry,
+                        telemetry_interval=telemetry_rate, randomize=randomize_exps)
 
     run_all_subsystems(info, subsystem_dir, time_str)
 
 
 if __name__ == '__main__':
-    invoke_main(main, 'home_dir', 'experiments_dir', 'subsystem_dir')
+    invoke_main(main, 'home_dir', 'experiments_dir', 'subsystem_dir', 'telemetry_script_dir')

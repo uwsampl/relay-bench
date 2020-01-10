@@ -139,7 +139,8 @@ def traverse_fields(entry, ignore_fields=None):
     Set ignore_fields to a non-None value to avoid the defaults.
     """
     ignore_set = {'timestamp', 'tvm_hash', 'detailed', 
-                  'start_time', 'end_time', 'time_delta', 'success'}
+                  'start_time', 'end_time', 'time_delta', 'success',
+                  'run_cpu_telemetry', 'run_gpu_telemetry'}
     if ignore_fields is not None:
         ignore_set = set(ignore_fields)
 
@@ -192,3 +193,30 @@ def invoke_main(main_func, *arg_names):
 
 def render_exception(e):
     return logging.Formatter.formatException(e, sys.exc_info())
+
+def process_cpu_telemetry(stat:dict) -> list:
+    '''
+    Returns a list of a timestamp and a list of tuples in the form of:
+        (adapter_name, topic_name, data_unit, list_of_data)
+    where `list_of_data` in the form of:
+        [timestamp, data]
+    Make the data consistent with those processed by `process_gpu_telemetry`.
+    '''
+    result = [stat.get('timestamp')]
+    for adapter, stat_dict in stat.items():
+        if adapter != 'timestamp':
+            for (topic_name, data) in stat_dict.items():
+                result.append((adapter, f'{adapter}_{topic_name}', '', data))
+    return result
+
+def process_gpu_telemetry(stat:dict) -> list:
+    '''
+    Returns a list of a timestamp and a list of tuples in the form of:
+        (topic_name, data_unit, list_of_data)
+    Make the data in a fixed accessible form.
+    '''
+    result = [stat.get('timestamp')]
+    for topic, stat_dict in stat.items():
+        if topic != 'timestamp':
+            result.append(('GPU', topic, stat_dict.get('unit'), stat_dict.get('data')))
+    return result

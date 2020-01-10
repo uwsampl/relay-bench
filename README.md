@@ -40,6 +40,9 @@ The top-level dashboard config.json may contain the following fields:
 - `tmp_data_dir` (str, mandatory): Directory for storing experiment raw data (we hope to move this to cloud storage eventually), which are zipped CSV files
 - `backup_dir` (str, mandatory): Directory for storing compressed copies of dashboard backups AKA dumping zip files (we hope to move this to cloud storage too)
 - `setup_dir` (str, mandatory): Directory for storing persistent setup files for experiments (this probably should stay local)
+- `run_cpu_telemetry` (boolean, optional): Top-level switch for CPU logging for all experiments (can be overwritten by configurations of experiments, default false)
+- `run_gpu_telemetry` (boolean, optional): Top-level switch for GPU logging for all experiments (can be overwritten by configurations of experiments, default false)
+- `telemetry_rate` (integer, optional): The rate (in seconds) that the telemetry process collect data from `sensors` and `nvidia-smi` (e.g. setting to 30 will make the telemetry process collect data once 30 seconds). The default value is 15. To disable the telemetry process, set this field to a negative integer.
 - `randomize` (boolean, optional): Whether to randomize the experiment order. Defaults to true. If false, experiments will be run based on their specified priority (ties broken by lexicographic order by name).
 
 Example configurations for the dashboard and every experiment and subsystem are given in `sample-dashboard-home/`.
@@ -69,6 +72,12 @@ Experiment `config.json` files may contain, in addition to any fields specific t
 - `tvm_remote` (optional, string): TVM fork to use for tvm_branch's functionality
 - `tvm_branch` (optional, string): If indicated, the experiment will check out the specified branch from the `tvm_remote` repo and build that variant of TVM for the experiment
 - `rerun_setup` (optional, boolean): If indicated and the experiment has a `setup.sh`, this will force the setup to be rerun regardless of whether the experiment has changed. Defaults to false.
+- `process_pinning` (optional, dict): configuration of process pinning for experiments
+  - `enable` (mandatory, boolean): Switch for the process pinning
+  - `cores`: (mandatory, parameter passed to `taskset`): Bitmask / cpu list, etc. See `man taskset` for more information. 
+- `run_cpu_telemetry` (optional, boolean): Switch of CPU logging for current experiment. If indicated, the configuration will overwrite the top-level configuration for current experiment. (default: same as the value in top-level configuration).
+- `run_gpu_telemetry` (optional, boolean): Switch of GPU logging for current experiment. If indicated, the configuration will overwrite the top-level configuration for current experiment. (default: same as the value in top-level configuration).
+- `telemetry_rate` (optional, integer): If indicated, the number in this field will overwrite the timespan between two data collections of the telemetry process, else, the value will be that in the top-level dashboard configuration. 
 - `priority` (optional, int): If the dashboard is not set to run experiments in random order, the priority will be used to decide the experiment ordering. If unspecified, the priority will default to 0. The highest-priority experiments will run first. Ties will be broken by lexicographic order by experiment directory name. (This mechanism is included primarily for debugging purposes, like determining if the experiment ordering affects the results. Experiments should not rely on running in any particular order, however.)
 
 Each script will be executed from its own directory so they don't have to use absolute addresses everywhere.
@@ -97,6 +106,15 @@ Subsystems will have config options as follows:
 - `subsys_reporter`: Reports any failed subsystems; also if a subsystem produces a report.json in its output directory, the reporter will put it into a Slack message. This should be configured to run after all other subsystems, since it requires their results.
 
 *(Meta-note: Something that became clear in the process of developing the subsystems is that the experiments themselves can be handled as a single subsystem that is configured to run first. This might reduce some duplicated logic in the core infrastructure but would take a lot of engineering effort to properly implement and may not be worthwhile.)*
+
+### Telemetry Record
+If the telemetry switch is enabled for some experiment, the telemetry process will collect data from CPU and/or GPU (configured by users), and the main process will parse the data to `JSON` files (separated for CPU and GPU) and store them in `DASHBOARD_HOME/results/subsystem/telemetry/EXP_NAME`, where `DASHBOARD_HOME` and `EXP_NAME` are home directory (configured by users) and experiment names. In order to make `vis_telemetry` subsystem work, parsed GPU and CPU telemetry files have to be in a certain format. The structure of `JSON` file for GPU telemetry is:
+1. A timestamp
+2. Topic names mapped to an object that has a `data` field and a `unit` field. `data` field is a list of pairs where the first element is time elapsed from the beginning of the experiment, and the second element is the data collected by the telemetry process. The `unit` field is the unit of the data, if it is not applicable, the value will be `null`.
+
+The structure of `JSON` file for CPU telemetry is:
+1. A timestamp
+2. Adaptor names mapped to an object whose keys are names of sensors of the adapter, and values to the keys are list of pairs, where the first element is time elapsed from the beginning of the experiment , and the second element is the data collected by the telemetry process.
 
 ## Implementation Details
 
