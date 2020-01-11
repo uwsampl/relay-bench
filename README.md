@@ -73,8 +73,9 @@ Experiment `config.json` files may contain, in addition to any fields specific t
 - `tvm_branch` (optional, string): If indicated, the experiment will check out the specified branch from the `tvm_remote` repo and build that variant of TVM for the experiment
 - `rerun_setup` (optional, boolean): If indicated and the experiment has a `setup.sh`, this will force the setup to be rerun regardless of whether the experiment has changed. Defaults to false.
 - `process_pinning` (optional, dict): configuration of process pinning for experiments (using `taskset`)
-  - `enable` (mandatory, boolean): Switch for the process pinning
-  - `cores`: (mandatory, parameter passed to `taskset`): Bitmask / cpu list, etc. See `man taskset` for more information. 
+  * `enable` (mandatory, boolean): Switch for the process pinning
+  * `cores`: (mandatory, parameter passed to `taskset`): Bitmask / cpu list, etc. See `man taskset` for more information.
+  * Example `process_pinning` dictionary: `"process_pinning": {"enable": true, "cores": "0-7"}`
 - `run_cpu_telemetry` (optional, boolean): Switch of CPU logging for current experiment. If indicated, the configuration will overwrite the top-level configuration for current experiment. (default: same as the value in top-level configuration).
 - `run_gpu_telemetry` (optional, boolean): Switch of GPU logging for current experiment. If indicated, the configuration will overwrite the top-level configuration for current experiment. (default: same as the value in top-level configuration).
 - `telemetry_rate` (optional, integer): If indicated, the number in this field will overwrite the timespan between two data collections of the telemetry process, else, the value will be that in the top-level dashboard configuration. 
