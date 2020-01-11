@@ -1,5 +1,7 @@
 {
     "tmp_data_dir": "~/test-dashboard-data",
     "backup_dir": "~/test-dashboard-backup",
-    "setup_dir": "~/test-dashboard-setup"
+    "setup_dir": "~/test-dashboard-setup",
+    "run_cpu_telemetry": false,
+    "run_gpu_telemetry": false
 }
