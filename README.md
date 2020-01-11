@@ -72,7 +72,7 @@ Experiment `config.json` files may contain, in addition to any fields specific t
 - `tvm_remote` (optional, string): TVM fork to use for tvm_branch's functionality
 - `tvm_branch` (optional, string): If indicated, the experiment will check out the specified branch from the `tvm_remote` repo and build that variant of TVM for the experiment
 - `rerun_setup` (optional, boolean): If indicated and the experiment has a `setup.sh`, this will force the setup to be rerun regardless of whether the experiment has changed. Defaults to false.
-- `process_pinning` (optional, dict): configuration of process pinning for experiments
+- `process_pinning` (optional, dict): configuration of process pinning for experiments (using `taskset`)
   - `enable` (mandatory, boolean): Switch for the process pinning
   - `cores`: (mandatory, parameter passed to `taskset`): Bitmask / cpu list, etc. See `man taskset` for more information. 
 - `run_cpu_telemetry` (optional, boolean): Switch of CPU logging for current experiment. If indicated, the configuration will overwrite the top-level configuration for current experiment. (default: same as the value in top-level configuration).
@@ -104,17 +104,21 @@ Subsystems will have config options as follows:
 - `exp_reports`: Puts experiment summaries into a Slack message
 - `stat_alerts`: Pings users on Slack if experiment results are more than a standard deviation outside their historic mean
 - `subsys_reporter`: Reports any failed subsystems; also if a subsystem produces a report.json in its output directory, the reporter will put it into a Slack message. This should be configured to run after all other subsystems, since it requires their results.
+- `vis_telemetry`: Produces longitudinal graphs for dashboard telemetry data (see below)
 
 *(Meta-note: Something that became clear in the process of developing the subsystems is that the experiments themselves can be handled as a single subsystem that is configured to run first. This might reduce some duplicated logic in the core infrastructure but would take a lot of engineering effort to properly implement and may not be worthwhile.)*
 
 ### Telemetry Record
-If the telemetry switch is enabled for some experiment, the telemetry process will collect data from CPU and/or GPU (configured by users), and the main process will parse the data to `JSON` files (separated for CPU and GPU) and store them in `DASHBOARD_HOME/results/subsystem/telemetry/EXP_NAME`, where `DASHBOARD_HOME` and `EXP_NAME` are home directory (configured by users) and experiment names. In order to make `vis_telemetry` subsystem work, parsed GPU and CPU telemetry files have to be in a certain format. The structure of `JSON` file for GPU telemetry is:
-1. A timestamp
-2. Topic names mapped to an object that has a `data` field and a `unit` field. `data` field is a list of pairs where the first element is time elapsed from the beginning of the experiment, and the second element is the data collected by the telemetry process. The `unit` field is the unit of the data, if it is not applicable, the value will be `null`.
 
-The structure of `JSON` file for CPU telemetry is:
+If the top-level dashboard config has telemetry enabled, a telemetry process runs in the background alongside experiments, periodically (configurable) querying the system about CPU and GPU performance data. The telemetry data is later parsed into JSON files that are stored in `DASHBOARD_HOME/results/subsystem/telemetry/EXP_NAME`, where `DASHBOARD_HOME` and `EXP_NAME` are the dashboard home directory and experiment names, respectively. The `vis_telemetry` subsystem produces readable graphs from the data.
+
+The JSON files for GPU telemetry must contain:
 1. A timestamp
-2. Adaptor names mapped to an object whose keys are names of sensors of the adapter, and values to the keys are list of pairs, where the first element is time elapsed from the beginning of the experiment , and the second element is the data collected by the telemetry process.
+2. Topic names mapped to an object that has a `data` field and a `unit` field. The `data` field is a list of pairs where the first element is time elapsed from the beginning of the experiment and the second element is the data collected by the telemetry process. The `unit` field is the unit of the data (a string) if one is provided and `null` otherwise.
+
+The JSON files for CPU telemetry must contain:
+1. A timestamp
+2. Adapter names mapped to an object whose keys are names of sensors and values to the keys are list of pairs, where the first element is time elapsed from the beginning of the experiment and the second element is the data collected by the telemetry process (numeric).
 
 ## Implementation Details
 
@@ -149,7 +153,7 @@ It is far beyond the scope of this document to go into detail on all the files (
     * `check_prerequisites.py`: Mostly intended for checking subsystem prerequisites. Provides a function that checks that certain experiments have run and have desirable settings in their configs. This could probably also be made a DSL akin to `plot_util.py`, depending on what needs emerge.
     * `trial_util.py`: This is where a lot of very confusing code for timing experiments and recording data in CSV files lives. An upside is that this code is used very widely so further profiling that is added here could be used by many experiments.
     * `analysis_util.py`: Also very confusing code responsible for reading raw data CSV files and producing summary statistics, as it has to follow the format set in `trial_util.py`. The main reason this code is so tangled is that the original dashboard has a lot of old data files hanging around and we have not written code for "migrating" those to any new data format; once this can be done relatively easily, it should be possible to simplify the data representation and also the code in this file.
-    * `exp_templates.py`: The newest and least principled part of the shared Python files. This file contains "templates" that implement the basic logic for each stage of an experiment, based on what code tended to be repeated most in practice. Some experiments do not follow these templates because they need extra steps for technical reasons and so have all the "dashboard boilerplate" in full. It may be possible to make these a little bit more general so as to handle those. As messy as this is, this should make it easier to change the dashboard's organization, since there is less code duplication in this manner.
+    * `exp_templates.py`: The least principled part of the shared Python files. This file contains "templates" that implement the basic logic for each stage of an experiment, based on what code tended to be repeated most in practice. Some experiments do not follow these templates because they need extra steps for technical reasons and so have all the "dashboard boilerplate" in full. It may be possible to make these a little bit more general so as to handle those. As messy as this is, this should make it easier to change the dashboard's organization, since there is less code duplication in this manner.
     * `slack_util`: Helper functions for constructing Slack messages and invoking the web API
     * `relay_util`: Functions for invoking TVM's compiler and certain common operations
     * `summary_util`: Basic functions for making generic text displays of common `data.json` configurations
