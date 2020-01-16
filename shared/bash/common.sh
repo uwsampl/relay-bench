@@ -38,9 +38,10 @@ function emit_status_file {
         flag_str="false"
     fi
 
-    # have to filter out newlines from the message and escape quotes
-    # or it won't be valid JSON
-    altered_msg=$(echo "$msg" | sed 's/$/\\n/' | tr -d '\n' | sed 's/"/\\"/g')
+    # Have to filter out newlines from the message and escape quotes
+    # or it won't be valid JSON.
+    # Also uses iconv to trim non-ASCII characters to prevent JSON parsing errors later.
+    altered_msg=$(echo "$msg" | sed 's/$/\\n/' | tr -d '\n' | sed 's/"/\\"/g' | iconv -c -t ascii)
     content="{\"success\": $flag_str, \"message\": \"$altered_msg\"}"
     echo "$content" > "$dest/status.json"
 }
