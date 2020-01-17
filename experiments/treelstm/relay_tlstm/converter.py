@@ -1,7 +1,7 @@
 import torch
 import tvm
 from tvm import relay
-from tvm.relay.backend.interpreter import Value, TupleValue, ConstructorValue, TensorValue
+from tvm.relay.backend.interpreter import TupleValue, ConstructorValue
 from tvm.relay import testing, create_executor
 from tvm.relay.prelude import Prelude
 
@@ -43,7 +43,7 @@ def from_list(p, l, t):
 # convert tensors
 def pytorch_to_relay(tensor):
     #print(tensor.shape)
-    return TensorValue(relay.const(tensor.detach().cpu().numpy().reshape((1, 300)), dtype='float32').data)
+    return relay.const(tensor.detach().cpu().numpy().reshape((1, 300)), dtype='float32').data
 
 
 def from_tree(p, rt, t):

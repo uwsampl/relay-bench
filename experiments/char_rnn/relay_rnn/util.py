@@ -42,8 +42,6 @@ def random_training_example():
     target_line_tensor = targetTensor(line)
     return category_tensor, input_line_tensor, target_line_tensor
 
-from tvm.relay.backend.interpreter import TensorValue
-
 def sample(rnn, category, start_letter='A'):
     category_tensor = categoryTensor(category)
     input = inputTensor(start_letter)
