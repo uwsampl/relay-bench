@@ -3,7 +3,6 @@ import tvm
 from tvm import relay
 from tvm.relay import op
 from tvm.relay import create_executor, Module
-from tvm.relay.backend.interpreter import TensorValue
 from tvm.relay.prelude import Prelude
 import aot
 
