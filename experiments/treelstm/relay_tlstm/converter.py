@@ -1,7 +1,7 @@
 import torch
 import tvm
 from tvm import relay
-from tvm.relay.backend.interpreter import TupleValue, ConstructorValue
+from tvm.relay.backend.interpreter import ConstructorValue
 from tvm.relay import testing, create_executor
 from tvm.relay.prelude import Prelude
 
