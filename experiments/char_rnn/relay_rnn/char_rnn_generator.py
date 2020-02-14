@@ -9,8 +9,9 @@ import math
 import numpy as np
 import tvm
 from tvm import relay
+from tvm import IRModule as Module
 from tvm.relay import op
-from tvm.relay import create_executor, Module
+from tvm.relay import create_executor
 from tvm.relay.prelude import Prelude
 
 import language_data as data
