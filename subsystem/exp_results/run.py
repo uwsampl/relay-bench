@@ -103,7 +103,6 @@ def main(config_dir, home_dir, output_dir):
         attachments.append(
             build_attachment(
                 title='Successful benchmarks',
-                pretext=description,
                 fields=successful_experiments))
     if failed_experiments:
         attachments.append(
@@ -127,7 +126,8 @@ def main(config_dir, home_dir, output_dir):
     success, report = post_message(
         webhook,
         build_message(
-            text='Dashboard Results',
+            text='*Dashboard Results*{}'.format(
+                '\n' + description if description != '' else ''),
             attachments=attachments))
     write_status(output_dir, success, report)
 
