@@ -8,16 +8,22 @@ import os
 from common import invoke_main, read_config, write_status
 from slack_util import (generate_ping_list,
                         build_field, build_attachment, build_message,
-                        post_message)
+                        post_message, new_client)
 
 
 def main(config_dir, home_dir, output_dir):
     config = read_config(config_dir)
-    if 'webhook_url' not in config:
-        write_status(output_dir, False, 'No webhook URL given')
+    if 'channel_id' not in config:
+        write_status(output_dir, False, 'No channel token given')
         return 1
 
-    webhook = config['webhook_url']
+    channel = config['channel_id']
+
+    success, msg, client = new_client()
+
+    if not success:
+        write_status(output_dir, False, msg)
+        return 1
 
     if 'deadlines' not in config:
         write_status(output_dir, True, 'No deadlines to report')
@@ -67,7 +73,8 @@ def main(config_dir, home_dir, output_dir):
         return 0
 
     success, report = post_message(
-        webhook,
+        client,
+        channel,
         build_message(
             text='*Upcoming Deadlines*',
             attachments=attachments))
