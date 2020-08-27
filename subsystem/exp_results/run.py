@@ -11,7 +11,7 @@ from dashboard_info import DashboardInfo
 from slack import WebClient
 from slack_util import (generate_ping_list,
                         build_field, build_attachment, build_message,
-                        post_message, new_client)
+                        post_message, new_client, upload_image)
 
 def attach_duration(message, duration=None):
     if duration is None:
@@ -32,6 +32,26 @@ def failed_experiment_field(exp, stage_statuses, stage, duration=None, notify=No
 
     return build_field(title=exp, value=message)
 
+def exp_titles(info):
+    result = {}
+    for exp_name in info.all_present_experiments():
+        if info.exp_config_valid(exp_name):
+            conf = info.read_exp_config(exp_name)
+            if 'title' in conf:
+                result[exp_name] = conf['title']
+    return result
+
+def send_graphs(config, info, client, output_dir):
+    os.chdir(output_dir)
+    titles = exp_titles(info)
+    for (curr_dir, _, files) in os.walk('./graphs'):
+        shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
+        for filename in files:
+            if filename.endswith('.png'):
+               success, msg = upload_image(client, config['channel_id'], f'./graph/{filename}', filename)
+               if not success:
+                   write_status(False, msg)
+
 
 def main(config_dir, home_dir, output_dir):
     config = read_config(config_dir)
@@ -40,6 +60,7 @@ def main(config_dir, home_dir, output_dir):
         return 1
     
     success, msg, client = new_client()
+    info = DashboardInfo(home_dir)
 
     if not success:
         write_status(output_dir, False, msg)
@@ -137,8 +158,9 @@ def main(config_dir, home_dir, output_dir):
             text='*Dashboard Results*{}'.format(
                 '\n' + description if description != '' else ''),
             attachments=attachments))
+    if config.get('report_images', False):
+        send_graphs(config, info, client, output_dir)
     write_status(output_dir, success, report)
-
 
 if __name__ == '__main__':
     invoke_main(main, 'config_dir', 'home_dir', 'output_dir')

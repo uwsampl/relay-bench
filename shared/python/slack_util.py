@@ -56,7 +56,7 @@ def build_message(text='', pretext='', attachments=None):
 def post_message(client, channel, message):
     """
     Attempts posting the given message object to the
-    Slack webhook URL.
+    Slack channel.
     Returns whether it was successful and a message.
     """
     try:
@@ -65,6 +65,18 @@ def post_message(client, channel, message):
                 client.chat_postMessage(channel=ch, text=message['pretext'], attachments=message['attachments'])
         else:
             client.chat_postMessage(channel=channel, text=message['pretext'], attachments=message['attachments'])
+        return (True, 'success')
+    except Exception as e:
+        return (False, 'Encountered exception:\n' + render_exception(e))
+
+def upload_image(client, channels, file_path, description):
+    """
+    Attempts to upload an image to a channel
+    """
+    try:
+        if isinstance(channels, list):
+            channels = ','.join(channels)
+        client.files_upload(channels=channels, file=file_path, title=description)
         return (True, 'success')
     except Exception as e:
         return (False, 'Encountered exception:\n' + render_exception(e))
