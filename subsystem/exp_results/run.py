@@ -32,26 +32,15 @@ def failed_experiment_field(exp, stage_statuses, stage, duration=None, notify=No
 
     return build_field(title=exp, value=message)
 
-def exp_titles(info):
-    result = {}
-    for exp_name in info.all_present_experiments():
-        if info.exp_config_valid(exp_name):
-            conf = info.read_exp_config(exp_name)
-            if 'title' in conf:
-                result[exp_name] = conf['title']
-    return result
-
 def send_graphs(config, info, client, output_dir):
     os.chdir(output_dir)
-    titles = exp_titles(info)
-    for (curr_dir, _, files) in os.walk('./graphs'):
-        shown_dir = os.sep.join(curr_dir.split(os.sep)[2:])
+    for (curr_dir, _, files) in os.walk(info.exp_graphs):
         for filename in files:
-            if filename.endswith('.png'):
-               success, msg = upload_image(client, config['channel_id'], f'./graph/{filename}', filename)
-               if not success:
-                   write_status(False, msg)
-
+            if filename.endswith('.png') or filename.endswith('.jpg'):
+                success, msg = upload_image(client, config['channel_id'], f'{curr_dir}/{filename}', filename)
+                if not success:
+                    return (False, msg)
+    return True, 'success'
 
 def main(config_dir, home_dir, output_dir):
     config = read_config(config_dir)
@@ -159,7 +148,11 @@ def main(config_dir, home_dir, output_dir):
                 '\n' + description if description != '' else ''),
             attachments=attachments))
     if config.get('report_images', False):
-        send_graphs(config, info, client, output_dir)
+        success, msg = send_graphs(config, info, client, output_dir)
+        if not success:
+            write_status(output_dir, False, msg)
+            return 1
+
     write_status(output_dir, success, report)
 
 if __name__ == '__main__':
