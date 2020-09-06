@@ -15,9 +15,10 @@ from common import render_exception
 def generate_ping_list(user_ids):
     return ', '.join(['<@{}>'.format(user_id) for user_id in user_ids])
 
-def new_client():
+def new_client(config):
     try:
-        return True, 'success', WebClient(token=os.environ['SLACK_CLIENT_TOKEN'])
+        # Please keep token locally. Do not upload config file(s) to the GitHub Repo.
+        return True, 'success', WebClient(token=config['slack_client_token'])
     except Exception as e:
         return False, f'Exception encountered: {render_exception(e)}', None
 
@@ -53,30 +54,31 @@ def build_message(text='', pretext='', attachments=None):
     return ret
 
 
-def post_message(client, channel, message):
+def post_message(client, channel, message, **kargs):
     """
     Attempts posting the given message object to the
     Slack channel.
     Returns whether it was successful and a message.
     """
     try:
+        resp = []
         if isinstance(channel, list):
             for ch in channel:
-                client.chat_postMessage(channel=ch, text=message['pretext'], attachments=message['attachments'])
+                resp.append(client.chat_postMessage(channel=ch, text=message['pretext'], attachments=message['attachments'], **kargs))
         else:
-            client.chat_postMessage(channel=channel, text=message['pretext'], attachments=message['attachments'])
-        return (True, 'success')
+            resp.append(client.chat_postMessage(channel=channel, text=message['pretext'], attachments=message['attachments'], **kargs))
+        return (True, resp, 'success')
     except Exception as e:
-        return (False, 'Encountered exception:\n' + render_exception(e))
+        return (False, None, 'Encountered exception:\n' + render_exception(e))
 
-def upload_image(client, channels, file_path, description):
+def upload_image(client, channels, file_path, description, **kargs):
     """
     Attempts to upload an image to a channel
     """
     try:
         if isinstance(channels, list):
             channels = ','.join(channels)
-        client.files_upload(channels=channels, file=file_path, title=description)
-        return (True, 'success')
+        resp = client.files_upload(channels=channels, file=file_path, title=description, **kargs)
+        return (True, resp, 'success')
     except Exception as e:
-        return (False, 'Encountered exception:\n' + render_exception(e))
+        return (False, None, 'Encountered exception:\n' + render_exception(e))

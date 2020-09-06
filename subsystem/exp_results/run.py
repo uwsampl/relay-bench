@@ -33,11 +33,22 @@ def failed_experiment_field(exp, stage_statuses, stage, duration=None, notify=No
     return build_field(title=exp, value=message)
 
 def send_graphs(config, info, client, output_dir):
-    os.chdir(output_dir)
+    img_dict = dict()
     for (curr_dir, _, files) in os.walk(info.exp_graphs):
         for filename in files:
             if filename.endswith('.png') or filename.endswith('.jpg'):
-                success, msg = upload_image(client, config['channel_id'], f'{curr_dir}/{filename}', filename)
+                if curr_dir not in img_dict:
+                    img_dict[curr_dir] = []
+                img_dict[curr_dir].append(filename)
+    for (dir_name, files) in img_dict:
+        success, resp, msg = post_message(client, config['channel_id'], f'Graphs of {dir_name}')
+        if not success:
+            return (False, msg)
+        channel_thread_ts = list(map(lambda resp: (resp.data['channel'], resp.data['ts']), resp))
+        for filename in files:
+            file_path = f'{dir_name}/{filename}'
+            for channel, thread_ts in channel_thread_ts:
+                success, _, msg = upload_image(client, channel, file_path, filename, thread_ts=thread_ts)
                 if not success:
                     return (False, msg)
     return True, 'success'
@@ -48,7 +59,7 @@ def main(config_dir, home_dir, output_dir):
         write_status(output_dir, False, 'No channel token given')
         return 1
     
-    success, msg, client = new_client()
+    success, msg, client = new_client(config)
     info = DashboardInfo(home_dir)
 
     if not success:
@@ -140,7 +151,7 @@ def main(config_dir, home_dir, output_dir):
                 title='Failed to Visualize',
                 text=', '.join(failed_graphs)))
 
-    success, report = post_message(
+    success, _, report = post_message(
         client,
         slack_channel,
         build_message(

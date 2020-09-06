@@ -27,7 +27,7 @@ def main(config_dir, home_dir, output_dir):
 
     channel = config['channel_id']
 
-    success, msg, client = new_client()
+    success, msg, client = new_client(config)
 
     if not success:
         write_status(output_dir, False, msg)
@@ -83,7 +83,7 @@ def main(config_dir, home_dir, output_dir):
         write_status(output_dir, True, 'Nothing to report')
         return 0
 
-    success, msg = post_message(
+    success, _,  msg = post_message(
         client,
         channel,
         build_message(
