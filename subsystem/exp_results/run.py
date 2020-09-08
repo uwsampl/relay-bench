@@ -40,8 +40,9 @@ def send_graphs(config, info, client, output_dir):
                 if curr_dir not in img_dict:
                     img_dict[curr_dir] = []
                 img_dict[curr_dir].append(filename)
-    for (dir_name, files) in img_dict:
-        success, resp, msg = post_message(client, config['channel_id'], f'Graphs of {dir_name}')
+    for (dir_name, files) in img_dict.items():
+        exp_name = dir_name.split(os.path.sep)[-1] if os.path.sep in dir_name else dir_name
+        success, resp, msg = post_message(client, config['channel_id'], build_message(text=f'Graphs of {exp_name}'))
         if not success:
             return (False, msg)
         channel_thread_ts = list(map(lambda resp: (resp.data['channel'], resp.data['ts']), resp))

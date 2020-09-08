@@ -64,9 +64,9 @@ def post_message(client, channel, message, **kargs):
         resp = []
         if isinstance(channel, list):
             for ch in channel:
-                resp.append(client.chat_postMessage(channel=ch, text=message['pretext'], attachments=message['attachments'], **kargs))
+                resp.append(client.chat_postMessage(channel=ch, text=message.get('text', '*No Message Content*'), attachments=message.get('attachments', ''), **kargs))
         else:
-            resp.append(client.chat_postMessage(channel=channel, text=message['pretext'], attachments=message['attachments'], **kargs))
+            resp.append(client.chat_postMessage(channel=channel, text=message.get('text', '*No Message Content*'), attachments=message.get('attachments', ''), **kargs))
         return (True, resp, 'success')
     except Exception as e:
         return (False, None, 'Encountered exception:\n' + render_exception(e))
