@@ -1,6 +1,7 @@
 {
     "active": true,
-    "webhook_url": "slack webhook URL here",
+    "slack_client_token": "Slack API token here",
+    "channel_id": ["list of Slack channel IDs here"],
     "deadlines": {
         "Total Solar Eclipse": {
             "date": "2024-04-08 12:00:00",

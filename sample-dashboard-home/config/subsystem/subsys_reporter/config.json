@@ -1,4 +1,5 @@
 {
     "active": true,
-    "webhook_url": "slack webhook url here"
+    "slack_client_token": "Slack API token here",
+    "channel_id": ["list of Slack channel IDs here"]
 }
