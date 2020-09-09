@@ -131,7 +131,7 @@ Non-Python dependencies:
 - CUDA 10.1 or higher and CuDNN 7.5.0 or higher, as the GPU versions of TVM and other frameworks depend on it (see the `run_dashboard.sh` script)
 - Machines for running VTA for the `relay_to_vta` experiment if you plan to run it; see its example config
 - To actually view the webpage, a web server like nginx should be configured to treat (dashboard home directory)/results/subsystem/output/website/ as the website root, as the index.html file will be produced there
-- Subsystems that post to Slack require a webhook
+- Subsystems that post to Slack require an Slack API OAuth token
 
 ### Scripts
 
