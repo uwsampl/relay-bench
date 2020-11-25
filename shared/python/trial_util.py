@@ -17,7 +17,7 @@ def set_seed(seed):
     # need to have their seeds set
     np.random.seed(seed)
     mx.random.seed(seed)
-    tf.set_random_seed(seed)
+    tf.random.set_seed(seed)
     pt.manual_seed(seed)
     random.seed(seed)
 
