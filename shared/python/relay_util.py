@@ -144,7 +144,7 @@ def setup_relay_mod(net, image_shape, input_name, params, dev, opt,
                             disabled_pass=disabled_pass):
         graph, lib, params = relay.build(net, 'llvm' if dev == 'cpu' else 'cuda', params=params)
 
-    mod = tvm.contrib.graph_runtime.create(graph, lib, ctx=device)
+    mod = tvm.contrib.graph_executor.create(graph, lib, device)
     mod.set_input(**params)
     mod.set_input(input_name,
                   tvm.nd.array((np.random.uniform(size=image_shape)).astype('float32')))
