@@ -150,7 +150,9 @@ set(USE_ANTLR OFF)
 set(USE_VTA_FSIM ON)
 
 # Whether to build cycle-accurate VTA simulator driver
-set(USE_VTA_TSIM ON)
+set(USE_VTA_TSIM OFF)
+
+set(USE_VERILATOR OFF)
 
 # Whether to build VTA FPGA driver (device side only)
 set(USE_VTA_FPGA OFF)
