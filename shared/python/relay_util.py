@@ -2,7 +2,7 @@ import tvm
 from tvm import relay
 from tvm.relay import transform
 import numpy as np
-import aot
+#import aot
 
 ALL_PASSES = {
     'FoldScaleAxis',
